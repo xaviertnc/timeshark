@@ -6,6 +6,7 @@ export function renderSidebar() {
         { hash: '#projects', icon: '📁', label: 'Projects' },
         { hash: '#planner', icon: '📅', label: 'Planner' },
         { hash: '#reports', icon: '📊', label: 'Reports' },
+        { label: 'Team', icon: '👥', hash: '#team' },
     ];
 
     nav.innerHTML = items.map(item => `

@@ -8,6 +8,7 @@ import { renderCustomers } from './components/customers.js';
 import { renderProjects } from './components/projects.js';
 import { renderPlanner } from './components/planner.js';
 import { renderReports } from './components/reports.js';
+import { renderTeam } from './components/team.js';
 
 const app = document.getElementById('app');
 const pageTitle = document.getElementById('page-title');
@@ -20,6 +21,7 @@ const routes = {
     '#projects': { title: 'Projects', sub: 'Planning', render: renderProjects },
     '#planner': { title: 'Resource Planner', sub: 'Timeline', render: renderPlanner },
     '#reports': { title: 'Time Reports', sub: 'Analytics', render: renderReports },
+    '#team': { title: 'Team Management', sub: 'Resources', render: renderTeam },
 };
 
 async function handleRoute() {
@@ -64,10 +66,11 @@ async function init() {
 
     // Fetch initial global data
     try {
-        const [customers, projects, timeEntries] = await Promise.all([
+        const [customers, projects, timeEntries, team] = await Promise.all([
             api.get('customers.php'),
             api.get('projects.php'),
-            api.get('time-entries.php')
+            api.get('time-entries.php'),
+            api.get('team.php')
         ]);
 
         let activeTimer = null;
@@ -81,6 +84,7 @@ async function init() {
             customers,
             projects,
             timeEntries,
+            team,
             activeTimer
         });
 

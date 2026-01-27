@@ -3,13 +3,12 @@ import { api } from '../utils/api.js';
 
 export async function renderPlanner() {
     const state = store.get();
-    const tasks = state.tasks || []; // These are allocations
+    const tasks = state.tasks || [];
     const projects = state.projects || [];
+    const team = state.team || [];
 
-    // Determine unique resources + 'Me'
-    const resourceSet = new Set(['Me']);
-    tasks.forEach(t => { if (t.resource_id) resourceSet.add(t.resource_id); });
-    const resources = Array.from(resourceSet);
+    // Resources from team data
+    const resources = team.length > 0 ? team.map(m => m.name) : ['Me'];
 
     // Timeline Settings: Show next 14 days
     const today = new Date();
@@ -69,12 +68,16 @@ export async function renderPlanner() {
                                     ${activeTasks.map(t => {
             const proj = projects.find(p => p.id == t.project_id) || { color: '#ccc', name: 'Unknown' };
             return `
-                                            <div class="mb-1 text-xs rounded px-2 py-1 text-white shadow-sm truncate cursor-pointer hover:opacity-80 transition-opacity relative group" 
-                                                style="background-color: ${proj.color}" 
-                                                title="${t.title} (${proj.name})"> 
-                                                ${t.title}
-                                                <button class="delete-task-btn absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 text-[10px]" data-id="${t.id}">&times;</button>
-                                            </div>
+                                            <div class="mb-1 text-[10px] rounded-lg px-2 py-1.5 text-white shadow-sm truncate cursor-pointer hover:opacity-80 transition-opacity relative group" 
+                                                 style="background-color: ${proj.color}" 
+                                                 title="${t.title} (${proj.name})"> 
+                                                 ${t.title}
+                                                 <button class="delete-task-btn absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 shadow-lg border border-white transition-opacity" data-id="${t.id}" title="Delete Allocation">
+                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                     </svg>
+                                                 </button>
+                                             </div>
                                         `;
         }).join('')}
                                 </div>
@@ -94,9 +97,10 @@ export async function renderPlanner() {
                 </div>
                 <form id="planner-form" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1">Resource Name</label>
-                        <input type="text" name="resource_id" value="Me" required 
-                            class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:border-primary outline-none">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Assign To</label>
+                        <select name="resource_id" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:border-primary outline-none bg-white font-bold">
+                            ${resources.map(r => `<option value="${r}">${r}</option>`).join('')}
+                        </select>
                     </div>
                      <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Project</label>

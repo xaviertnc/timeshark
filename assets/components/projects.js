@@ -286,30 +286,36 @@ function renderProjectCard(p, customer) {
     const percent = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
 
     return `
-        <div class="project-card bg-white rounded-xl shadow-sm hover:shadow-lg transition-all p-5 border-t-4 group relative cursor-pointer active:scale-[0.99]" 
-             style="border-color: ${color}" data-id="${p.id}">
-            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <button class="delete-btn text-slate-300 hover:text-red-500 p-1" data-id="${p.id}">&times;</button>
+        <div class="project-card bg-white rounded-[2.25rem] p-8 border border-slate-100 shadow-xl shadow-slate-500/5 group relative cursor-pointer active:scale-[0.98] transition-all hover:shadow-2xl hover:shadow-primary/5" 
+             style="border-top: 6px solid ${color}" data-id="${p.id}">
+            <div class="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 translate-y-2 group-hover:translate-y-0">
+                <button class="delete-btn text-slate-300 hover:text-red-500 transition-colors p-2 bg-white rounded-xl shadow-lg border border-slate-100" data-id="${p.id}" title="Delete Project">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
             </div>
             
-            <div class="flex justify-between items-start mb-2">
-                <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-500 uppercase tracking-wide">
+            <div class="flex justify-between items-start mb-6">
+                <span class="text-[10px] font-black px-3 py-1 rounded-full bg-slate-50 text-slate-400 uppercase tracking-widest border border-slate-100">
                     ${p.status || 'Active'}
                 </span>
             </div>
             
-            <h3 class="text-xl font-bold text-slate-800 mb-1">${p.name}</h3>
-            <p class="text-sm text-slate-500 mb-4 flex items-center">
-                <span class="w-2 h-2 rounded-full mr-2" style="background-color: ${customer ? customer.color : '#ccc'}"></span>
+            <h3 class="text-2xl font-black text-slate-900 mb-1 tracking-tight">${p.name}</h3>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center mb-8">
+                <span class="w-1.5 h-1.5 rounded-full mr-2" style="background-color: ${customer ? customer.color : '#ccc'}"></span>
                 ${customer ? customer.name : 'Unknown Customer'}
             </p>
 
-            <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
-                <div class="h-full transition-all duration-500" style="width: ${percent}%; background-color: ${color}"></div>
-            </div>
-
-            <div class="flex items-center justify-between text-sm text-slate-400">
-                <span>${completedTodos}/${totalTodos} Tasks</span>
+            <div class="space-y-3">
+                <div class="flex justify-between items-end">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${completedTodos} / ${totalTodos} Tasks</span>
+                    <span class="text-xs font-black text-slate-900">${Math.round(percent)}%</span>
+                </div>
+                <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                    <div class="h-full transition-all duration-700 ease-out" style="width: ${percent}%; background: linear-gradient(to right, ${color}, ${color}dd)"></div>
+                </div>
             </div>
         </div>
     `;
