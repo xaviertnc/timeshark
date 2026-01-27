@@ -40,6 +40,7 @@ try {
                     'project_id' => $data['project_id'],
                     'project_name' => $data['project_name'] ?? 'Unknown Project', // Cache for display
                     'description' => $data['description'] ?? '',
+                    'resource_id' => $data['resource_id'] ?? 'Main',
                     'start_time' => gmdate('c'),
                     'end_time' => null
                 ];

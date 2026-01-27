@@ -2,7 +2,9 @@ import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 
 let currentPage = 1;
-const ITEMS_PER_PAGE = 8;
+const DAYS_PER_PAGE = 5;
+let selectedProject = '';
+let selectedMember = '';
 
 export async function renderReports() {
     const state = store.get();
@@ -41,11 +43,38 @@ export async function renderReports() {
         return h > 0 ? `${h}h ${m}m` : `${m}m`;
     };
 
-    // Pagination logic
-    const completedEntries = entries.filter(e => e.end_time).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-    const totalPages = Math.ceil(completedEntries.length / ITEMS_PER_PAGE);
-    const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
-    const paginatedEntries = completedEntries.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+    // Filter logic
+    const filteredEntries = entries.filter(e => {
+        if (!e.end_time) return false;
+        if (selectedProject && e.project_id !== selectedProject) return false;
+        if (selectedMember && (e.resource_id || 'Main') !== selectedMember) return false;
+        return true;
+    });
+
+    // Grouping logic
+    const grouped = {};
+    filteredEntries.forEach(e => {
+        const d = new Date(e.start_time);
+        const dayKey = d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        if (!grouped[dayKey]) grouped[dayKey] = {
+            entries: [],
+            total: 0,
+            date: d
+        };
+        const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
+        grouped[dayKey].entries.push(e);
+        grouped[dayKey].total += duration;
+    });
+
+    const sortedDays = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+    const totalPages = Math.ceil(sortedDays.length / DAYS_PER_PAGE);
+    const paginatedDays = sortedDays.slice((currentPage - 1) * DAYS_PER_PAGE, currentPage * DAYS_PER_PAGE);
+
+    const formatTime = (dateStr) => {
+        if (!dateStr) return '--:--';
+        const d = new Date(dateStr);
+        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    };
 
     const container = document.createElement('div');
     container.className = "max-w-5xl mx-auto pb-20";
@@ -93,9 +122,30 @@ export async function renderReports() {
             </div>
         </div>
 
+        <!-- Filters -->
+        <div class="flex flex-wrap items-center gap-4 mb-8 px-2">
+            <div class="flex-1 min-w-[200px]">
+                <label class="text-[9px] font-black text-dim uppercase tracking-widest mb-1.5 block ml-1">Filter Project</label>
+                <select id="filter-project" class="w-full bg-card border border-soft rounded-xl py-2.5 px-4 text-xs font-bold text-main appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
+                    <option value="">All Projects</option>
+                    ${projects.map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                </select>
+            </div>
+            <div class="flex-1 min-w-[200px]">
+                <label class="text-[9px] font-black text-dim uppercase tracking-widest mb-1.5 block ml-1">Filter Member</label>
+                <select id="filter-member" class="w-full bg-card border border-soft rounded-xl py-2.5 px-4 text-xs font-bold text-main appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
+                    <option value="">All Members</option>
+                    ${(state.team || []).map(m => `<option value="${m.name}" ${selectedMember === m.name ? 'selected' : ''}>${m.name}</option>`).join('')}
+                </select>
+            </div>
+            <div class="pt-5">
+                <button id="clear-filters" class="text-[9px] font-black text-dim hover:text-primary uppercase tracking-widest transition-colors">Clear</button>
+            </div>
+        </div>
+
         <!-- History -->
-        <div class="space-y-4">
-            <div class="flex items-center justify-between mb-8 px-2">
+        <div class="space-y-10">
+            <div class="flex items-center justify-between px-2">
                 <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Time History</h3>
                 ${totalPages > 1 ? `
                     <div class="flex items-center gap-1">
@@ -110,41 +160,60 @@ export async function renderReports() {
                 ` : ''}
             </div>
 
-            ${paginatedEntries.map(e => {
-        const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
-        const duration = formatDuration((new Date(e.end_time) - new Date(e.start_time)) / 1000);
+            ${paginatedDays.map(dayKey => {
+        const group = grouped[dayKey];
+        const displayDate = group.date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
 
         return `
-                    <div class="bg-card rounded-[1.25rem] p-3.5 border border-soft shadow-sm group hover:border-primary/20 transition-all duration-300 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-1 h-7 rounded-full" style="background-color: ${proj.color}"></div>
-                            <div>
-                                <h4 class="text-sm font-bold text-main tracking-tight leading-none mb-1">${proj.name}</h4>
-                                <p class="text-[9px] font-black text-dim uppercase tracking-widest">${e.description || 'No description provided'}</p>
-                            </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between px-2 opacity-50">
+                            <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${displayDate}</div>
+                            <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${formatDuration(group.total)}</div>
                         </div>
+                        <div class="space-y-3">
+                            ${group.entries.map(e => {
+            const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
+            const duration = formatDuration((new Date(e.end_time) - new Date(e.start_time)) / 1000);
+            const member = state.team?.find(m => m.name === e.resource_id) || { color: '#94a3b8' };
 
-                        <div class="flex items-center gap-6">
-                            <div class="text-right">
-                                <div class="text-base font-light text-main tracking-tighter leading-none">${duration}</div>
-                                <div class="text-[8px] font-black text-dim uppercase mt-0.5">${new Date(e.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                            </div>
-                            <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button class="edit-btn text-dim hover:text-primary transition-colors p-1.5" data-id="${e.id}">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                </button>
-                                <button class="delete-btn text-dim hover:text-red-300 transition-colors p-1.5" data-id="${e.id}">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
+            return `
+                                    <div class="bg-card rounded-[1.25rem] p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between">
+                                        <div class="flex items-center gap-4 flex-1">
+                                            <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <h4 class="text-xs font-bold text-main tracking-tight truncate">${proj.name}</h4>
+                                                    <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${e.resource_id || 'Main'}</span>
+                                                </div>
+                                                <p class="text-[10px] font-medium text-muted truncate">${e.description || 'No description provided'}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-8">
+                                            <div class="text-right whitespace-nowrap">
+                                                <div class="text-[10px] font-black text-dim uppercase tracking-widest mb-1 opacity-40">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
+                                                <div class="text-sm font-bold text-main tracking-tighter tabular-nums">${duration}</div>
+                                            </div>
+                                            <div class="flex gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                                                <button class="edit-btn text-dim hover:text-primary transition-colors p-1.5" data-id="${e.id}">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                </button>
+                                                <button class="delete-btn text-dim hover:text-red-300 transition-colors p-1.5" data-id="${e.id}">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+        }).join('')}
                         </div>
                     </div>
                 `;
     }).join('')}
 
-            ${completedEntries.length === 0 ? `
+            ${sortedDays.length === 0 ? `
                 <div class="text-center py-20 opacity-20">
-                    <p class="text-[10px] font-black uppercase tracking-[0.4em]">Historical record empty</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.4em]">No matching records</p>
                 </div>
             ` : ''}
         </div>
@@ -249,7 +318,26 @@ export async function renderReports() {
         }
     };
 
+    container.addEventListener('change', (event) => {
+        if (event.target.id === 'filter-project') {
+            selectedProject = event.target.value;
+            currentPage = 1;
+            refreshView();
+        }
+        if (event.target.id === 'filter-member') {
+            selectedMember = event.target.value;
+            currentPage = 1;
+            refreshView();
+        }
+    });
+
     container.addEventListener('click', async (event) => {
+        if (event.target.id === 'clear-filters') {
+            selectedProject = '';
+            selectedMember = '';
+            currentPage = 1;
+            refreshView();
+        }
         if (event.target.closest('#prev-page')) {
             if (currentPage > 1) {
                 currentPage--;
