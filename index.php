@@ -12,17 +12,24 @@
                 extend: {
                     colors: {
                         primary: {
-                            DEFAULT: '#0ea5e9',
-                            dark: '#0284c7',
-                            light: '#e0f2fe'
+                            DEFAULT: '#4db6ac', // Soft shark teal
+                            dark: '#00897b',
+                            light: '#e0f2f1'
                         },
-                        secondary: '#0f172a',
-                        accent: '#f59e0b',
+                        secondary: '#263238', // Muted slate gray
+                        accent: {
+                            DEFAULT: '#ffd54f', // Pastel coin gold
+                            light: '#fff8e1'
+                        },
                         chomper: {
-                            teal: '#14b8a6',
-                            blue: '#0891b2',
-                            dark: '#134e4a'
+                            teal: '#80cbc4',
+                            deep: '#004d40',
+                            sand: '#faf9f6'
                         }
+                    },
+                    borderRadius: {
+                        '3xl': '1.5rem',
+                        '4xl': '2rem',
                     },
                     fontFamily: {
                         sans: ['Outfit', 'Inter', 'sans-serif'],

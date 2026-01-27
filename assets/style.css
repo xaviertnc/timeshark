@@ -1,45 +1,20 @@
-/* Zen Design System */
+/* Zen Design System - Refined */
 :root {
-    --primary: #0ea5e9;
-    --primary-soft: #f0f9ff;
-    --slate-soft: #f8fafc;
+    --primary: #4db6ac;
+    --primary-soft: #e0f2f1;
+    --sand-soft: #faf9f6;
     --border-soft: #f1f5f9;
 }
 
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #f8fafc;
-    color: #334155;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 20px;
+    background-color: #fafafa;
+    color: #455a64;
 }
 
 /* Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes slideIn {
+@keyframes slideUp {
     from {
         opacity: 0;
         transform: translateY(10px);
@@ -51,35 +26,19 @@ body {
     }
 }
 
-.animate-fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
-}
-
 .animate-slide-up {
-    animation: slideIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-/* Custom Utilities */
-.zen-glass {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.zen-shadow {
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+    animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* Nav Improvements */
 .nav-link {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 14px;
+    border-radius: 12px;
 }
 
 .nav-link.active {
@@ -87,32 +46,33 @@ body {
     color: var(--primary);
 }
 
-.nav-link.active::after {
-    content: '';
-    position: absolute;
-    right: -12px;
-    width: 4px;
-    height: 20px;
-    background-color: var(--primary);
-    border-radius: 2px;
+/* Custom Interaction States */
+.action-btn {
+    transition: all 0.3s ease;
 }
 
-/* Custom Scrollbar for app */
-#app::-webkit-scrollbar {
-    width: 0px;
-    /* Hidden but scrollable for ultra zen */
+.action-btn:active {
+    transform: scale(0.95);
 }
 
-/* Form Styles */
+/* Refined Form Styles */
 input,
 select {
-    border: 1px solid var(--border-soft) !important;
-    background-color: var(--slate-soft) !important;
+    border: 1px solid #eceff1 !important;
+    background-color: #fcfdfe !important;
+    border-radius: 12px !important;
+    padding: 1rem 1.25rem !important;
+    font-size: 0.875rem !important;
 }
 
 input:focus,
 select:focus {
     border-color: var(--primary) !important;
     background-color: white !important;
-    box-shadow: 0 0 0 4px var(--primary-soft) !important;
+    outline: none !important;
+}
+
+/* Scrollbars - Hidden but functional */
+::-webkit-scrollbar {
+    width: 0px;
 }

@@ -7,62 +7,68 @@ export async function renderDashboard() {
     const activeTimer = state.activeTimer;
 
     const container = document.createElement('div');
-    container.className = "h-full flex flex-col items-center justify-center -mt-12";
+    container.className = "h-full flex flex-col items-center justify-center -mt-16";
 
     container.innerHTML = `
-        <div class="max-w-xl w-full px-8 animate-slide-up">
-            <div class="text-center mb-16">
-                <h1 class="text-5xl font-light text-slate-800 tracking-tight leading-tight">
-                    What are we <br/>
-                    <span class="font-bold text-primary italic">conquering</span> next?
-                </h1>
-            </div>
+        <div class="max-w-md w-full px-6 animate-slide-up">
+            
+            ${!activeTimer ? `
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-light text-slate-700 tracking-tight leading-tight">
+                        What's on the <br/>
+                        <span class="font-bold text-primary italic">horizon?</span>
+                    </h1>
+                </div>
+            ` : ''}
 
-            <div class="bg-white rounded-[3rem] p-12 shadow-sm border border-slate-100 relative group overflow-hidden">
+            <div class="${activeTimer ? 'bg-white border-primary/20' : 'bg-white border-slate-100'} rounded-[1.5rem] p-8 shadow-sm border relative group transition-colors duration-200">
                 <div class="relative z-10">
                     ${activeTimer ? `
-                        <div class="text-center py-6">
-                            <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-6">Actively Tracking</p>
-                            <h3 class="text-4xl font-bold text-slate-800 mb-2 tracking-tight">${activeTimer.project_name}</h3>
-                            <p class="text-slate-400 font-medium italic mb-12 opacity-60">"${activeTimer.description || 'Focusing on the mission'}"</p>
+                        <div class="text-center py-2">
+                            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-primary/10 text-[8px] font-black text-primary uppercase tracking-widest mb-4">
+                                <span class="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+                                Chomping
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-0.5 tracking-tight">${activeTimer.project_name}</h3>
+                            <p class="text-slate-400 font-medium text-xs italic mb-8 opacity-80">"${activeTimer.description || 'Focusing'}"</p>
                             
                             <div class="flex justify-center">
-                                 <button id="dashboard-stop-btn" class="px-14 py-5 bg-slate-900 text-white font-bold text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-red-500 transition-all duration-500 active:scale-95">
-                                    Stop Chomping
+                                 <button id="dashboard-stop-btn" class="flex items-center justify-center min-w-[200px] h-14 bg-[#FF3B30] hover:bg-[#FF2D55] text-white font-black text-[13px] uppercase tracking-[0.1em] rounded-full transition-all duration-150 active:scale-95 shadow-sm leading-none pt-0.5">
+                                    Stop Tracking
                                  </button>
                             </div>
                         </div>
                     ` : `
-                        <form id="start-timer-form" class="space-y-10">
-                            <div class="space-y-8">
-                                 <div class="relative group">
-                                    <label class="absolute -top-2.5 left-6 bg-white px-2 text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] z-10 transition-colors group-focus-within:text-primary">Target Project</label>
-                                    <select name="project_id" required class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-lg font-medium text-slate-600 outline-none focus:border-primary focus:bg-white transition-all appearance-none cursor-pointer">
+                        <form id="start-timer-form" class="space-y-6">
+                            <div class="space-y-4">
+                                 <div class="relative">
+                                    <label class="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1.5 ml-1">Mission</label>
+                                    <select name="project_id" required class="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 outline-none focus:border-primary focus:bg-white transition-all appearance-none cursor-pointer font-bold text-slate-600 text-sm">
                                         <option value="">Select Target...</option>
                                         ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
                                     </select>
-                                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-200">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    <div class="absolute right-4 top-[2.3rem] pointer-events-none text-slate-300">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </div>
                                 </div>
                                 
-                                <div class="relative group">
-                                     <label class="absolute -top-2.5 left-6 bg-white px-2 text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] z-10 transition-colors group-focus-within:text-primary">Brief Hint</label>
-                                     <input type="text" name="description" placeholder="What's happening?" 
-                                        class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 font-medium text-slate-600 outline-none focus:border-primary focus:bg-white transition-all">
+                                <div class="relative">
+                                     <label class="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1.5 ml-1">Context</label>
+                                     <input type="text" name="description" placeholder="What are we doing?" 
+                                        class="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 outline-none focus:border-primary focus:bg-white transition-all font-bold text-slate-600 text-sm">
                                 </div>
                             </div>
 
-                            <button type="submit" class="w-full h-24 bg-slate-900 hover:bg-primary text-white text-xs font-black uppercase tracking-[0.4em] rounded-[2.5rem] shadow-sm transition-all duration-500 active:scale-95">
-                                Start Tracking
+                            <button type="submit" class="flex items-center justify-center w-full h-14 bg-primary hover:bg-primary-dark text-white text-[13px] font-black uppercase tracking-[0.1em] rounded-full transition-all duration-150 active:scale-95 shadow-sm leading-none pt-0.5">
+                                Start Chomping
                             </button>
                         </form>
                     `}
                 </div>
             </div>
 
-            <div class="mt-20 text-center opacity-20 hover:opacity-100 transition-opacity duration-1000">
-                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.6em]">Less Noise. More Work.</p>
+            <div class="mt-12 text-center opacity-30">
+                 <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.6em]">Steady & Calm.</p>
             </div>
         </div>
     `;
@@ -71,7 +77,8 @@ export async function renderDashboard() {
     if (form) {
         form.onsubmit = async (e) => {
             e.preventDefault();
-            const data = Object.fromEntries(new FormData(form).entries());
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
             if (!data.project_id) return;
 
             const projects = store.get().projects;
@@ -83,7 +90,7 @@ export async function renderDashboard() {
                 store.update('activeTimer', result);
                 refreshView();
             } catch (err) {
-                alert('Launch failed');
+                alert('Request failed');
             }
         };
     }
@@ -96,7 +103,7 @@ export async function renderDashboard() {
                 store.update('activeTimer', null);
                 refreshView();
             } catch (err) {
-                alert('Stop failed');
+                alert('Error stopping');
             }
         };
     }
