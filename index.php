@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="assets/style.css">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -41,12 +42,12 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans h-screen flex overflow-hidden">
+<body class="bg-app text-main font-sans h-screen flex overflow-hidden">
 
     <!-- Sidebar: Ultra Zen -->
-    <aside class="w-20 lg:w-24 bg-white border-r border-slate-100 flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
+    <aside class="w-20 lg:w-24 bg-sidebar border-r border-soft flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
         <div class="h-24 flex items-center justify-center">
-            <div class="w-12 h-12 rounded-2xl overflow-hidden border border-slate-100 shadow-sm transition-transform hover:scale-110 duration-500">
+            <div class="w-12 h-12 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500">
                  <img src="assets/images/time-chomper-logo.jpg" class="w-full h-full object-cover">
             </div>
         </div>
@@ -55,8 +56,8 @@
             <!-- Navigation icons will be injected here. We'll simplify sidebar.js too -->
         </nav>
 
-        <div class="p-6 flex justify-center">
-            <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black opacity-40">
+        <div class="p-6 flex flex-col items-center gap-6">
+            <div class="w-10 h-10 rounded-xl bg-app border border-soft flex items-center justify-center text-[10px] font-black opacity-40">
                 TC
             </div>
         </div>
@@ -71,13 +72,13 @@
             </div>
 
             <!-- Subtle Timer Indicator -->
-            <div id="active-timer-display" class="hidden items-center gap-6 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-1000">
+            <div id="active-timer-display" class="hidden items-center gap-6 bg-card px-6 py-3 rounded-2xl shadow-soft border border-soft animate-in fade-in slide-in-from-top-4 duration-1000">
                 <div class="flex items-center gap-3">
                     <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                    <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest whitespace-nowrap" id="timer-project-name">Project</div>
+                    <div class="text-[10px] text-dim font-black uppercase tracking-widest whitespace-nowrap" id="timer-project-name">Project</div>
                 </div>
-                <div class="font-mono text-lg font-black tabular-nums tracking-tighter text-slate-800" id="timer-counter">00:00:00</div>
-                <button id="stop-timer-btn-header" class="text-slate-300 hover:text-red-500 transition-colors">
+                <div class="font-mono text-lg font-black tabular-nums tracking-tighter text-main" id="timer-counter">00:00:00</div>
+                <button id="stop-timer-btn-header" class="text-dim hover:text-red-500 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1" stroke-width="2.5"/></svg>
                 </button>
             </div>

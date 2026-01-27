@@ -159,34 +159,34 @@ export async function renderPlanner() {
     container.innerHTML = `
         <div class="flex items-end justify-between mb-8 px-2">
             <div>
-                 <h2 class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Resource Flow</h2>
-                 <h1 class="text-2xl font-light text-slate-800 tracking-tight">Active <span class="font-bold italic text-primary">Planner.</span></h1>
+                 <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2">Resource Flow</h2>
+                 <h1 class="text-2xl font-light text-main tracking-tight">Active <span class="font-bold italic text-primary">Planner.</span></h1>
             </div>
             
             <div class="flex items-center gap-6">
-                <div class="flex items-center bg-slate-100/50 p-1 rounded-xl gap-1">
-                    <button id="prev-time" class="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-primary">
+                <div class="flex items-center bg-app p-1 rounded-xl gap-1">
+                    <button id="prev-time" class="p-2 hover:bg-card rounded-lg transition-all text-dim hover:text-primary">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
-                    <button id="today-time" class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-all">Today</button>
-                    <button id="next-time" class="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-primary">
+                    <button id="today-time" class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-dim hover:text-primary transition-all">Today</button>
+                    <button id="next-time" class="p-2 hover:bg-card rounded-lg transition-all text-dim hover:text-primary">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                 </div>
 
                 <div class="relative group">
-                    <select id="project-filter" class="appearance-none bg-slate-50 border-none rounded-xl px-4 py-2.5 pr-9 text-[10px] font-black uppercase tracking-widest text-slate-400 focus:text-primary transition-all cursor-pointer outline-none">
+                    <select id="project-filter" class="appearance-none bg-app border-none rounded-xl px-4 py-2.5 pr-9 text-[10px] font-black uppercase tracking-widest text-dim focus:text-primary transition-all cursor-pointer outline-none">
                         <option value="all">Global View</option>
                         ${projects.map(p => `<option value="${p.id}" ${projectFilter === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
                     </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-200">
+                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-dim/50">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
 
-                <div class="bg-slate-100/50 p-1 rounded-xl flex items-center">
+                <div class="bg-app p-1 rounded-xl flex items-center">
                     ${['day', 'week', 'month', 'year'].map(s => `
-                        <button class="scale-toggle px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}" data-scale="${s}">
+                        <button class="scale-toggle px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted'}" data-scale="${s}">
                             ${s}
                         </button>
                     `).join('')}
@@ -198,37 +198,37 @@ export async function renderPlanner() {
             </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] border border-slate-50 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div class="bg-card rounded-[2rem] border border-soft shadow-soft overflow-hidden">
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full border-collapse">
                     <thead>
-                        <tr class="bg-slate-50/10 border-b border-slate-100/20">
-                            <th class="p-2 border-r border-slate-100/20 sticky left-0 bg-white z-40"></th>
+                        <tr class="bg-app border-b border-soft">
+                            <th class="p-2 border-r border-soft sticky left-0 bg-sidebar z-40"></th>
                             ${config.groups.map(g => `
-                                <th colspan="${g.count}" class="p-2 text-[8px] font-black text-slate-300 uppercase tracking-[0.4em] text-center border-r border-slate-100/20 last:border-r-0">
+                                <th colspan="${g.count}" class="p-2 text-[8px] font-black text-dim uppercase tracking-[0.4em] text-center border-r border-soft last:border-r-0">
                                     ${g.label}
                                 </th>
                             `).join('')}
                         </tr>
-                        <tr class="bg-slate-50/20 border-b border-slate-100/30">
-                            <th class="p-4 py-3 text-left text-[9px] font-black text-slate-300 uppercase tracking-widest min-w-[180px] sticky left-0 bg-white/95 backdrop-blur-md z-30 border-r border-slate-100/30">Resource</th>
+                        <tr class="bg-app border-b border-soft">
+                            <th class="p-4 py-3 text-left text-[9px] font-black text-dim uppercase tracking-widest min-w-[180px] sticky left-0 bg-sidebar backdrop-blur-md z-30 border-r border-soft">Resource</th>
                             ${config.dates.map(date => `
-                                <th class="p-3 text-center border-r border-slate-100/10 last:border-r-0 ${config.colWidth} ${date.toDateString() === today.toDateString() ? 'bg-primary/[0.03]' : ''}">
-                                    <div class="text-[7px] font-black text-slate-200 uppercase mb-0.5 tracking-tighter">${config.sublabel(date)}</div>
-                                    <div class="text-sm font-bold text-slate-500 tracking-tight leading-tight transition-colors ${date.toDateString() === today.toDateString() ? 'text-primary' : ''}">${config.label(date)}</div>
+                                <th class="p-3 text-center border-r border-soft/30 last:border-r-0 ${config.colWidth} ${date.toDateString() === today.toDateString() ? 'bg-primary/10' : ''}">
+                                    <div class="text-[7px] font-black text-dim uppercase mb-0.5 tracking-tighter">${config.sublabel(date)}</div>
+                                    <div class="text-sm font-bold text-muted tracking-tight leading-tight transition-colors ${date.toDateString() === today.toDateString() ? 'text-primary' : ''}">${config.label(date)}</div>
                                 </th>
                             `).join('')}
                         </tr>
                     </thead>
                     <tbody>
                         ${resources.map(resource => `
-                            <tr class="border-b border-slate-50/50 last:border-b-0 hover:bg-slate-50/5 transition-colors">
-                                <td class="p-4 py-2 bg-white/95 backdrop-blur-md sticky left-0 z-20 border-r border-slate-100/30">
+                            <tr class="border-b border-soft/50 last:border-b-0 hover:bg-primary/[0.02] transition-colors">
+                                <td class="p-4 py-2 bg-sidebar backdrop-blur-md sticky left-0 z-20 border-r border-soft">
                                     <div class="flex items-center gap-3">
-                                         <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-200 border border-slate-100/50">
+                                         <div class="w-8 h-8 rounded-lg bg-app flex items-center justify-center text-[10px] font-black text-dim border border-soft">
                                             ${resource.substring(0, 2).toUpperCase()}
                                          </div>
-                                         <span class="text-[13px] font-bold tracking-tight text-slate-700">${resource}</span>
+                                         <span class="text-[13px] font-bold tracking-tight text-main">${resource}</span>
                                     </div>
                                 </td>
                                 ${config.dates.map(date => {
@@ -246,7 +246,7 @@ export async function renderPlanner() {
                                                                  <div class="font-bold mb-1 line-clamp-2 leading-tight ${textColorClass}">${t.title}</div>
                                                                  <div class="opacity-60 font-black uppercase tracking-widset text-[8px] line-clamp-1 ${textColorClass}">${proj.name}</div>
                                                              </div>
-                                                             <button class="delete-task-btn absolute -top-2 -right-2 bg-white text-red-500 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover/item:opacity-100 shadow-xl border border-slate-100 transition-all z-30 transform hover:scale-110 active:scale-90" data-id="${t.id}">
+                                                             <button class="delete-task-btn absolute -top-2 -right-2 bg-card text-red-500 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover/item:opacity-100 shadow-xl border border-soft transition-all z-30 transform hover:scale-110 active:scale-90" data-id="${t.id}">
                                                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                              </button>
                                                         </div>
@@ -267,46 +267,46 @@ export async function renderPlanner() {
     // Modal portal setup
     const modalPortal = document.getElementById('modal-portal');
     modalPortal.innerHTML = `
-        <div id="planner-modal" class="fixed inset-0 bg-secondary/20 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
+        <div id="planner-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
             <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="planner-modal-content">
-                    <button id="close-planner-modal" class="absolute top-8 right-10 text-slate-300 hover:text-slate-600 text-2xl transition-colors">&times;</button>
+                <div class="bg-card rounded-[2rem] shadow-soft w-full max-w-md p-10 transform transition-all scale-95 opacity-0 text-center relative" id="planner-modal-content">
+                    <button id="close-planner-modal" class="absolute top-8 right-10 text-dim hover:text-main text-2xl transition-colors">&times;</button>
                     
                     <div class="mb-10">
-                        <h3 id="planner-modal-title" class="text-2xl font-bold text-slate-800 tracking-tight">Assign Task</h3>
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-3">Planning Registry</p>
+                        <h3 id="planner-modal-title" class="text-2xl font-bold text-main tracking-tight">Assign Task</h3>
+                        <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-3">Planning Registry</p>
                     </div>
 
                     <form id="planner-form" class="space-y-6">
                         <input type="hidden" name="id">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block text-left ml-2">Team Member</label>
-                            <select name="resource_id" required class="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-center text-slate-600 font-bold cursor-pointer appearance-none">
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Team Member</label>
+                            <select name="resource_id" required class="w-full bg-app border-none rounded-2xl py-4 px-6 text-center text-main font-bold cursor-pointer appearance-none">
                                 ${resources.map(r => `<option value="${r}">${r}</option>`).join('')}
                             </select>
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block text-left ml-2">Project</label>
-                            <select name="project_id" required class="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-center text-slate-600 font-bold cursor-pointer appearance-none">
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Project</label>
+                            <select name="project_id" required class="w-full bg-app border-none rounded-2xl py-4 px-6 text-center text-main font-bold cursor-pointer appearance-none">
                                 <option value="">Select Target...</option>
                                 ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
                             </select>
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block text-left ml-2">Description</label>
-                            <input type="text" name="title" required placeholder="What are we achieving?" class="w-full text-center py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold text-slate-600">
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Description</label>
+                            <input type="text" name="title" required placeholder="What are we achieving?" class="w-full text-center py-4 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold text-main">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block text-left ml-2">Start</label>
-                                <input type="date" name="start_date" required class="w-full text-center py-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-slate-600">
+                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Start</label>
+                                <input type="date" name="start_date" required class="w-full text-center py-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main">
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block text-left ml-2">End</label>
-                                <input type="date" name="end_date" required class="w-full text-center py-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-slate-600">
+                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">End</label>
+                                <input type="date" name="end_date" required class="w-full text-center py-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main">
                             </div>
                         </div>
 

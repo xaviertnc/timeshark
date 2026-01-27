@@ -11,8 +11,8 @@ export async function renderTeam() {
     container.innerHTML = `
         <div class="flex items-end justify-between mb-16 px-2">
             <div>
-                 <h2 class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-3">Resources</h2>
-                 <h1 class="text-3xl font-light text-slate-800 tracking-tight">Active <span class="font-bold italic text-primary">Team.</span></h1>
+                 <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-3">Resources</h2>
+                 <h1 class="text-3xl font-light text-main tracking-tight">Active <span class="font-bold italic text-primary">Team.</span></h1>
             </div>
             <button id="add-member-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl shadow-sm transition-all flex items-center font-black uppercase tracking-[0.2em] text-[10px]">
                 Add Team Member
@@ -21,22 +21,22 @@ export async function renderTeam() {
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             ${team.map(m => `
-                <div class="bg-white rounded-3xl p-10 border border-slate-50 shadow-sm group hover:-translate-y-1 transition-all duration-300 relative flex flex-col items-center text-center">
+                <div class="bg-card rounded-3xl p-10 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative flex flex-col items-center text-center">
                      <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1">
-                        <button class="edit-member-btn text-slate-100 hover:text-primary transition-colors p-2" data-id="${m.id}">
+                        <button class="edit-member-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${m.id}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </button>
-                        <button class="delete-member-btn text-slate-100 hover:text-red-300 transition-colors p-2" data-id="${m.id}">
+                        <button class="delete-member-btn text-dim/50 hover:text-red-300 transition-colors p-2" data-id="${m.id}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
 
-                    <div class="w-16 h-16 rounded-2xl bg-primary-light flex items-center justify-center text-[14px] font-black text-primary mb-6">
+                    <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-[14px] font-black text-primary mb-6">
                         ${m.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <h3 class="text-xl font-bold text-slate-700 tracking-tight mb-1">${m.name}</h3>
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${m.role || 'Contributor'}</p>
+                        <h3 class="text-xl font-bold text-main tracking-tight mb-1">${m.name}</h3>
+                        <p class="text-[10px] font-black text-dim uppercase tracking-widest">${m.role || 'Contributor'}</p>
                     </div>
                 </div>
             `).join('')}
@@ -51,25 +51,25 @@ export async function renderTeam() {
 
     const modalPortal = document.getElementById('modal-portal');
     modalPortal.innerHTML = `
-        <div id="team-modal" class="fixed inset-0 bg-secondary/20 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
+        <div id="team-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
             <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="team-modal-content">
-                    <button id="close-team-modal" class="absolute top-6 right-8 text-slate-300 hover:text-slate-600 text-2xl">&times;</button>
+                <div class="bg-card rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="team-modal-content">
+                    <button id="close-team-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl">&times;</button>
                     
                     <div class="mb-10">
-                        <h3 class="text-2xl font-bold text-slate-800 tracking-tight" id="modal-title">New Team Member</h3>
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-2">Member Details</p>
+                        <h3 class="text-2xl font-bold text-main tracking-tight" id="modal-title">New Team Member</h3>
+                        <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Member Details</p>
                     </div>
 
                     <form id="team-form" class="space-y-8">
                         <input type="hidden" name="id">
                         <div class="space-y-3">
-                             <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block">Name</label>
-                             <input type="text" name="name" required placeholder="Enter name" class="w-full text-center py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20">
+                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Name</label>
+                             <input type="text" name="name" required placeholder="Enter name" class="w-full text-center py-4 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main font-bold">
                         </div>
                         <div class="space-y-3">
-                             <label class="text-[10px) font-black text-slate-300 uppercase tracking-widest block">Role</label>
-                             <input type="text" name="role" placeholder="Enter role" class="w-full text-center py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20">
+                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Role</label>
+                             <input type="text" name="role" placeholder="Enter role" class="w-full text-center py-4 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main font-bold">
                         </div>
                         <div class="pt-6">
                             <button type="submit" id="submit-btn" class="w-full h-18 bg-primary hover:bg-primary-dark text-white font-black text-[10px] uppercase tracking-[0.4em] rounded-2xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 py-5">

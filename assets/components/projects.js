@@ -12,8 +12,8 @@ export async function renderProjects() {
     container.innerHTML = `
         <div class="flex items-end justify-between mb-16 px-2">
             <div>
-                 <h2 class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-3">Portfolio</h2>
-                 <h1 class="text-3xl font-light text-slate-800 tracking-tight">Active <span class="font-bold italic text-primary">Projects.</span></h1>
+                 <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-3">Portfolio</h2>
+                 <h1 class="text-3xl font-light text-main tracking-tight">Active <span class="font-bold italic text-primary">Projects.</span></h1>
             </div>
             <button id="add-project-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl shadow-sm transition-all flex items-center font-black uppercase tracking-[0.2em] text-[10px]">
                 Create Project
@@ -24,20 +24,20 @@ export async function renderProjects() {
             ${projects.map(p => {
         const customer = customers.find(c => c.id == p.customer_id);
         return `
-                    <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm group hover:-translate-y-1 transition-all duration-300 relative project-card" data-id="${p.id}">
+                    <div class="bg-card rounded-3xl p-8 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative project-card" data-id="${p.id}">
                         <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-2">
-                             <button class="edit-btn text-slate-200 hover:text-primary transition-colors p-2" data-id="${p.id}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                             <button class="edit-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${p.id}">
+                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                              </button>
-                             <button class="delete-btn text-slate-200 hover:text-red-400 transition-colors p-2" data-id="${p.id}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                             <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${p.id}">
+                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                              </button>
                         </div>
 
                         <div class="flex flex-col h-full pointer-events-none items-center text-center">
                             <div class="w-10 h-1.5 rounded-full mb-6" style="background-color: ${p.color || '#eceff1'}"></div>
-                            <h3 class="text-xl font-bold text-slate-700 mb-1 leading-tight">${p.name}</h3>
-                            <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">${customer ? customer.name : 'No Customer'}</p>
+                            <h3 class="text-xl font-bold text-main mb-1 leading-tight">${p.name}</h3>
+                            <p class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">${customer ? customer.name : 'No Customer'}</p>
                         </div>
                     </div>
                 `;
@@ -53,27 +53,27 @@ export async function renderProjects() {
 
     const modalPortal = document.getElementById('modal-portal');
     modalPortal.innerHTML = `
-        <div id="project-modal" class="fixed inset-0 bg-secondary/20 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
+        <div id="project-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
             <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="project-modal-content">
-                    <button id="close-project-modal" class="absolute top-6 right-8 text-slate-300 hover:text-slate-600 text-2xl transition-colors">&times;</button>
+                <div class="bg-card rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="project-modal-content">
+                    <button id="close-project-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl transition-colors">&times;</button>
                     
                     <div class="mb-10">
-                        <h3 class="text-2xl font-bold text-slate-800 tracking-tight" id="modal-title">New Project</h3>
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-2">Project Specification</p>
+                        <h3 class="text-2xl font-bold text-main tracking-tight" id="modal-title">New Project</h3>
+                        <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Project Specification</p>
                     </div>
 
                     <form id="project-form" class="space-y-8">
                         <input type="hidden" name="id">
                         <div class="space-y-3">
-                            <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block">Project Name</label>
-                            <input type="text" name="name" required placeholder="Enter name" class="w-full text-center py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20">
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Project Name</label>
+                            <input type="text" name="name" required placeholder="Enter name" class="w-full text-center py-4 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main font-bold">
                         </div>
 
                         <div class="space-y-3">
-                            <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block">Customer</label>
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Customer</label>
                             <div class="relative">
-                                <select name="customer_id" required class="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 appearance-none cursor-pointer text-center text-slate-600 font-medium">
+                                <select name="customer_id" required class="w-full bg-app border-none rounded-2xl py-4 px-6 appearance-none cursor-pointer text-center text-main font-bold">
                                     <option value="">Select Customer...</option>
                                     ${customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                                 </select>
@@ -81,7 +81,7 @@ export async function renderProjects() {
                         </div>
 
                         <div class="space-y-3">
-                            <label class="text-[10px] font-black text-slate-300 uppercase tracking-widest block">Color Label</label>
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Color Label</label>
                             <div class="flex gap-4 justify-center flex-wrap">
                                 ${['#26a69a', '#fbc02d', '#607d8b', '#ab47bc', '#f4511e', '#5c6bc0'].map((color, idx) => `
                                     <label class="cursor-pointer group">

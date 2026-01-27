@@ -1,16 +1,63 @@
-/* Zen Design System - Refined */
+/* Zen Design System - Refined with Dark Mode Support */
 :root {
     --primary: #338a81;
+    --primary-dark: #2a736c;
     --primary-soft: #e0f2f1;
-    --sand-soft: #fcfdfe;
+    --primary-soft-dark: rgba(51, 138, 129, 0.15);
+
+    --bg-app: #fafafe;
+    --bg-card: #ffffff;
+    --bg-sidebar: #ffffff;
+    --bg-input: #f8fafc;
+
+    --text-main: #334155;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --text-light: #f1f5f9;
+
     --border-soft: #f1f5f9;
+    --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+    --bg-app: #121418;
+    --bg-card: #1c2025;
+    --bg-sidebar: #1c2025;
+    --bg-input: #252a30;
+
+    --primary-soft: var(--primary-soft-dark);
+
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+
+    --border-soft: #2d343c;
+    --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #fafafe;
-    color: #334155;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Base Utility Classes */
+.bg-card {
+    background-color: var(--bg-card);
+}
+
+.bg-sidebar {
+    background-color: var(--bg-sidebar);
+}
+
+.text-main {
+    color: var(--text-main);
+}
+
+.text-muted {
+    color: var(--text-muted);
 }
 
 /* Animations */
@@ -39,6 +86,7 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: 16px;
+    color: var(--text-dim);
 }
 
 .nav-link.active {
@@ -60,18 +108,18 @@ body {
 input,
 select {
     border: none !important;
-    background-color: #f8fafc !important;
+    background-color: var(--bg-input) !important;
     border-radius: 16px !important;
     padding: 1.1rem 1.4rem !important;
     font-size: 0.9rem !important;
     font-weight: 600 !important;
-    color: #475569 !important;
+    color: var(--text-main) !important;
     transition: all 0.2s ease !important;
 }
 
 input:focus,
 select:focus {
-    background-color: white !important;
+    background-color: var(--bg-card) !important;
     box-shadow: 0 0 0 3px rgba(51, 138, 129, 0.1) !important;
     outline: none !important;
 }
@@ -91,6 +139,26 @@ select:focus {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
+    background: var(--border-soft);
     border-radius: 10px;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-card);
+    color: var(--text-dim);
+    transition: all 0.3s ease;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-color: transparent;
 }

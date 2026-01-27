@@ -64,6 +64,11 @@ function updateActiveLink(hash) {
 
 // Initial Load
 async function init() {
+    // Theme Init
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark');
+    }
+
     renderSidebar();
 
     try {
