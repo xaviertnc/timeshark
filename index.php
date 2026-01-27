@@ -33,69 +33,51 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
+<body class="bg-slate-50 text-slate-900 font-sans h-screen flex overflow-hidden">
 
-    <!-- Sidebar -->
-    <aside class="w-20 lg:w-72 bg-slate-900 text-white flex flex-col transition-all duration-300 shadow-2xl z-30 relative" id="sidebar">
-        <!-- Logo Area -->
-        <div class="h-24 flex items-center px-6 border-b border-slate-800/50">
-            <div class="w-12 h-12 bg-gradient-to-br from-chomper-teal to-primary rounded-2xl flex items-center justify-center shadow-lg border border-white/10 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                 <span class="text-2xl font-black text-white italic">TC</span>
-            </div>
-            <div class="hidden lg:block ml-4 overflow-hidden">
-                <h1 class="font-black text-xl tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">TIME CHOMPER</h1>
-                <p class="text-[10px] text-chomper-teal font-black tracking-[0.2em] uppercase mt-1">Conquer the Clock</p>
+    <!-- Sidebar: Ultra Zen -->
+    <aside class="w-20 lg:w-24 bg-white border-r border-slate-100 flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
+        <div class="h-24 flex items-center justify-center">
+            <div class="w-12 h-12 rounded-2xl overflow-hidden border border-slate-100 shadow-sm transition-transform hover:scale-110 duration-500">
+                 <img src="assets/images/time-chomper-logo.jpg" class="w-full h-full object-cover">
             </div>
         </div>
         
-        <nav class="flex-1 overflow-y-auto pt-8 space-y-2 px-4">
-            <!-- Navigation items injected by app.js -->
+        <nav class="flex-1 flex flex-col items-center pt-10 space-y-8">
+            <!-- Navigation icons will be injected here. We'll simplify sidebar.js too -->
         </nav>
 
-        <!-- User Profile Area -->
-        <div class="p-6 border-t border-slate-800/50 bg-slate-950/40">
-            <div class="flex items-center group cursor-pointer">
-                <div class="relative">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accent to-red-500 flex items-center justify-center text-sm font-bold shadow-lg group-hover:scale-110 transition-transform border border-white/20">
-                        ME
-                    </div>
-                    <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></div>
-                </div>
-                <div class="hidden lg:block ml-3">
-                    <p class="text-sm font-bold text-white group-hover:text-primary transition-colors">Developer</p>
-                    <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Workspace Owner</p>
-                </div>
+        <div class="p-6 flex justify-center">
+            <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black opacity-40">
+                TC
             </div>
         </div>
     </aside>
 
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col h-full relative overflow-hidden">
-        <!-- Sticky Top Header -->
-        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-20 sticky top-0 shadow-sm">
-            <div>
-                <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-0.5" id="breadcrumb">Main Menu</h2>
-                <h1 class="text-3xl font-black text-slate-900 tracking-tight" id="page-title">Dashboard</h1>
+        <!-- Minimal Header -->
+        <header class="h-24 flex items-center justify-between px-16 z-20 sticky top-0">
+            <div class="opacity-0 transition-opacity duration-700" id="page-header-container">
+                <h1 class="text-xs font-black text-slate-300 uppercase tracking-[0.5em]" id="page-title">Dashboard</h1>
             </div>
 
-            <!-- Active Timer Widget -->
-            <div id="active-timer-display" class="hidden items-center gap-4 bg-slate-900 text-white pl-2 pr-4 py-2 rounded-[1.25rem] shadow-2xl border border-slate-800 animate-in fade-in zoom-in duration-300">
-                <div class="w-10 h-10 rounded-xl bg-chomper-teal/20 flex items-center justify-center">
-                    <div class="w-2.5 h-2.5 rounded-full bg-chomper-teal animate-pulse"></div>
+            <!-- Subtle Timer Indicator -->
+            <div id="active-timer-display" class="hidden items-center gap-6 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-1000">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                    <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest whitespace-nowrap" id="timer-project-name">Project</div>
                 </div>
-                <div>
-                   <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1" id="timer-project-name">Project X</div>
-                   <div class="font-mono text-xl font-black tabular-nums tracking-wider text-white" id="timer-counter">00:00:00</div>
-                </div>
-                <button id="stop-timer-btn-header" class="ml-2 w-10 h-10 flex items-center justify-center bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all group">
-                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                <div class="font-mono text-lg font-black tabular-nums tracking-tighter text-slate-800" id="timer-counter">00:00:00</div>
+                <button id="stop-timer-btn-header" class="text-slate-300 hover:text-red-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1" stroke-width="2.5"/></svg>
                 </button>
             </div>
         </header>
 
-        <!-- Scrollable Content -->
-        <div id="app" class="flex-1 overflow-y-auto p-10 relative scroll-smooth bg-slate-100/30">
-            <!-- Dynamic Content injected here -->
+        <!-- The Stage -->
+        <div id="app" class="flex-1 overflow-y-auto px-16 pb-16 relative scroll-smooth">
+            <!-- Views Injected Here -->
         </div>
     </main>
 

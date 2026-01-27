@@ -6,117 +6,125 @@ export async function renderReports() {
     const entries = state.timeEntries || [];
     const projects = state.projects || [];
 
-    // Aggregation Logic
-    const projectTimes = {}; // { projectId: seconds }
+    const projectTimes = {};
     let totalSeconds = 0;
 
     entries.forEach(e => {
-        if (!e.end_time) return; // Skip active
-        const start = new Date(e.start_time);
-        const end = new Date(e.end_time);
-        const diff = (end - start) / 1000;
-
+        if (!e.end_time) return;
+        const diff = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
         projectTimes[e.project_id] = (projectTimes[e.project_id] || 0) + diff;
         totalSeconds += diff;
     });
 
-    const formatTime = (secs) => {
+    const formatDuration = (secs) => {
         const h = Math.floor(secs / 3600);
         const m = Math.floor((secs % 3600) / 60);
-        return `${h}h ${m}m`;
+        if (h > 0) return `${h}h ${m}m`;
+        return `${m}m`;
+    };
+
+    const formatDate = (dateStr) => {
+        return new Date(dateStr).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric'
+        });
     };
 
     const container = document.createElement('div');
-    container.className = "max-w-4xl mx-auto space-y-8";
+    container.className = "max-w-5xl mx-auto animate-slide-up pb-20";
 
     container.innerHTML = `
-        <h2 class="text-3xl font-bold text-slate-800">Time Reports</h2>
-        
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-                <div class="text-blue-100 text-sm font-bold uppercase tracking-wider mb-2">Total Time Tracked</div>
-                <div class="text-4xl font-bold">${formatTime(totalSeconds)}</div>
+        <div class="flex items-end justify-between mb-20 px-4">
+            <div>
+                 <h2 class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4">Analytics</h2>
+                 <h1 class="text-4xl font-light text-slate-800 tracking-tight">Time <span class="font-bold italic text-primary">Pulse.</span></h1>
             </div>
-            
-            <div class="bg-white rounded-xl p-6 shadow border border-slate-100 col-span-2">
-                <h3 class="font-bold text-slate-700 mb-4">Project Breakdown</h3>
-                <div class="space-y-3">
-                    ${Object.entries(projectTimes).map(([pid, secs]) => {
-        const proj = projects.find(p => p.id == pid) || { name: 'Unknown', color: '#ccc' };
-        const percent = (secs / totalSeconds) * 100;
-        return `
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full mr-3" style="background-color: ${proj.color}"></div>
-                            <div class="flex-1">
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="font-medium text-slate-700">${proj.name}</span>
-                                    <span class="text-slate-500">${formatTime(secs)}</span>
-                                </div>
-                                <div class="w-full bg-slate-100 rounded-full h-2">
-                                    <div class="h-2 rounded-full" style="width: ${percent}%; background-color: ${proj.color}"></div>
-                                </div>
-                            </div>
-                        </div>
-                        `;
-    }).join('')}
-                    ${Object.keys(projectTimes).length === 0 ? '<p class="text-slate-400 italic">No completed time entries yet.</p>' : ''}
-                </div>
+            <div class="text-right">
+                <div class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">Total Effort</div>
+                <div class="text-3xl font-light text-slate-800 tracking-tighter">${formatDuration(totalSeconds)}</div>
             </div>
         </div>
 
-        <!-- Detailed Log -->
-        <div class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
-            <div class="p-6 border-b border-slate-100">
-                <h3 class="font-bold text-slate-800">Detailed Log</h3>
-            </div>
-            <div class="divide-y divide-slate-100">
-                ${entries.map(e => {
-        const proj = projects.find(p => p.id == e.project_id) || { name: 'Unknown', color: '#ccc' };
-        const duration = e.end_time ? formatTime((new Date(e.end_time) - new Date(e.start_time)) / 1000) : '<span class="text-blue-500 font-bold animate-pulse">Running</span>';
-
+        <!-- Breakdown Section -->
+        <div class="bg-white rounded-[3rem] p-16 border border-slate-100/60 shadow-sm mb-20">
+            <h3 class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-12">Mission Distribution</h3>
+            <div class="space-y-10">
+                ${Object.entries(projectTimes).map(([pid, secs]) => {
+        const proj = projects.find(p => p.id == pid) || { name: 'Unknown Mission', color: '#e2e8f0' };
+        const percent = totalSeconds > 0 ? (secs / totalSeconds) * 100 : 0;
         return `
-                        <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors group">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-2 h-10 rounded-full" style="background-color: ${proj.color}"></div>
+                        <div>
+                            <div class="flex justify-between items-end mb-4 px-1">
                                 <div>
-                                    <div class="font-bold text-slate-700">${proj.name}</div>
-                                    <div class="text-sm text-slate-500">${new Date(e.start_time).toLocaleString()}</div>
+                                    <span class="text-lg font-bold text-slate-700">${proj.name}</span>
+                                    <span class="ml-3 text-[10px] font-black text-slate-300 uppercase tracking-widest">${Math.round(percent)}%</span>
                                 </div>
+                                <span class="text-xs font-bold text-slate-400">${formatDuration(secs)}</span>
                             </div>
-                            <div class="flex items-center space-x-6">
-                                <div class="text-right">
-                                    <div class="font-mono font-bold text-slate-600">${duration}</div>
-                                    <div class="text-xs text-slate-400 max-w-[200px] truncate">${e.description || 'No description'}</div>
-                                </div>
-                                <button class="delete-entry-btn text-slate-300 hover:text-red-500 p-2 transition-colors rounded-lg hover:bg-slate-100" data-id="${e.id}" title="Delete Entry">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
+                            <div class="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-1000 ease-out" style="width: ${percent}%; background-color: ${proj.color}"></div>
                             </div>
                         </div>
                     `;
     }).join('')}
-                ${entries.length === 0 ? '<div class="p-8 text-center text-slate-400">No time entries found.</div>' : ''}
+                ${Object.keys(projectTimes).length === 0 ? '<p class="text-center py-10 text-slate-200 font-black uppercase tracking-[0.4em] text-[10px]">No telemetry found</p>' : ''}
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div>
+            <h3 class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-12 ml-4">Historical Logs</h3>
+            <div class="space-y-4">
+                ${entries.map(e => {
+        const proj = projects.find(p => p.id == e.project_id) || { name: 'Unknown Mission', color: '#e2e8f0' };
+        const duration = e.end_time ? formatDuration((new Date(e.end_time) - new Date(e.start_time)) / 1000) : 'Active...';
+
+        return `
+                        <div class="bg-white rounded-[2rem] p-8 border border-slate-100/40 shadow-sm group hover:-translate-y-1 transition-all duration-500">
+                            <div class="flex items-center justify-between gap-10">
+                                <div class="flex items-center gap-8">
+                                    <div class="w-1.5 h-10 rounded-full" style="background-color: ${proj.color}"></div>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-slate-800 tracking-tight">${proj.name}</h3>
+                                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest truncate max-w-sm">${e.description || 'Focusing'}</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-12">
+                                    <div class="text-right">
+                                        <div class="text-xl font-light text-slate-800 tabular-nums tracking-tighter">${duration}</div>
+                                        <div class="text-[9px] font-black text-slate-300 uppercase tracking-widest opacity-60">${formatDate(e.start_time)}</div>
+                                    </div>
+                                    
+                                    <button class="delete-btn text-slate-200 hover:text-red-500 transition-all p-3 opacity-0 group-hover:opacity-100" data-id="${e.id}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+    }).reverse().join('')}
             </div>
         </div>
     `;
 
-    // Interactions
     container.addEventListener('click', async (e) => {
-        if (e.target.closest('.delete-entry-btn')) {
-            const id = e.target.closest('.delete-entry-btn').dataset.id;
-            if (confirm('Delete this time entry?')) {
+        const btn = e.target.closest('.delete-btn');
+        if (btn) {
+            if (confirm('Erase this log?')) {
+                const id = btn.dataset.id;
                 await api.delete(`time-entries.php?id=${id}`);
                 store.update('timeEntries', await api.get('time-entries.php'));
-
-                const app = document.getElementById('app');
-                app.innerHTML = '';
-                app.appendChild(await renderReports());
+                refreshView();
             }
         }
     });
+
+    async function refreshView() {
+        const app = document.getElementById('app');
+        app.innerHTML = '';
+        app.appendChild(await renderReports());
+    }
 
     return container;
 }

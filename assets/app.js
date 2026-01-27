@@ -11,39 +11,40 @@ import { renderReports } from './components/reports.js';
 import { renderTeam } from './components/team.js';
 
 const app = document.getElementById('app');
+const headerContainer = document.getElementById('page-header-container');
 const pageTitle = document.getElementById('page-title');
-const breadcrumb = document.getElementById('breadcrumb');
 
 // Router
 const routes = {
-    '': { title: 'Dashboard', sub: 'Home', render: renderDashboard },
-    '#customers': { title: 'Customers', sub: 'CRM', render: renderCustomers },
-    '#projects': { title: 'Projects', sub: 'Planning', render: renderProjects },
-    '#planner': { title: 'Resource Planner', sub: 'Timeline', render: renderPlanner },
-    '#reports': { title: 'Time Reports', sub: 'Analytics', render: renderReports },
-    '#team': { title: 'Team Management', sub: 'Resources', render: renderTeam },
+    '': { title: 'Dashboard', render: renderDashboard },
+    '#customers': { title: 'CRM', render: renderCustomers },
+    '#projects': { title: 'Missions', render: renderProjects },
+    '#planner': { title: 'Timeline', render: renderPlanner },
+    '#reports': { title: 'Analytics', render: renderReports },
+    '#team': { title: 'Humanity', render: renderTeam },
 };
 
 async function handleRoute() {
     const hash = window.location.hash;
     const route = routes[hash] || routes[''];
 
-    pageTitle.textContent = route.title;
-    breadcrumb.textContent = route.sub;
+    // Smooth header transition
+    headerContainer.style.opacity = '0';
 
-    app.innerHTML = '<div class="flex items-center justify-center h-full"><span class="loader"></span></div>';
-
-    // Slight delay for smoother feel or data fetching
-    // In a real app we might fetch specific data here
+    app.innerHTML = '<div class="flex items-center justify-center h-full"><div class="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div></div>';
 
     try {
         const content = await route.render();
         app.innerHTML = '';
         app.appendChild(content);
+
+        pageTitle.textContent = route.title;
+        setTimeout(() => headerContainer.style.opacity = '1', 100);
+
         updateActiveLink(hash);
     } catch (e) {
         console.error(e);
-        app.innerHTML = `<div class="p-10 text-center"><div class="bg-red-50 text-red-600 p-6 rounded-2xl inline-block border border-red-100 font-bold">Error loading view: ${e.message}</div></div>`;
+        app.innerHTML = `<div class="p-10 text-center"><div class="text-slate-300 font-black uppercase tracking-widest text-xs">Error: ${e.message}</div></div>`;
     }
 }
 
@@ -51,20 +52,19 @@ function updateActiveLink(hash) {
     document.querySelectorAll('#sidebar nav a').forEach(link => {
         const isActive = link.getAttribute('href') === hash || (hash === '' && link.getAttribute('href') === '#');
         if (isActive) {
-            link.classList.add('active', 'text-white');
-            link.classList.remove('text-slate-400', 'hover:bg-slate-800/50');
+            link.classList.add('active');
+            link.classList.remove('text-slate-300');
         } else {
-            link.classList.remove('active', 'text-white');
-            link.classList.add('text-slate-400', 'hover:bg-slate-800/50');
+            link.classList.remove('active');
+            link.classList.add('text-slate-300');
         }
     });
 }
 
 // Initial Load
 async function init() {
-    renderSidebar(); // Static sidebar
+    renderSidebar();
 
-    // Fetch initial global data
     try {
         const [customers, projects, timeEntries, team] = await Promise.all([
             api.get('customers.php'),
@@ -73,12 +73,7 @@ async function init() {
             api.get('team.php')
         ]);
 
-        let activeTimer = null;
-        // Check for active timer
-        // We know logical check: end_time is null
-        // API returns all, we find it.
-        const active = timeEntries.find(e => !e.end_time);
-        if (active) activeTimer = active;
+        const activeTimer = timeEntries.find(e => !e.end_time);
 
         store.set({
             customers,
@@ -88,7 +83,6 @@ async function init() {
             activeTimer
         });
 
-        // Start header timer ticker if active
         if (activeTimer) startHeaderTicker(activeTimer);
 
     } catch (e) {
@@ -103,13 +97,12 @@ function startHeaderTicker(timerEntry) {
     const display = document.getElementById('active-timer-display');
     const projectName = document.getElementById('timer-project-name');
     const counter = document.getElementById('timer-counter');
-    const stopBtn = document.getElementById('stop-timer-btn-header'); // Needs event listener
+    const stopBtn = document.getElementById('stop-timer-btn-header');
 
     display.classList.remove('hidden');
     display.classList.add('flex');
     projectName.textContent = timerEntry.project_name;
 
-    // Ticker interval
     if (window.timerInterval) clearInterval(window.timerInterval);
 
     const startTime = new Date(timerEntry.start_time).getTime();
@@ -118,32 +111,25 @@ function startHeaderTicker(timerEntry) {
         const now = new Date().getTime();
         const diff = now - startTime;
 
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-        counter.textContent =
-            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        counter.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }, 1000);
 
     stopBtn.onclick = async () => {
         try {
             await api.post('time-entries.php?action=stop', { id: timerEntry.id });
-            clearInterval(window.timerInterval);
-            display.classList.add('hidden');
             store.update('activeTimer', null);
-            // Refresh entries if on dashboard/reports?
-            // Ideally store notifies components.
-            // For now, simple re-fetch if we are on a relevant page could work, or just let the view handle it.
             const newEntries = await api.get('time-entries.php');
             store.update('timeEntries', newEntries);
         } catch (e) {
-            alert('Failed to stop timer');
+            alert('Error');
         }
     };
 }
 
-// Subscribe to store to update header if timer changes from elsewhere
 store.subscribe(state => {
     if (state.activeTimer && !window.timerInterval) {
         startHeaderTicker(state.activeTimer);
