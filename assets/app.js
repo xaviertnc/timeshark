@@ -17,11 +17,11 @@ const pageTitle = document.getElementById('page-title');
 // Router
 const routes = {
     '': { title: 'Dashboard', render: renderDashboard },
-    '#customers': { title: 'CRM', render: renderCustomers },
-    '#projects': { title: 'Missions', render: renderProjects },
-    '#planner': { title: 'Timeline', render: renderPlanner },
-    '#reports': { title: 'Analytics', render: renderReports },
-    '#team': { title: 'Humanity', render: renderTeam },
+    '#planner': { title: 'Planner', render: renderPlanner },
+    '#projects': { title: 'Projects', render: renderProjects },
+    '#customers': { title: 'Customers', render: renderCustomers },
+    '#team': { title: 'Team', render: renderTeam },
+    '#reports': { title: 'Reports', render: renderReports },
 };
 
 async function handleRoute() {
@@ -53,10 +53,11 @@ function updateActiveLink(hash) {
         const isActive = link.getAttribute('href') === hash || (hash === '' && link.getAttribute('href') === '#');
         if (isActive) {
             link.classList.add('active');
-            link.classList.remove('text-slate-300');
+            link.classList.remove('text-slate-300', 'text-slate-200');
+            link.classList.add('text-primary');
         } else {
-            link.classList.remove('active');
-            link.classList.add('text-slate-300');
+            link.classList.remove('active', 'text-primary');
+            link.classList.add('text-slate-200');
         }
     });
 }
@@ -66,11 +67,12 @@ async function init() {
     renderSidebar();
 
     try {
-        const [customers, projects, timeEntries, team] = await Promise.all([
+        const [customers, projects, timeEntries, team, tasks] = await Promise.all([
             api.get('customers.php'),
             api.get('projects.php'),
             api.get('time-entries.php'),
-            api.get('team.php')
+            api.get('team.php'),
+            api.get('planner.php')
         ]);
 
         const activeTimer = timeEntries.find(e => !e.end_time);
@@ -80,6 +82,7 @@ async function init() {
             projects,
             timeEntries,
             team,
+            tasks,
             activeTimer
         });
 

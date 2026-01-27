@@ -1,49 +1,50 @@
 /* Zen Design System - Refined */
 :root {
-    --primary: #4db6ac;
+    --primary: #338a81;
     --primary-soft: #e0f2f1;
-    --sand-soft: #faf9f6;
+    --sand-soft: #fcfdfe;
     --border-soft: #f1f5f9;
 }
 
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #fafafa;
-    color: #455a64;
+    background-color: #fafafe;
+    color: #334155;
 }
 
 /* Animations */
 @keyframes slideUp {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(15px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: none;
     }
 }
 
 .animate-slide-up {
-    animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* Nav Improvements */
 .nav-link {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 16px;
 }
 
 .nav-link.active {
     background-color: var(--primary-soft);
     color: var(--primary);
+    box-shadow: 0 4px 12px rgba(51, 138, 129, 0.1);
 }
 
 /* Custom Interaction States */
@@ -52,27 +53,44 @@ body {
 }
 
 .action-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
 }
 
 /* Refined Form Styles */
 input,
 select {
-    border: 1px solid #eceff1 !important;
-    background-color: #fcfdfe !important;
-    border-radius: 12px !important;
-    padding: 1rem 1.25rem !important;
-    font-size: 0.875rem !important;
+    border: none !important;
+    background-color: #f8fafc !important;
+    border-radius: 16px !important;
+    padding: 1.1rem 1.4rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    transition: all 0.2s ease !important;
 }
 
 input:focus,
 select:focus {
-    border-color: var(--primary) !important;
     background-color: white !important;
+    box-shadow: 0 0 0 3px rgba(51, 138, 129, 0.1) !important;
     outline: none !important;
 }
 
-/* Scrollbars - Hidden but functional */
+/* Modal Scroll Cleanup */
+.modal-open {
+    overflow: hidden;
+}
+
+/* Scrollbars - Minimal */
 ::-webkit-scrollbar {
-    width: 0px;
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
 }

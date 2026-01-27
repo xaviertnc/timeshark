@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Chomper</title>
+    <link rel="icon" type="image/jpeg" href="assets/images/time-chomper-logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/style.css">
     <script>
@@ -12,19 +13,19 @@
                 extend: {
                     colors: {
                         primary: {
-                            DEFAULT: '#4db6ac', // Soft shark teal
-                            dark: '#00897b',
-                            light: '#e0f2f1'
+                            DEFAULT: '#338a81', // Darker shark teal
+                            dark: '#1f5e58',
+                            light: '#b2dfdb'
                         },
-                        secondary: '#263238', // Muted slate gray
+                        secondary: '#1e293b', // Rich slate
                         accent: {
-                            DEFAULT: '#ffd54f', // Pastel coin gold
-                            light: '#fff8e1'
+                            DEFAULT: '#f59e0b', // Amber/Gold
+                            light: '#fef3c7'
                         },
                         chomper: {
-                            teal: '#80cbc4',
-                            deep: '#004d40',
-                            sand: '#faf9f6'
+                            teal: '#14b8a6',
+                            deep: '#0f172a',
+                            sand: '#f8fafc'
                         }
                     },
                     borderRadius: {
@@ -88,6 +89,7 @@
         </div>
     </main>
 
+    <div id="modal-portal" class="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"></div>
     <script type="module" src="assets/app.js"></script>
 </body>
 </html>

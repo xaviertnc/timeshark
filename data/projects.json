@@ -1,10 +1,18 @@
 [
     {
-        "id": "",
+        "id": "69786c671ac19",
         "name": "Zoho Sign Scanner",
-        "customer_id": "",
-        "color": "#3b82f6",
+        "customer_id": "69786bbe96bda",
+        "color": "#26a69a",
         "status": "active",
         "todos": []
+    },
+    {
+        "name": "Time Chomper",
+        "customer_id": "69786bbe96bdc",
+        "color": "#ffd54f",
+        "status": "active",
+        "todos": [],
+        "id": "697874a0e6271"
     }
 ]

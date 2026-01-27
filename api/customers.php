@@ -37,6 +37,20 @@ try {
             if (!$id) {
                 throw new Exception('ID required for deletion');
             }
+            
+            // Sever links from projects
+            $projects = $store->get('projects');
+            $updatedProjects = false;
+            foreach ($projects as &$project) {
+                if (($project['customer_id'] ?? '') == $id) {
+                    $project['customer_id'] = '';
+                    $updatedProjects = true;
+                }
+            }
+            if ($updatedProjects) {
+                $store->save('projects', $projects);
+            }
+
             $success = $store->delete($file, $id);
             echo json_encode(['success' => $success]);
             break;

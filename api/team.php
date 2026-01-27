@@ -34,6 +34,27 @@ try {
         case 'DELETE':
             $id = $_GET['id'] ?? null;
             if (!$id) throw new Exception('ID required');
+            
+            // Get team member to find their name
+            $member = $store->find($file, $id);
+            if ($member) {
+                $name = $member['name'] ?? '';
+                if ($name) {
+                    // Sever links in tasks (assignments)
+                    $tasks = $store->get('tasks');
+                    $updatedTasks = false;
+                    foreach ($tasks as &$task) {
+                        if (($task['resource_id'] ?? '') === $name) {
+                            $task['resource_id'] = 'Main'; // Default to Main or empty
+                            $updatedTasks = true;
+                         }
+                    }
+                    if ($updatedTasks) {
+                        $store->save('tasks', $tasks);
+                    }
+                }
+            }
+
             $success = $store->delete($file, $id);
             echo json_encode(['success' => $success]);
             break;

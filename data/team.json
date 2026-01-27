@@ -4,5 +4,29 @@
         "role": "Code Shark",
         "color": "#8b5cf6",
         "id": "69786cce13218"
+    },
+    {
+        "id": "69787be9e3d31",
+        "name": "Ashton",
+        "role": "Manager",
+        "color": "#f59e0b"
+    },
+    {
+        "id": "69787bfd898ad",
+        "name": "Nicole",
+        "role": "Operations",
+        "color": "#f59e0b"
+    },
+    {
+        "id": "69787c133f2c6",
+        "name": "Antea",
+        "role": "Accounts",
+        "color": "#10b981"
+    },
+    {
+        "id": "69787c2085ab3",
+        "name": "Meagan Adams",
+        "role": "AIT",
+        "color": "#ec4899"
     }
 ]

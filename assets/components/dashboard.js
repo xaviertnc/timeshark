@@ -21,45 +21,80 @@ export async function renderDashboard() {
                 </div>
             ` : ''}
 
-            <div class="${activeTimer ? 'bg-white border-primary/20' : 'bg-white border-slate-100'} rounded-[1.5rem] p-8 shadow-sm border relative group transition-colors duration-200">
+            <div class="bg-white rounded-[1.67rem] p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] relative group transition-all duration-300">
                 <div class="relative z-10">
                     ${activeTimer ? `
                         <div class="text-center py-2">
-                            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-primary/10 text-[8px] font-black text-primary uppercase tracking-widest mb-4">
-                                <span class="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-[9px] font-black text-primary uppercase tracking-widest mb-6">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                                 Chomping
                             </div>
-                            <h3 class="text-2xl font-bold text-slate-800 mb-0.5 tracking-tight">${activeTimer.project_name}</h3>
-                            <p class="text-slate-400 font-medium text-xs italic mb-8 opacity-80">"${activeTimer.description || 'Focusing'}"</p>
+                            <div id="active-task-display" class="cursor-pointer group/task relative py-4 px-6 rounded-3xl hover:bg-slate-50/50 transition-all">
+                                <h3 class="text-3xl font-bold text-slate-700/90 mb-2 tracking-tight group-hover/task:text-primary transition-colors">${activeTimer.project_name}</h3>
+                                <p class="text-slate-500 font-medium text-sm leading-relaxed px-4">
+                                    <span class="opacity-50">"</span>${activeTimer.description || 'Focusing'}<span class="opacity-50">"</span>
+                                </p>
+                                <div class="absolute -top-1 -right-1 opacity-0 group-hover/task:opacity-100 transition-opacity bg-white shadow-md rounded-full p-2 text-primary border border-slate-100">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </div>
+                            </div>
                             
-                            <div class="flex justify-center">
-                                 <button id="dashboard-stop-btn" class="flex items-center justify-center min-w-[200px] h-14 bg-[#FF3B30] hover:bg-[#FF2D55] text-white font-black text-[13px] uppercase tracking-[0.1em] rounded-full transition-all duration-150 active:scale-95 shadow-sm leading-none pt-0.5">
+                            <div class="flex justify-center mt-10">
+                                 <button id="dashboard-stop-btn" class="flex items-center justify-center min-w-[220px] h-16 bg-[#FF3B30] hover:bg-[#FF453A] text-white font-black text-[13px] uppercase tracking-[0.2em] rounded-2xl transition-all duration-150 active:scale-95 shadow-lg shadow-red-500/20 leading-none">
                                     Stop Tracking
                                  </button>
                             </div>
                         </div>
+
+                        <!-- Edit Active Task Modal/Overlay -->
+                        <div id="edit-active-panel" class="fixed inset-0 bg-secondary/20 hidden z-[60] backdrop-blur-md items-center justify-center p-4">
+                            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-10 transform scale-95 opacity-0 transition-all duration-300" id="edit-active-content">
+                                <div class="mb-8 text-center">
+                                    <h3 class="text-2xl font-bold text-slate-800 tracking-tight">Edit Current Task</h3>
+                                    <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-3">Live Log Adjustment</p>
+                                </div>
+                                <form id="edit-active-form" class="space-y-6">
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Project</label>
+                                        <select name="project_id" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 font-bold text-slate-600 text-sm appearance-none cursor-pointer">
+                                            ${projects.map(p => `<option value="${p.id}" ${activeTimer.project_id == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Context</label>
+                                        <input type="text" name="description" value="${activeTimer.description || ''}" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 font-bold text-slate-600 text-sm">
+                                    </div>
+                                    <div class="flex gap-4 pt-4">
+                                        <button type="button" id="close-edit-active" class="flex-1 h-14 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black text-[11px] uppercase tracking-widest rounded-xl transition-all">Cancel</button>
+                                        <button type="submit" class="flex-[2] h-14 bg-primary hover:bg-primary-dark text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     ` : `
-                        <form id="start-timer-form" class="space-y-6">
-                            <div class="space-y-4">
-                                 <div class="relative">
-                                    <label class="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1.5 ml-1">Mission</label>
-                                    <select name="project_id" required class="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 outline-none focus:border-primary focus:bg-white transition-all appearance-none cursor-pointer font-bold text-slate-600 text-sm">
-                                        <option value="">Select Target...</option>
-                                        ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                                    </select>
-                                    <div class="absolute right-4 top-[2.3rem] pointer-events-none text-slate-300">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <form id="start-timer-form" class="space-y-8">
+                            <div class="space-y-5">
+                                 <div class="space-y-2">
+                                    <label class="block text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Project</label>
+                                    <div class="relative">
+                                        <select name="project_id" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer font-bold text-slate-600 text-sm">
+                                            <option value="">Select Target...</option>
+                                            ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                                        </select>
+                                        <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div class="relative">
-                                     <label class="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1.5 ml-1">Context</label>
+                                <div class="space-y-2">
+                                     <label class="block text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Context</label>
                                      <input type="text" name="description" placeholder="What are we doing?" 
-                                        class="w-full bg-slate-50 border border-slate-100 rounded-lg px-4 py-3 outline-none focus:border-primary focus:bg-white transition-all font-bold text-slate-600 text-sm">
+                                        class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-600 text-sm">
                                 </div>
                             </div>
 
-                            <button type="submit" class="flex items-center justify-center w-full h-14 bg-primary hover:bg-primary-dark text-white text-[13px] font-black uppercase tracking-[0.1em] rounded-full transition-all duration-150 active:scale-95 shadow-sm leading-none pt-0.5">
+                            <button type="submit" class="flex items-center justify-center w-full h-16 bg-primary hover:bg-primary-dark text-white text-[13px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-150 active:scale-95 shadow-lg shadow-primary/20 leading-none">
                                 Start Chomping
                             </button>
                         </form>
@@ -67,8 +102,8 @@ export async function renderDashboard() {
                 </div>
             </div>
 
-            <div class="mt-12 text-center opacity-30">
-                 <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.6em]">Steady & Calm.</p>
+            <div class="mt-16 text-center opacity-30">
+                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.6em]">Steady & Calm.</p>
             </div>
         </div>
     `;
@@ -91,6 +126,56 @@ export async function renderDashboard() {
                 refreshView();
             } catch (err) {
                 alert('Request failed');
+            }
+        };
+    }
+
+    const editPanel = container.querySelector('#edit-active-panel');
+    const editContent = container.querySelector('#edit-active-content');
+    const editDisplay = container.querySelector('#active-task-display');
+    const closeEdit = container.querySelector('#close-edit-active');
+    const editForm = container.querySelector('#edit-active-form');
+
+    if (editDisplay) {
+        editDisplay.onclick = () => {
+            editPanel.classList.remove('hidden');
+            editPanel.classList.add('flex');
+            setTimeout(() => {
+                editContent.classList.remove('scale-95', 'opacity-0');
+                editContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+    }
+
+    const closeEditPanel = () => {
+        editContent.classList.remove('scale-100', 'opacity-100');
+        editContent.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            editPanel.classList.add('hidden');
+            editPanel.classList.remove('flex');
+        }, 300);
+    };
+
+    if (closeEdit) closeEdit.onclick = closeEditPanel;
+
+    if (editForm) {
+        editForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(editForm);
+            const data = Object.fromEntries(formData.entries());
+
+            const project = projects.find(p => p.id == data.project_id);
+            data.project_name = project.name;
+            data.id = activeTimer.id;
+
+            try {
+                // We reuse the start endpoint which handles updates if ID is provided
+                const result = await api.post('time-entries.php?action=start', data);
+                store.update('activeTimer', result);
+                closeEditPanel();
+                setTimeout(refreshView, 350);
+            } catch (err) {
+                alert('Update failed');
             }
         };
     }

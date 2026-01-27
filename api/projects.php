@@ -43,6 +43,30 @@ try {
             if (!$id) {
                 throw new Exception('ID required for deletion');
             }
+
+            // Sever links from time entries
+            $timeEntries = $store->get('time-entries');
+            $updatedEntries = false;
+            foreach ($timeEntries as &$entry) {
+                if (($entry['project_id'] ?? '') == $id) {
+                    $entry['project_id'] = '';
+                    $entry['project_name'] = '[Deleted Project]'; // Keep the name for historical reference
+                    $updatedEntries = true;
+                }
+            }
+            if ($updatedEntries) {
+                $store->save('time-entries', $timeEntries);
+            }
+
+            // Delete associated tasks (assignments in planner)
+            $tasks = $store->get('tasks');
+            $newTasks = array_filter($tasks, function($task) use ($id) {
+                return ($task['project_id'] ?? '') != $id;
+            });
+            if (count($tasks) !== count($newTasks)) {
+                $store->save('tasks', array_values($newTasks));
+            }
+
             $success = $store->delete($file, $id);
             echo json_encode(['success' => $success]);
             break;

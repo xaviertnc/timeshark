@@ -32,7 +32,7 @@ try {
                     if (!isset($entry['end_time']) || $entry['end_time'] === null) {
                         // Stop this one automatically or throw error?
                         // Let's stop it automatically to be user friendly
-                        $store->update($file, $entry['id'], ['end_time' => date('Y-m-d H:i:s')]);
+                        $store->update($file, $entry['id'], ['end_time' => gmdate('c')]);
                     }
                 }
 
@@ -40,7 +40,7 @@ try {
                     'project_id' => $data['project_id'],
                     'project_name' => $data['project_name'] ?? 'Unknown Project', // Cache for display
                     'description' => $data['description'] ?? '',
-                    'start_time' => date('Y-m-d H:i:s'),
+                    'start_time' => gmdate('c'),
                     'end_time' => null
                 ];
                 $result = $store->insert($file, $newEntry);
@@ -62,7 +62,7 @@ try {
                 }
 
                 if ($id) {
-                     $result = $store->update($file, $id, ['end_time' => date('Y-m-d H:i:s')]);
+                     $result = $store->update($file, $id, ['end_time' => gmdate('c')]);
                      echo json_encode($result);
                 } else {
                     echo json_encode(['error' => 'No active timer found to stop']);
