@@ -6,7 +6,7 @@ export async function renderTeam() {
     const team = state.team || [];
 
     const container = document.createElement('div');
-    container.className = "max-w-6xl mx-auto animate-slide-up";
+    container.className = "max-w-6xl mx-auto";
 
     container.innerHTML = `
         <div class="flex items-end justify-between mb-16 px-2">

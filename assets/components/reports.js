@@ -9,14 +9,30 @@ export async function renderReports() {
     const entries = state.timeEntries || [];
     const projects = state.projects || [];
 
-    const projectTimes = {};
-    let totalSeconds = 0;
+    const tasks = state.tasks || [];
 
+    const projectStats = {};
+    let totalSecondsLogged = 0;
+
+    // Calculate Logged Time
     entries.forEach(e => {
         if (!e.end_time) return;
         const diff = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
-        projectTimes[e.project_id] = (projectTimes[e.project_id] || 0) + diff;
-        totalSeconds += diff;
+        if (!projectStats[e.project_id]) projectStats[e.project_id] = { logged: 0, planned: 0 };
+        projectStats[e.project_id].logged += diff;
+        totalSecondsLogged += diff;
+    });
+
+    // Calculate Planned Time from Tasks
+    tasks.forEach(t => {
+        if (!projectStats[t.project_id]) projectStats[t.project_id] = { logged: 0, planned: 0 };
+        let plannedSeconds = 3600;
+        if (t.slots && typeof t.slots === 'string') {
+            plannedSeconds = t.slots.split(',').filter(s => s.trim() !== '').length * 3600;
+        } else {
+            plannedSeconds = (new Date(t.end_date || t.start_date) - new Date(t.start_date)) / 1000 || 3600;
+        }
+        projectStats[t.project_id].planned += plannedSeconds;
     });
 
     const formatDuration = (secs) => {
@@ -32,7 +48,7 @@ export async function renderReports() {
     const paginatedEntries = completedEntries.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
     const container = document.createElement('div');
-    container.className = "max-w-5xl mx-auto animate-slide-up pb-20";
+    container.className = "max-w-5xl mx-auto pb-20";
 
     container.innerHTML = `
         <div class="flex items-end justify-between mb-16 px-2">
@@ -42,33 +58,38 @@ export async function renderReports() {
             </div>
             <div class="text-right">
                 <div class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mb-1">Total Time</div>
-                <div class="text-2xl font-light text-muted tracking-tighter">${formatDuration(totalSeconds)}</div>
+                <div class="text-2xl font-light text-muted tracking-tighter">${formatDuration(totalSecondsLogged)}</div>
             </div>
         </div>
 
-        <!-- Project Stats -->
         <div class="bg-card rounded-[2rem] p-12 shadow-soft border border-soft mb-16">
-            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-8">Allocation Summary</h3>
+            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-8">Performance & Fulfillment</h3>
             <div class="space-y-8">
-                ${Object.entries(projectTimes).map(([pid, secs]) => {
+                ${Object.entries(projectStats).map(([pid, stats]) => {
         const proj = projects.find(p => p.id == pid) || { name: 'Unknown', color: '#eceff1' };
-        const percent = totalSeconds > 0 ? (secs / totalSeconds) * 100 : 0;
+        const fulfillment = stats.planned > 0 ? Math.min(100, Math.round((stats.logged / stats.planned) * 100)) : 0;
+        const allocation = totalSecondsLogged > 0 ? Math.round((stats.logged / totalSecondsLogged) * 100) : 0;
+
         return `
                         <div>
                             <div class="flex justify-between items-end mb-3">
                                 <div>
                                     <span class="text-sm font-bold text-main/80">${proj.name}</span>
-                                    <span class="ml-2 text-[9px] font-black text-dim uppercase">${Math.round(percent)}%</span>
+                                    <span class="ml-2 text-[9px] font-black text-primary uppercase tracking-widest">${fulfillment}% Fulfilled</span>
+                                    <span class="ml-2 text-[8px] font-black text-dim uppercase opacity-50">(${allocation}% of total volume)</span>
                                 </div>
-                                <span class="text-[11px] font-bold text-muted">${formatDuration(secs)}</span>
+                                <div class="text-right">
+                                    <span class="text-[11px] font-bold text-main block">${formatDuration(stats.logged)}</span>
+                                    <span class="text-[8px] font-black text-dim uppercase tracking-widest">of ${formatDuration(stats.planned)} target</span>
+                                </div>
                             </div>
                             <div class="w-full bg-app rounded-full h-1 overflow-hidden">
-                                <div class="h-full transition-all duration-700" style="width: ${percent}%; background-color: ${proj.color}"></div>
+                                <div class="h-full transition-all duration-1000" style="width: ${fulfillment}%; background-color: ${proj.color}"></div>
                             </div>
                         </div>
                     `;
     }).join('')}
-                ${Object.keys(projectTimes).length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-[9px]">No data logged yet</p>' : ''}
+                ${Object.keys(projectStats).length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-[9px]">No logs or assignments found</p>' : ''}
             </div>
         </div>
 

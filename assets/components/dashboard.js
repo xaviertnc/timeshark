@@ -10,7 +10,7 @@ export async function renderDashboard() {
     container.className = "h-full flex flex-col items-center justify-center -mt-16";
 
     container.innerHTML = `
-        <div class="max-w-md w-full px-6 animate-slide-up">
+        <div class="max-w-md w-full px-6">
             
             ${!activeTimer ? `
                 <div class="text-center mb-8">
@@ -64,6 +64,12 @@ export async function renderDashboard() {
                                         <label class="block text-[10px] font-black text-dim uppercase tracking-widest ml-1">Context</label>
                                         <input type="text" name="description" value="${activeTimer.description || ''}" class="w-full bg-app border-none rounded-2xl px-5 py-4 font-bold text-main text-sm">
                                     </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-black text-dim uppercase tracking-widest ml-1">Acting As</label>
+                                        <select name="resource_id" required class="w-full bg-app border-none rounded-2xl px-5 py-4 font-bold text-main text-sm appearance-none cursor-pointer">
+                                            ${(state.team || []).map(m => `<option value="${m.name}" ${activeTimer.resource_id == m.name ? 'selected' : ''}>${m.name}</option>`).join('')}
+                                        </select>
+                                    </div>
                                     <div class="flex gap-4 pt-4">
                                         <button type="button" id="close-edit-active" class="flex-1 h-14 bg-app hover:bg-border-soft text-muted font-black text-[11px] uppercase tracking-widest rounded-xl transition-all">Cancel</button>
                                         <button type="submit" class="flex-[2] h-14 bg-primary hover:bg-primary-dark text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all">Save Changes</button>
@@ -91,6 +97,19 @@ export async function renderDashboard() {
                                      <label class="block text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Context</label>
                                      <input type="text" name="description" placeholder="What are we doing?" 
                                         class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-600 text-sm">
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label class="block text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Resource</label>
+                                    <div class="relative">
+                                        <select name="resource_id" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer font-bold text-slate-600 text-sm">
+                                            <option value="">Who's chomping?</option>
+                                            ${(state.team || []).map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
+                                        </select>
+                                        <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
