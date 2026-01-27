@@ -45,11 +45,11 @@ async function handleRoute() {
 function updateActiveLink(hash) {
     document.querySelectorAll('#sidebar nav a').forEach(link => {
         if (link.getAttribute('href') === hash || (hash === '' && link.getAttribute('href') === '#')) {
-            link.classList.add('bg-primary/10', 'text-primary', 'border-l-4', 'border-primary', 'font-semibold');
-            link.classList.remove('text-slate-500', 'hover:bg-slate-50');
+            link.classList.add('bg-slate-800', 'text-white', 'border-l-4', 'border-accent');
+            link.classList.remove('text-slate-400', 'hover:bg-slate-800');
         } else {
-            link.classList.remove('bg-primary/10', 'text-primary', 'border-l-4', 'border-primary', 'font-semibold');
-            link.classList.add('text-slate-500', 'hover:bg-slate-50', 'hover:text-slate-700');
+            link.classList.remove('bg-slate-800', 'text-white', 'border-l-4', 'border-accent');
+            link.classList.add('text-slate-400', 'hover:bg-slate-800');
         }
     });
 }

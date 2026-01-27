@@ -311,4 +311,3 @@ function renderProjectCard(p, customer) {
         </div>
     `;
 }
-

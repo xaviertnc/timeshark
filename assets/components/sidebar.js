@@ -9,8 +9,8 @@ export function renderSidebar() {
     ];
 
     nav.innerHTML = items.map(item => `
-        <a href="${item.hash}" class="flex items-center px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-all rounded-r-full mr-2 border-l-4 border-transparent group">
-            <span class="mr-3 text-xl group-hover:scale-110 transition-transform">${item.icon}</span>
+        <a href="${item.hash}" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent">
+            <span class="mr-3 text-xl">${item.icon}</span>
             <span class="font-medium hidden lg:block">${item.label}</span>
         </a>
     `).join('');

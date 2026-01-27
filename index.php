@@ -11,9 +11,9 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#003366', // Deep Blue
-                        secondary: '#1a1a1a', // Dark Gray/Black
-                        accent: '#F97316', // Orange
+                        primary: '#3b82f6',
+                        secondary: '#1e293b',
+                        accent: '#f59e0b',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -24,25 +24,26 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-[#f0f2f5] text-slate-800 font-sans h-screen flex overflow-hidden">
+<body class="bg-gray-50 text-slate-800 font-sans h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-20 lg:w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-sm z-20" id="sidebar">
-        <div class="h-20 flex items-center justify-center border-b border-gray-100 p-4">
-            <img src="time-chomper-logo.jpg" alt="Time Chomper" class="h-full object-contain max-w-[150px]">
+    <aside class="w-20 lg:w-64 bg-secondary text-white flex flex-col transition-all duration-300 shadow-xl z-20" id="sidebar">
+        <div class="h-16 flex items-center justify-center border-b border-slate-700">
+            <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-300">TC</span>
+            <span class="hidden lg:block ml-3 font-bold text-xl tracking-tight">Time Chomper</span>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-6 space-y-1 px-3">
+        <nav class="flex-1 overflow-y-auto py-4 space-y-2 px-3">
             <!-- Navigation items will be injected here by app.js -->
         </nav>
 
-        <div class="p-4 border-t border-gray-100">
+        <div class="p-4 border-t border-slate-700">
             <div class="flex items-center justify-center lg:justify-start">
-                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-accent to-red-500 flex items-center justify-center text-xs font-bold shadow-lg">
                     ME
                 </div>
                 <div class="hidden lg:block ml-3">
-                    <p class="text-sm font-bold text-slate-700">User</p>
+                    <p class="text-sm font-medium text-slate-200">User</p>
                     <p class="text-xs text-slate-400">Admin</p>
                 </div>
             </div>
