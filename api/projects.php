@@ -21,7 +21,7 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
-            if (isset($data['id']) && $store->find($file, $data['id'])) {
+            if (!empty($data['id']) && $store->find($file, $data['id'])) {
                 // Update
                 $result = $store->update($file, $data['id'], $data);
             } else {

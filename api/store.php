@@ -52,7 +52,7 @@ class JsonStore {
 
     public function insert($storeName, $item) {
         $data = $this->get($storeName);
-        if (!isset($item['id'])) {
+        if (empty($item['id'])) {
             $item['id'] = uniqid();
         }
         $data[] = $item;

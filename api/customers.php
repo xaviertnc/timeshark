@@ -18,14 +18,12 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
-            if (isset($data['id']) && $store->find($file, $data['id'])) {
+            if (!empty($data['id']) && $store->find($file, $data['id'])) {
                 // Update
                 $result = $store->update($file, $data['id'], $data);
             } else {
                 // Create
-                // If it's a new customer, ensure we have a color
                 if (!isset($data['color'])) {
-                    // Assign a random tailwind-ish color if not provided
                     $colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'];
                     $data['color'] = $colors[array_rand($colors)];
                 }
@@ -39,7 +37,6 @@ try {
             if (!$id) {
                 throw new Exception('ID required for deletion');
             }
-            // Check if customer has projects (optional integrity check, skipping for simplicity)
             $success = $store->delete($file, $id);
             echo json_encode(['success' => $success]);
             break;

@@ -11,14 +11,15 @@ import { renderReports } from './components/reports.js';
 
 const app = document.getElementById('app');
 const pageTitle = document.getElementById('page-title');
+const breadcrumb = document.getElementById('breadcrumb');
 
 // Router
 const routes = {
-    '': { title: 'Dashboard', render: renderDashboard },
-    '#customers': { title: 'Customers', render: renderCustomers },
-    '#projects': { title: 'Projects', render: renderProjects },
-    '#planner': { title: 'Planner', render: renderPlanner },
-    '#reports': { title: 'Reports', render: renderReports },
+    '': { title: 'Dashboard', sub: 'Home', render: renderDashboard },
+    '#customers': { title: 'Customers', sub: 'CRM', render: renderCustomers },
+    '#projects': { title: 'Projects', sub: 'Planning', render: renderProjects },
+    '#planner': { title: 'Resource Planner', sub: 'Timeline', render: renderPlanner },
+    '#reports': { title: 'Time Reports', sub: 'Analytics', render: renderReports },
 };
 
 async function handleRoute() {
@@ -26,7 +27,9 @@ async function handleRoute() {
     const route = routes[hash] || routes[''];
 
     pageTitle.textContent = route.title;
-    app.innerHTML = '<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>'; // Loading
+    breadcrumb.textContent = route.sub;
+
+    app.innerHTML = '<div class="flex items-center justify-center h-full"><span class="loader"></span></div>';
 
     // Slight delay for smoother feel or data fetching
     // In a real app we might fetch specific data here
@@ -38,18 +41,19 @@ async function handleRoute() {
         updateActiveLink(hash);
     } catch (e) {
         console.error(e);
-        app.innerHTML = `<div class="p-4 text-red-500">Error loading view: ${e.message}</div>`;
+        app.innerHTML = `<div class="p-10 text-center"><div class="bg-red-50 text-red-600 p-6 rounded-2xl inline-block border border-red-100 font-bold">Error loading view: ${e.message}</div></div>`;
     }
 }
 
 function updateActiveLink(hash) {
     document.querySelectorAll('#sidebar nav a').forEach(link => {
-        if (link.getAttribute('href') === hash || (hash === '' && link.getAttribute('href') === '#')) {
-            link.classList.add('bg-slate-800', 'text-white', 'border-l-4', 'border-accent');
-            link.classList.remove('text-slate-400', 'hover:bg-slate-800');
+        const isActive = link.getAttribute('href') === hash || (hash === '' && link.getAttribute('href') === '#');
+        if (isActive) {
+            link.classList.add('active', 'text-white');
+            link.classList.remove('text-slate-400', 'hover:bg-slate-800/50');
         } else {
-            link.classList.remove('bg-slate-800', 'text-white', 'border-l-4', 'border-accent');
-            link.classList.add('text-slate-400', 'hover:bg-slate-800');
+            link.classList.remove('active', 'text-white');
+            link.classList.add('text-slate-400', 'hover:bg-slate-800/50');
         }
     });
 }

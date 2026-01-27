@@ -4,5 +4,11 @@
         "name": "Neels",
         "email": "neels@currencyhub.co.za",
         "color": "#3b82f6"
+    },
+    {
+        "id": "69786bbe96bda",
+        "name": "Currency Hub",
+        "email": "",
+        "color": "#8b5cf6"
     }
 ]

@@ -11,14 +11,17 @@ export async function renderProjects() {
 
     // Header
     container.innerHTML = `
-        <div class="flex items-center justify-between mb-8">
-            <h2 class="text-3xl font-bold text-slate-800">Projects</h2>
-            <button id="add-project-btn" class="bg-primary hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow-md transition-all flex items-center font-medium">
-                <span class="mr-2 text-xl">+</span> New Project
+        <div class="flex items-center justify-between mb-12 animate-slide-up">
+            <div>
+                <h2 class="text-4xl font-black text-slate-900 tracking-tight">Active Projects</h2>
+                <p class="text-slate-400 font-medium">Manage your targets and roadmaps.</p>
+            </div>
+            <button id="add-project-btn" class="bg-slate-900 hover:bg-primary text-white px-8 py-4 rounded-2xl shadow-xl transition-all flex items-center font-bold uppercase tracking-widest text-xs group">
+                <span class="mr-3 text-xl group-hover:rotate-90 transition-transform duration-300">+</span> New Project
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             ${projects.map(p => {
         const customer = customers.find(c => c.id == p.customer_id);
         return renderProjectCard(p, customer);
