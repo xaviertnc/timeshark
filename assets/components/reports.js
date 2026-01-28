@@ -204,13 +204,17 @@ export async function renderReports() {
                   <div class="space-y-2">
                     ${group.entries.map(e => {
                       const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
+                      const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
                       return `
                         <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-soft/30 hover:border-primary/30 transition-all group/row flex items-center justify-between">
                           <div class="flex items-center gap-4 flex-1 min-w-0">
                             <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
                             <div class="min-w-0">
                               <h4 class="text-sm font-bold text-main truncate">${e.description || 'No description'}</h4>
-                              <p class="text-[10px] font-bold text-dim uppercase tracking-wider">${proj.name}</p>
+                              <p class="text-[10px] font-bold text-dim uppercase tracking-wider">
+                                ${proj.name}
+                                ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}
+                              </p>
                             </div>
                           </div>
                           <div class="flex items-center gap-6">

@@ -360,7 +360,13 @@ export async function renderPlanner() {
                                                                  style="background-color: ${proj.color}">
                                                                  <div class="relative z-10">
                                                                     <div class="font-bold mb-1 line-clamp-2 leading-tight ${textColorClass}">${t.title}</div>
-                                                                    <div class="opacity-60 font-black uppercase tracking-widest text-[8px] line-clamp-1 ${textColorClass}">${proj.name}</div>
+                                                                    <div class="opacity-60 font-black uppercase tracking-widest text-[8px] line-clamp-1 ${textColorClass}">
+                                                                        ${proj.name}
+                                                                        ${(() => {
+                                                                            const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
+                                                                            return org ? ` • ${org.name}` : '';
+                                                                        })()}
+                                                                    </div>
 
                                                                     ${(() => {
                         // Show progress bar only on the FIRST hourly slot in Day View, or always in other views

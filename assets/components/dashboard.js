@@ -23,9 +23,7 @@ export async function renderDashboard() {
   const projects = state.projects || [];
   const activeTimer = state.activeTimer;
   const entries = state.timeEntries || [];
-
-  const container = document.createElement('div');
-  container.className = 'max-w-5xl mx-auto pb-10 space-y-8';
+  const customers = state.customers || [];
 
   const formatDuration = (secs) => {
     const h = Math.floor(secs / 3600);
@@ -46,6 +44,9 @@ export async function renderDashboard() {
     const z = (n) => n.toString().padStart(2, '0');
     return `${ d.getFullYear() }-${ z(d.getMonth() + 1) }-${ z(d.getDate()) }T${ z(d.getHours()) }:${ z(d.getMinutes()) }`;
   };
+
+  const container = document.createElement('div');
+  container.className = 'max-w-5xl mx-auto pb-10 space-y-8';
 
   // Helper for color shifting
   const shiftColor = (hex, percent) => {
@@ -123,6 +124,7 @@ export async function renderDashboard() {
       <div class="space-y-3">
         ${ entries.filter(e => e.end_time).slice(0, 10).map(e => {
           const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
+          const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
           const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
           const taskColor = shiftColor(proj.color, -10);
 
@@ -135,7 +137,7 @@ export async function renderDashboard() {
                     <h4 class="text-sm font-bold text-main tracking-tight">${ e.description || 'No description' }</h4>
                     <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${ e.resource_id || 'Main' }</span>
                   </div>
-                  <p class="text-xs font-medium text-muted truncate">${ proj.name }</p>
+                  <p class="text-xs font-medium text-muted truncate">${ proj.name } ${ org ? `<span class="opacity-40 mx-1">•</span> ${ org.name }` : '' }</p>
                   ${ e.notes ? `<p class="text-[9px] text-dim italic mt-0.5">${ e.notes }</p>` : '' }
                 </div>
               </div>
@@ -146,17 +148,17 @@ export async function renderDashboard() {
                   <div class="text-base font-bold text-main tracking-tighter tabular-nums">${ formatDuration(duration) }</div>
                 </div>
                 <div class="flex gap-1">
-                  <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all" 
-                          data-project-id="${ e.project_id }" 
-                          data-description="${ e.description || '' }" 
+                  <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all"
+                          data-project-id="${ e.project_id }"
+                          data-description="${ e.description || '' }"
                           data-notes="${ e.notes || '' }">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </button>
-                  <button class="edit-history-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all" 
+                  <button class="edit-history-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all"
                           data-id="${ e.id }">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                   </button>
-                  <button class="delete-history-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-red-500 hover:bg-red-500/10 transition-all" 
+                  <button class="delete-history-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-red-500 hover:bg-red-500/10 transition-all"
                           data-id="${ e.id }">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
@@ -245,7 +247,7 @@ export async function renderDashboard() {
   if ( activeTimer ) {
     const counterEl = container.querySelector('#active-timer-counter');
     const startTime = new Date(activeTimer.start_time).getTime();
-    
+
     const updateCounter = () => {
       const now = new Date().getTime();
       const diff = now - startTime;
@@ -270,6 +272,7 @@ export async function renderDashboard() {
 
   // Event Handlers
   const startForm = container.querySelector('#start-timer-form');
+
   if ( startForm ) {
     startForm.onsubmit = async (e) => {
       e.preventDefault();

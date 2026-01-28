@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 require_once 'store.php';
 
 $store = new JsonStore();
-$file = 'customers';
+$file = 'organizations';
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
@@ -46,9 +46,35 @@ try {
                     $project['customer_id'] = '';
                     $updatedProjects = true;
                 }
+                if (($project['client_id'] ?? '') == $id) {
+                    $project['client_id'] = '';
+                    $updatedProjects = true;
+                }
             }
             if ($updatedProjects) {
                 $store->save('projects', $projects);
+            }
+
+            // Sever links from clients (if deleting an organization)
+            $allEntries = $store->get($file);
+            $updatedEntries = false;
+            foreach ($allEntries as &$entry) {
+                // Handle legacy single client_id
+                if (($entry['client_id'] ?? '') == $id) {
+                    $entry['client_id'] = '';
+                    $updatedEntries = true;
+                }
+                // Handle new multi-org organization_ids
+                if (isset($entry['organization_ids']) && is_array($entry['organization_ids'])) {
+                    if (($key = array_search($id, $entry['organization_ids'])) !== false) {
+                        unset($entry['organization_ids'][$key]);
+                        $entry['organization_ids'] = array_values($entry['organization_ids']);
+                        $updatedEntries = true;
+                    }
+                }
+            }
+            if ($updatedEntries) {
+                $store->save($file, $allEntries);
             }
 
             $success = $store->delete($file, $id);

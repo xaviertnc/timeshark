@@ -4,7 +4,23 @@ import { api } from './utils/api.js';
 // Components
 import { renderSidebar } from './components/sidebar.js';
 import { renderDashboard } from './components/dashboard.js';
-import { renderCustomers } from './components/customers.js';
+import { renderOrganizations } from './components/organizations.js';
+
+/**
+ * assets/app.js
+ *
+ * Main Application Entry - 28 Jun 2025
+ *
+ * Purpose: Application initialization and routing.
+ *
+ * @package Chompy
+ *
+ * @author Senpai
+ *
+ * Last 3 version commits:
+ * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
+ * @version 1.1 - UPD - 28 Jan 2026 - Rename Customers to Organizations and Clients
+ */
 import { renderProjects } from './components/projects.js';
 import { renderPlanner } from './components/planner.js';
 import { renderReports } from './components/reports.js';
@@ -19,7 +35,7 @@ const routes = {
     '': { title: 'Dashboard', render: renderDashboard },
     '#planner': { title: 'Planner', render: renderPlanner },
     '#projects': { title: 'Projects', render: renderProjects },
-    '#customers': { title: 'Customers', render: renderCustomers },
+    '#organizations': { title: 'Organizations', render: renderOrganizations },
     '#team': { title: 'Team', render: renderTeam },
     '#reports': { title: 'Reports', render: renderReports },
 };
@@ -85,7 +101,7 @@ async function init() {
 
     try {
         const [customers, projects, timeEntries, team, tasks] = await Promise.all([
-            api.get('customers.php'),
+            api.get('organizations.php'),
             api.get('projects.php'),
             api.get('time-entries.php'),
             api.get('team.php'),
