@@ -20,19 +20,19 @@
 }
 
 .dark {
-    --bg-app: #121418;
-    --bg-card: #1c2025;
-    --bg-sidebar: #1c2025;
-    --bg-input: #252a30;
+    --bg-app: #0b0d11;
+    --bg-card: #121519;
+    --bg-sidebar: #121519;
+    --bg-input: #161a1f;
 
     --primary-soft: var(--primary-soft-dark);
 
-    --text-main: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-dim: #64748b;
+    --text-main: #b4bcc7;
+    --text-muted: #64748b;
+    --text-dim: #334155;
 
-    --border-soft: #2d343c;
-    --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+    --border-soft: #1a1e23;
+    --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
 body {
@@ -50,6 +50,10 @@ body {
 
 .bg-sidebar {
     background-color: var(--bg-sidebar);
+}
+
+.border-soft {
+    border-color: var(--border-soft) !important;
 }
 
 .text-main {
@@ -122,6 +126,24 @@ select:focus {
     background-color: var(--bg-card) !important;
     box-shadow: 0 0 0 3px rgba(51, 138, 129, 0.1) !important;
     outline: none !important;
+}
+
+/* Date Input Fixes */
+input[type="date"] {
+    position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
 }
 
 /* Modal Scroll Cleanup */

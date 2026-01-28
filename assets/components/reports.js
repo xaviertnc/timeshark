@@ -148,7 +148,7 @@ export async function renderReports() {
         </div>
 
         <!-- Cumulative Build-up Card -->
-        <div class="bg-card rounded-2xl p-8 border border-soft/50 shadow-soft relative overflow-hidden group">
+        <div class="bg-card rounded-2xl p-8 border border-soft shadow-soft relative overflow-hidden group">
           <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-8">Cumulative Build-up (8h Goal)</h4>
           <div class="h-64">
             <canvas id="cumulative-build-chart"></canvas>
@@ -156,7 +156,7 @@ export async function renderReports() {
         </div>
 
         <!-- Hourly Distribution Card -->
-        <div class="bg-card rounded-2xl p-8 border border-soft/50 shadow-soft">
+        <div class="bg-card rounded-2xl p-8 border border-soft shadow-soft">
           <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-8">Hourly Project Intensity</h4>
           <div class="h-64">
             <canvas id="daily-stacked-bar"></canvas>
@@ -169,7 +169,7 @@ export async function renderReports() {
             <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Resource Allocation</h3>
             <button id="toggle-all-projects" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">${showAllProjects ? 'Top 3 Projects' : 'View All Projects'}</button>
           </div>
-          <div class="bg-card rounded-2xl p-8 border border-soft/50 shadow-soft min-h-[400px]">
+          <div class="bg-card rounded-2xl p-8 border border-soft shadow-soft min-h-[400px]">
             <canvas id="comparison-grouped-bar"></canvas>
           </div>
         </div>
@@ -206,7 +206,7 @@ export async function renderReports() {
                       const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
                       const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
                       return `
-                        <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-soft/30 hover:border-primary/30 transition-all group/row flex items-center justify-between">
+                        <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-soft hover:border-primary/30 transition-all group/row flex items-center justify-between">
                           <div class="flex items-center gap-4 flex-1 min-w-0">
                             <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
                             <div class="min-w-0">
@@ -241,12 +241,12 @@ export async function renderReports() {
       <!-- Sidebar -->
       <div class="lg:w-[320px] space-y-8 flex-shrink-0">
         <!-- Controls Sidebar -->
-        <div class="bg-card rounded-2xl p-5 border border-soft/50 shadow-soft space-y-4 sticky top-8">
-          <div class="flex gap-1 bg-app rounded-xl p-1 border border-soft/50">
+        <div class="bg-card rounded-2xl p-5 border border-soft shadow-soft space-y-4 sticky top-8">
+          <div class="flex gap-1 bg-app rounded-xl p-1 border border-soft">
             <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === todayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${todayStr}">Today</button>
             <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === yesterdayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${yesterdayStr}">Yesterday</button>
           </div>
-          <div class="flex items-center justify-center px-2 py-3 bg-app/50 rounded-xl border border-soft/30">
+          <div class="flex items-center justify-center px-2 py-3 bg-app/50 rounded-xl border border-soft">
             <input type="date" id="daily-date-picker" value="${dailyReportDate}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-main focus:ring-0 cursor-pointer p-0 text-center">
           </div>
           

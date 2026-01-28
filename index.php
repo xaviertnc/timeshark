@@ -28,7 +28,8 @@
                             teal: '#14b8a6',
                             deep: '#0f172a',
                             sand: '#f8fafc'
-                        }
+                        },
+                        soft: 'var(--border-soft)'
                     },
                     borderRadius: {
                         '3xl': '1rem',

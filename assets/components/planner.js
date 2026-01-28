@@ -247,7 +247,7 @@ export async function renderPlanner() {
                         <tr class="bg-app border-b border-soft">
                             <th class="p-4 py-3 text-left text-[9px] font-black text-dim uppercase tracking-widest min-w-[180px] sticky left-0 bg-sidebar backdrop-blur-md z-30 border-r border-soft">Resource</th>
                             ${config.dates.map(date => `
-                                <th class="p-3 text-center border-r border-soft/30 last:border-r-0 ${config.colWidth} ${date.toDateString() === today.toDateString() ? 'bg-primary/10' : ''}">
+                                <th class="p-3 text-center border-r border-soft last:border-r-0 ${config.colWidth} ${date.toDateString() === today.toDateString() ? 'bg-primary/10' : ''}">
                                     <div class="text-[7px] font-black text-dim uppercase mb-0.5 tracking-tighter">${config.sublabel(date)}</div>
                                     <div class="text-sm font-bold text-muted tracking-tight leading-tight transition-colors ${date.toDateString() === today.toDateString() ? 'text-primary' : ''}">${config.label(date)}</div>
                                 </th>
@@ -256,7 +256,7 @@ export async function renderPlanner() {
                     </thead>
                     <tbody>
                         ${resources.map(resource => `
-                            <tr class="border-b border-soft/50 last:border-b-0 hover:bg-primary/[0.02] transition-colors">
+                            <tr class="border-b border-soft last:border-b-0 hover:bg-primary/[0.02] transition-colors">
                                 <td class="p-4 py-2 bg-sidebar backdrop-blur-md sticky left-0 z-20 border-r border-soft">
                                     ${(() => {
             const formatDur = (sec) => {

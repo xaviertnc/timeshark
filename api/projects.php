@@ -27,11 +27,25 @@ try {
             } else {
                 // Create
                 if (!isset($data['status'])) {
-                    $data['status'] = 'active';
+                    $data['status'] = 'Active';
                 }
                 // Ensure todos array exists if not provided
                 if (!isset($data['todos'])) {
                     $data['todos'] = [];
+                }
+                if (!isset($data['created_at'])) {
+                    $data['created_at'] = date('c');
+                }
+                // Set default sort order to end of list
+                if (!isset($data['sort_order'])) {
+                    $projects = $store->get($file);
+                    $maxOrder = 0;
+                    foreach ($projects as $p) {
+                        if (isset($p['sort_order']) && $p['sort_order'] > $maxOrder) {
+                            $maxOrder = $p['sort_order'];
+                        }
+                    }
+                    $data['sort_order'] = $maxOrder + 1;
                 }
                 $result = $store->insert($file, $data);
             }
