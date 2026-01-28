@@ -19,14 +19,14 @@ class JsonStore {
         if (!file_exists($filePath)) {
             return [];
         }
-        
+
         $content = file_get_contents($filePath);
         return json_decode($content, true) ?? [];
     }
 
     public function save($storeName, $data) {
         $filePath = $this->getFilePath($storeName);
-        
+
         // Atomic write with lock
         $fp = fopen($filePath, 'c+'); // Open for reading and writing; place the file pointer at the beginning.
         if (flock($fp, LOCK_EX)) { // Acquire an exclusive lock
@@ -81,7 +81,7 @@ class JsonStore {
         $newData = array_filter($data, function($item) use ($id) {
             return $item['id'] != $id;
         });
-        
+
         if (count($data) !== count($newData)) {
             $this->save($storeName, array_values($newData));
             return true;

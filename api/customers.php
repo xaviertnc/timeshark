@@ -37,7 +37,7 @@ try {
             if (!$id) {
                 throw new Exception('ID required for deletion');
             }
-            
+
             // Sever links from projects
             $projects = $store->get('projects');
             $updatedProjects = false;

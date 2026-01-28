@@ -169,6 +169,7 @@ select:focus {
     z-index: 9999;
     padding: 10px 14px;
     background: rgba(15, 23, 42, 0.95);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     color: white;
     font-size: 11px;

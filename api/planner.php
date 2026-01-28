@@ -28,7 +28,7 @@ try {
                 if (!isset($data['resource_id'])) $data['resource_id'] = 'me'; // Default to 'me'
                 if (!isset($data['start_date'])) $data['start_date'] = date('Y-m-d');
                 if (!isset($data['end_date'])) $data['end_date'] = date('Y-m-d');
-                
+
                 $result = $store->insert($file, $data);
             }
             echo json_encode($result);

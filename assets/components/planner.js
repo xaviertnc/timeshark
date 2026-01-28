@@ -196,7 +196,7 @@ export async function renderPlanner() {
                  <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2">Resource Flow</h2>
                  <h1 class="text-2xl font-light text-main tracking-tight">Active <span class="font-bold italic text-primary">Planner.</span></h1>
             </div>
-            
+
             <div class="flex items-center gap-6">
                 <div class="flex items-center bg-app p-1 rounded-xl gap-1">
                     <button id="prev-time" class="p-2 hover:bg-card rounded-lg transition-all text-dim hover:text-primary">
@@ -356,12 +356,12 @@ export async function renderPlanner() {
 
                 return `
                                                         <div class="task-card group/item relative w-full" data-id="${t.id}">
-                                                            <div class="text-[10px] rounded-xl px-3 py-3 shadow-md border border-black/5 transition-all overflow-hidden relative" 
-                                                                 style="background-color: ${proj.color}"> 
+                                                            <div class="text-[10px] rounded-xl px-3 py-3 shadow-md border border-black/5 transition-all overflow-hidden relative"
+                                                                 style="background-color: ${proj.color}">
                                                                  <div class="relative z-10">
                                                                     <div class="font-bold mb-1 line-clamp-2 leading-tight ${textColorClass}">${t.title}</div>
                                                                     <div class="opacity-60 font-black uppercase tracking-widest text-[8px] line-clamp-1 ${textColorClass}">${proj.name}</div>
-                                                                    
+
                                                                     ${(() => {
                         // Show progress bar only on the FIRST hourly slot in Day View, or always in other views
                         if (currentScale !== 'day') return true;
@@ -375,13 +375,13 @@ export async function renderPlanner() {
                                                                         </div>
                                                                     ` : ''}
                                                                  </div>
-                                                                 
+
                                                                  <!-- Background highlight for completed tasks -->
                                                                  ${progress >= 100 ? `<div class="absolute inset-0 bg-primary/20 animate-pulse"></div>` : ''}
-                                                                 
+
                                                                  <div class="absolute inset-0 cursor-pointer opacity-0 group-hover/item:opacity-10 transition-opacity bg-black"></div>
                                                              </div>
-                                                             <button class="${currentScale === 'day' ? 'remove-slot-btn' : 'delete-task-btn'} absolute -top-2 -right-2 bg-card text-red-500 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover/item:opacity-100 shadow-xl border border-soft transition-all z-30 transform hover:scale-110 active:scale-90" 
+                                                             <button class="${currentScale === 'day' ? 'remove-slot-btn' : 'delete-task-btn'} absolute -top-2 -right-2 bg-card text-red-500 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover/item:opacity-100 shadow-xl border border-soft transition-all z-30 transform hover:scale-110 active:scale-90"
                                                                      data-id="${t.id}" data-slot="${date.getHours()}">
                                                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                              </button>
@@ -407,7 +407,7 @@ export async function renderPlanner() {
             <div class="min-h-screen w-full flex items-center justify-center p-4">
                 <div class="bg-card rounded-[2rem] shadow-soft w-full max-w-md p-10 transform transition-all scale-95 opacity-0 text-center relative" id="planner-modal-content">
                     <button id="close-planner-modal" class="absolute top-8 right-10 text-dim hover:text-main text-2xl transition-colors">&times;</button>
-                    
+
                     <div class="mb-10">
                         <h3 id="planner-modal-title" class="text-2xl font-bold text-main tracking-tight">Assign Task</h3>
                         <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-3">Planning Registry</p>

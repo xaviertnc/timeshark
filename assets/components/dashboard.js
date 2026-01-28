@@ -11,7 +11,7 @@ export async function renderDashboard() {
 
     container.innerHTML = `
         <div class="max-w-md w-full px-6">
-            
+
             ${!activeTimer ? `
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-light text-slate-700 tracking-tight leading-tight">
@@ -38,7 +38,7 @@ export async function renderDashboard() {
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </div>
                             </div>
-                            
+
                             <div class="flex justify-center mt-10">
                                  <button id="dashboard-stop-btn" class="flex items-center justify-center min-w-[220px] h-16 bg-[#FF3B30] hover:bg-[#FF453A] text-white font-black text-[13px] uppercase tracking-[0.2em] rounded-2xl transition-all duration-150 active:scale-95 shadow-lg shadow-red-500/20 leading-none">
                                     Stop Tracking
@@ -92,10 +92,10 @@ export async function renderDashboard() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="space-y-2">
                                      <label class="block text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Context</label>
-                                     <input type="text" name="description" placeholder="What are we doing?" 
+                                     <input type="text" name="description" placeholder="What are we doing?"
                                         class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-600 text-sm">
                                 </div>
 

@@ -18,7 +18,7 @@ export async function renderCustomers() {
                 New Customer
             </button>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             ${customers.map(c => `
                 <div class="bg-card rounded-3xl p-10 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative text-center">
@@ -53,7 +53,7 @@ export async function renderCustomers() {
             <div class="min-h-screen w-full flex items-center justify-center p-4">
                 <div class="bg-card rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="customer-modal-content">
                     <button id="close-modal-btn" class="absolute top-6 right-8 text-dim hover:text-main text-2xl transition-colors">&times;</button>
-                    
+
                     <div class="mb-10">
                         <h3 class="text-2xl font-bold text-main tracking-tight" id="modal-title">New Customer</h3>
                         <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Customer Details</p>

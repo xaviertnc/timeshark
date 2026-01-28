@@ -51,7 +51,7 @@ try {
                 $id = $data['id'] ?? null;
                 $entries = $store->get($file);
                 $found = false;
-                
+
                 // If ID not provided, stop the latest running one
                 if (!$id) {
                     foreach ($entries as $entry) {

@@ -31,7 +31,7 @@ try {
                 }
                 // Ensure todos array exists if not provided
                 if (!isset($data['todos'])) {
-                    $data['todos'] = []; 
+                    $data['todos'] = [];
                 }
                 $result = $store->insert($file, $data);
             }

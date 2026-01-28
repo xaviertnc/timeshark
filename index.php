@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Chomper</title>
+    <title>Time Shark</title>
     <link rel="icon" type="image/jpeg" href="assets/images/time-chomper-logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/style.css">
@@ -51,7 +51,7 @@
                  <img src="assets/images/time-chomper-logo.jpg" class="w-full h-full object-cover">
             </div>
         </div>
-        
+
         <nav class="flex-1 flex flex-col items-center pt-10 space-y-8">
             <!-- Navigation icons will be injected here. We'll simplify sidebar.js too -->
         </nav>

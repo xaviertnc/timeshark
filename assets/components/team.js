@@ -55,7 +55,7 @@ export async function renderTeam() {
             <div class="min-h-screen w-full flex items-center justify-center p-4">
                 <div class="bg-card rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="team-modal-content">
                     <button id="close-team-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl">&times;</button>
-                    
+
                     <div class="mb-10">
                         <h3 class="text-2xl font-bold text-main tracking-tight" id="modal-title">New Team Member</h3>
                         <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Member Details</p>

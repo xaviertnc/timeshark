@@ -34,7 +34,7 @@ try {
         case 'DELETE':
             $id = $_GET['id'] ?? null;
             if (!$id) throw new Exception('ID required');
-            
+
             // Get team member to find their name
             $member = $store->find($file, $id);
             if ($member) {
