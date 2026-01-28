@@ -1,380 +1,460 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 
+/**
+ * assets/components/reports.js
+ *
+ * Reports - 28 Jan 2026
+ *
+ * Purpose: High-end performance reporting with cumulative build-up, hourly distribution, and planned vs actual analysis.
+ *
+ * @package Chompy
+ * @author Senpai
+ */
+
 let currentPage = 1;
 const DAYS_PER_PAGE = 5;
 let selectedProject = '';
 let selectedMember = '';
+let dailyReportDate = new Date().toLocaleDateString('en-CA');
+let showAllProjects = false;
 
 export async function renderReports() {
-    const state = store.get();
-    const entries = state.timeEntries || [];
-    const projects = state.projects || [];
+  const state = store.get();
+  const entries = state.timeEntries || [];
+  const projects = state.projects || [];
+  const tasks = state.tasks || [];
 
-    const tasks = state.tasks || [];
+  const formatDuration = (secs) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
-    const projectStats = {};
-    let totalSecondsLogged = 0;
+  const formatTime = (dateStr) => {
+    if (!dateStr) return '--:--';
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
 
-    // Calculate Logged Time
-    entries.forEach(e => {
-        if (!e.end_time) return;
-        const diff = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
-        if (!projectStats[e.project_id]) projectStats[e.project_id] = { logged: 0, planned: 0 };
-        projectStats[e.project_id].logged += diff;
-        totalSecondsLogged += diff;
-    });
+  // --- 1. DAILY INSIGHTS DATA ---
+  const dailyEntries = entries.filter(e => e.end_time && e.start_time.startsWith(dailyReportDate));
+  const dailyProjectData = {};
+  let dailyTotalSeconds = 0;
+  
+  // Cumulative Data Points (Minute-by-Minute)
+  const cumulativePoints = Array(1440).fill(0); // 24h * 60m
+  
+  dailyEntries.forEach(e => {
+    const start = new Date(e.start_time);
+    const end = new Date(e.end_time);
+    const pid = e.project_id;
+    
+    if (!dailyProjectData[pid]) dailyProjectData[pid] = { total: 0, hourly: Array(24).fill(0) };
+    
+    let current = new Date(start);
+    while (current < end) {
+      const minuteOfDay = current.getHours() * 60 + current.getMinutes();
+      const hour = current.getHours();
+      const nextHour = new Date(current);
+      nextHour.setHours(hour + 1, 0, 0, 0);
+      const endOfSegment = end < nextHour ? end : nextHour;
+      const segmentSeconds = (endOfSegment - current) / 1000;
+      
+      dailyProjectData[pid].hourly[hour] += segmentSeconds / 60;
+      dailyProjectData[pid].total += segmentSeconds;
+      dailyTotalSeconds += segmentSeconds;
+      
+      // Fill cumulative points
+      for (let i = minuteOfDay; i < 1440; i++) {
+        cumulativePoints[i] += segmentSeconds / 60;
+      }
+      
+      current = endOfSegment;
+    }
+  });
 
-    // Calculate Planned Time from Tasks
-    tasks.forEach(t => {
-        if (!projectStats[t.project_id]) projectStats[t.project_id] = { logged: 0, planned: 0 };
-        let plannedSeconds = 3600;
-        if (t.slots && typeof t.slots === 'string') {
-            plannedSeconds = t.slots.split(',').filter(s => s.trim() !== '').length * 3600;
-        } else {
-            plannedSeconds = (new Date(t.end_date || t.start_date) - new Date(t.start_date)) / 1000 || 3600;
-        }
-        projectStats[t.project_id].planned += plannedSeconds;
-    });
+  // --- 2. PLANNED VS ACTUAL DATA ---
+  const comparisonData = {};
+  entries.filter(e => e.end_time).forEach(e => {
+    const pid = e.project_id;
+    if (!comparisonData[pid]) comparisonData[pid] = { actual: 0, planned: 0 };
+    comparisonData[pid].actual += (new Date(e.end_time) - new Date(e.start_time)) / 3600000;
+  });
 
-    const formatDuration = (secs) => {
-        const h = Math.floor(secs / 3600);
-        const m = Math.floor((secs % 3600) / 60);
-        return h > 0 ? `${h}h ${m}m` : `${m}m`;
-    };
+  tasks.forEach(t => {
+    const pid = t.project_id;
+    if (!comparisonData[pid]) comparisonData[pid] = { actual: 0, planned: 0 };
+    let plannedHours = 1;
+    if (t.slots && typeof t.slots === 'string') plannedHours = t.slots.split(',').filter(s => s.trim() !== '').length;
+    else plannedHours = (new Date(t.end_date || t.start_date) - new Date(t.start_date)) / 3600000 || 1;
+    comparisonData[pid].planned += plannedHours;
+  });
 
-    // Filter logic
-    const filteredEntries = entries.filter(e => {
-        if (!e.end_time) return false;
-        if (selectedProject && e.project_id !== selectedProject) return false;
-        if (selectedMember && (e.resource_id || 'Main') !== selectedMember) return false;
-        return true;
-    });
+  const sortedPidsByRecency = [...new Set(entries.filter(e => e.project_id).map(e => e.project_id))];
+  const displayedComparisonPids = showAllProjects ? Object.keys(comparisonData) : sortedPidsByRecency.slice(0, 3);
 
-    // Grouping logic
-    const grouped = {};
-    filteredEntries.forEach(e => {
-        const d = new Date(e.start_time);
-        const dayKey = d.toLocaleDateString('en-CA'); // YYYY-MM-DD
-        if (!grouped[dayKey]) grouped[dayKey] = {
-            entries: [],
-            total: 0,
-            date: d
-        };
-        const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
-        grouped[dayKey].entries.push(e);
-        grouped[dayKey].total += duration;
-    });
+  // --- 3. HISTORY DATA ---
+  const filteredEntries = entries.filter(e => {
+    if (!e.end_time) return false;
+    if (selectedProject && e.project_id !== selectedProject) return false;
+    if (selectedMember && (e.resource_id || 'Main') !== selectedMember) return false;
+    return true;
+  });
 
-    const sortedDays = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
-    const totalPages = Math.ceil(sortedDays.length / DAYS_PER_PAGE);
-    const paginatedDays = sortedDays.slice((currentPage - 1) * DAYS_PER_PAGE, currentPage * DAYS_PER_PAGE);
+  const grouped = {};
+  filteredEntries.forEach(e => {
+    const d = new Date(e.start_time);
+    const dayKey = d.toLocaleDateString('en-CA');
+    if (!grouped[dayKey]) grouped[dayKey] = { entries: [], total: 0, date: d };
+    grouped[dayKey].entries.push(e);
+    grouped[dayKey].total += (new Date(e.end_time) - new Date(e.start_time)) / 1000;
+  });
 
-    const formatTime = (dateStr) => {
-        if (!dateStr) return '--:--';
-        const d = new Date(dateStr);
-        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    };
+  const sortedDays = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+  const totalPages = Math.ceil(sortedDays.length / DAYS_PER_PAGE);
+  const paginatedDays = sortedDays.slice((currentPage - 1) * DAYS_PER_PAGE, currentPage * DAYS_PER_PAGE);
 
-    const container = document.createElement('div');
-    container.className = "max-w-5xl mx-auto pb-20";
+  const container = document.createElement('div');
+  container.className = "max-w-7xl mx-auto pb-20 px-4 space-y-12";
 
-    container.innerHTML = `
-        <div class="flex items-end justify-between mb-16 px-2">
-            <div>
-                 <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-3">Analytics</h2>
-                 <h1 class="text-3xl font-light text-main tracking-tight">Time <span class="font-bold italic text-primary">Reports.</span></h1>
-            </div>
-            <div class="text-right">
-                <div class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mb-1">Total Time</div>
-                <div class="text-2xl font-light text-muted tracking-tighter">${formatDuration(totalSecondsLogged)}</div>
-            </div>
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+
+  container.innerHTML = `
+    <div class="flex items-end justify-between px-2 pt-8">
+      <div>
+        <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Analytics</h2>
+        <h1 class="text-4xl font-light text-main tracking-tight">System <span class="font-bold italic text-primary">Performance.</span></h1>
+      </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Main Column -->
+      <div class="flex-1 space-y-8 min-w-0">
+        <!-- Dashboard Header -->
+        <div class="flex items-center justify-between px-2">
+          <div>
+            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2">Daily Performance</h3>
+            <p class="text-lg font-bold text-slate-200 uppercase tracking-widest">
+              ${ new Date(dailyReportDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }
+            </p>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] font-black text-dim uppercase tracking-widest mb-1 opacity-50">Total Burned</div>
+            <div class="text-4xl font-black text-primary tracking-tighter tabular-nums leading-none">${ formatDuration(dailyTotalSeconds) }</div>
+          </div>
         </div>
 
-        <div class="bg-card rounded-[2rem] p-12 shadow-soft border border-soft mb-16">
-            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-8">Performance & Fulfillment</h3>
-            <div class="space-y-8">
-                ${Object.entries(projectStats).map(([pid, stats]) => {
-        const proj = projects.find(p => p.id == pid) || { name: 'Unknown', color: '#eceff1' };
-        const fulfillment = stats.planned > 0 ? Math.min(100, Math.round((stats.logged / stats.planned) * 100)) : 0;
-        const allocation = totalSecondsLogged > 0 ? Math.round((stats.logged / totalSecondsLogged) * 100) : 0;
-
-        return `
-                        <div>
-                            <div class="flex justify-between items-end mb-3">
-                                <div>
-                                    <span class="text-sm font-bold text-main/80">${proj.name}</span>
-                                    <span class="ml-2 text-[9px] font-black text-primary uppercase tracking-widest">${fulfillment}% Fulfilled</span>
-                                    <span class="ml-2 text-[8px] font-black text-dim uppercase opacity-50">(${allocation}% of total volume)</span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-[11px] font-bold text-main block">${formatDuration(stats.logged)}</span>
-                                    <span class="text-[8px] font-black text-dim uppercase tracking-widest">of ${formatDuration(stats.planned)} target</span>
-                                </div>
-                            </div>
-                            <div class="w-full bg-app rounded-full h-1 overflow-hidden">
-                                <div class="h-full transition-all duration-1000" style="width: ${fulfillment}%; background-color: ${proj.color}"></div>
-                            </div>
-                        </div>
-                    `;
-    }).join('')}
-                ${Object.keys(projectStats).length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-[9px]">No logs or assignments found</p>' : ''}
-            </div>
+        <!-- Cumulative Build-up Card -->
+        <div class="bg-card rounded-2xl p-8 border border-soft/50 shadow-soft relative overflow-hidden group">
+          <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-8">Cumulative Build-up (8h Goal)</h4>
+          <div class="h-64">
+            <canvas id="cumulative-build-chart"></canvas>
+          </div>
         </div>
 
-        <!-- Filters -->
-        <div class="flex flex-wrap items-center gap-4 mb-8 px-2">
-            <div class="flex-1 min-w-[200px]">
-                <label class="text-[9px] font-black text-dim uppercase tracking-widest mb-1.5 block ml-1">Filter Project</label>
-                <select id="filter-project" class="w-full bg-card border border-soft rounded-xl py-2.5 px-4 text-xs font-bold text-main appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
-                    <option value="">All Projects</option>
-                    ${projects.map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-                </select>
-            </div>
-            <div class="flex-1 min-w-[200px]">
-                <label class="text-[9px] font-black text-dim uppercase tracking-widest mb-1.5 block ml-1">Filter Member</label>
-                <select id="filter-member" class="w-full bg-card border border-soft rounded-xl py-2.5 px-4 text-xs font-bold text-main appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
-                    <option value="">All Members</option>
-                    ${(state.team || []).map(m => `<option value="${m.name}" ${selectedMember === m.name ? 'selected' : ''}>${m.name}</option>`).join('')}
-                </select>
-            </div>
-            <div class="pt-5">
-                <button id="clear-filters" class="text-[9px] font-black text-dim hover:text-primary uppercase tracking-widest transition-colors">Clear</button>
-            </div>
+        <!-- Hourly Distribution Card -->
+        <div class="bg-card rounded-2xl p-8 border border-soft/50 shadow-soft">
+          <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-8">Hourly Project Intensity</h4>
+          <div class="h-64">
+            <canvas id="daily-stacked-bar"></canvas>
+          </div>
         </div>
 
-        <!-- History -->
-        <div class="space-y-10">
-            <div class="flex items-center justify-between px-2">
-                <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Time History</h3>
-                ${totalPages > 1 ? `
-                    <div class="flex items-center gap-1">
-                        <button id="prev-page" ${currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app transition-colors disabled:opacity-20">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
-                        </button>
-                        <span class="text-[10px] font-black text-dim px-2">PAGE ${currentPage} / ${totalPages}</span>
-                        <button id="next-page" ${currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app transition-colors disabled:opacity-20">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                        </button>
-                    </div>
-                ` : ''}
-            </div>
+        <!-- Planned vs Actual Card -->
+        <div class="space-y-4 pt-4">
+          <div class="flex items-center justify-between px-2">
+            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Resource Allocation</h3>
+            <button id="toggle-all-projects" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">${showAllProjects ? 'Top 3 Projects' : 'View All Projects'}</button>
+          </div>
+          <div class="bg-card rounded-2xl p-8 border border-soft/50 shadow-soft min-h-[400px]">
+            <canvas id="comparison-grouped-bar"></canvas>
+          </div>
+        </div>
 
+        <!-- Detailed History -->
+        <div class="space-y-6 pt-8">
+          <div class="flex items-center justify-between px-2">
+            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Time History</h3>
+            <div class="flex items-center gap-3">
+              <select id="filter-project" class="bg-card border border-soft rounded-lg py-1.5 px-3 text-[9px] font-black text-dim uppercase tracking-widest appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
+                <option value="">All Projects</option>
+                ${projects.map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+              </select>
+              ${totalPages > 1 ? `
+                <div class="flex items-center gap-1 bg-card rounded-lg p-0.5 border border-soft">
+                  <button id="prev-page" ${currentPage === 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-app transition-colors disabled:opacity-20"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg></button>
+                  <span class="text-[9px] font-black text-dim px-2">${currentPage}/${totalPages}</span>
+                  <button id="next-page" ${currentPage === totalPages ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-app transition-colors disabled:opacity-20"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+          <div class="space-y-10">
             ${paginatedDays.map(dayKey => {
-        const group = grouped[dayKey];
-        const displayDate = group.date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-
-        return `
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between px-2 opacity-50">
-                            <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${displayDate}</div>
-                            <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${formatDuration(group.total)}</div>
+              const group = grouped[dayKey];
+              return `
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between px-2 opacity-40">
+                    <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${group.date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                    <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${formatDuration(group.total)}</div>
+                  </div>
+                  <div class="space-y-2">
+                    ${group.entries.map(e => {
+                      const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
+                      return `
+                        <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-soft/30 hover:border-primary/30 transition-all group/row flex items-center justify-between">
+                          <div class="flex items-center gap-4 flex-1 min-w-0">
+                            <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
+                            <div class="min-w-0">
+                              <h4 class="text-sm font-bold text-main truncate">${e.description || 'No description'}</h4>
+                              <p class="text-[10px] font-bold text-dim uppercase tracking-wider">${proj.name}</p>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-6">
+                            <div class="text-right tabular-nums">
+                              <div class="text-[10px] font-black text-dim uppercase tracking-widest opacity-30">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
+                              <div class="text-sm font-black text-main">${formatDuration((new Date(e.end_time) - new Date(e.start_time)) / 1000)}</div>
+                            </div>
+                            <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                              <button class="edit-btn p-1.5 text-dim hover:text-primary transition-colors" data-id="${e.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                              <button class="delete-btn p-1.5 text-dim hover:text-red-400 transition-colors" data-id="${e.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            </div>
+                          </div>
                         </div>
-                        <div class="space-y-3">
-                            ${group.entries.map(e => {
-            const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
-            const duration = formatDuration((new Date(e.end_time) - new Date(e.start_time)) / 1000);
-            const member = state.team?.find(m => m.name === e.resource_id) || { color: '#94a3b8' };
-
-            return `
-                                    <div class="bg-card rounded-[1.25rem] p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between">
-                                        <div class="flex items-center gap-4 flex-1">
-                                            <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
-                                            <div class="min-w-0">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <h4 class="text-xs font-bold text-main tracking-tight truncate">${proj.name}</h4>
-                                                    <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${e.resource_id || 'Main'}</span>
-                                                </div>
-                                                <p class="text-[10px] font-medium text-muted truncate">${e.description || 'No description provided'}</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex items-center gap-8">
-                                            <div class="text-right whitespace-nowrap">
-                                                <div class="text-[10px] font-black text-dim uppercase tracking-widest mb-1 opacity-40">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
-                                                <div class="text-sm font-bold text-main tracking-tighter tabular-nums">${duration}</div>
-                                            </div>
-                                            <div class="flex gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
-                                                <button class="edit-btn text-dim hover:text-primary transition-colors p-1.5" data-id="${e.id}">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                                </button>
-                                                <button class="delete-btn text-dim hover:text-red-300 transition-colors p-1.5" data-id="${e.id}">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-        }).join('')}
-                        </div>
-                    </div>
-                `;
-    }).join('')}
-
-            ${sortedDays.length === 0 ? `
-                <div class="text-center py-20 opacity-20">
-                    <p class="text-[10px] font-black uppercase tracking-[0.4em]">No matching records</p>
+                      `;
+                    }).join('')}
+                  </div>
                 </div>
-            ` : ''}
+              `;
+            }).join('')}
+          </div>
         </div>
-    `;
+      </div>
 
-    const modalPortal = document.getElementById('modal-portal');
-    modalPortal.innerHTML = `
-        <div id="edit-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
-            <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-card rounded-[2rem] shadow-soft w-full max-w-md p-10 transform transition-all scale-95 opacity-0 text-center relative" id="edit-modal-content">
-                    <button id="close-edit-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl transition-colors">&times;</button>
-
-                    <div class="mb-10">
-                        <h3 class="text-2xl font-bold text-main tracking-tight">Edit Entry</h3>
-                        <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Log Adjustment</p>
-                    </div>
-
-                    <form id="edit-form" class="space-y-8">
-                        <input type="hidden" name="id">
-                        <div class="space-y-3">
-                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Project</label>
-                            <select name="project_id" required class="w-full bg-app border-none rounded-2xl py-4 px-6 text-center text-main font-medium cursor-pointer appearance-none">
-                                ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="space-y-3">
-                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Description</label>
-                            <input type="text" name="description" placeholder="Enter description" class="w-full text-center py-4 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-3">
-                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Start Time</label>
-                                <input type="datetime-local" name="start_time" required class="w-full text-center py-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-xs text-main">
-                            </div>
-                            <div class="space-y-3">
-                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block">End Time</label>
-                                <input type="datetime-local" name="end_time" required class="w-full text-center py-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-xs text-main">
-                            </div>
-                        </div>
-                        <div class="pt-8">
-                            <button type="submit" class="w-full h-18 bg-primary hover:bg-primary-dark text-white font-black text-[10px] uppercase tracking-[0.4em] rounded-2xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 active:scale-95 py-5">
-                                Save Changes
-                            </button>
-                        </div>
-                    </form>
-                </div>
+      <!-- Sidebar -->
+      <div class="lg:w-[320px] space-y-8 flex-shrink-0">
+        <!-- Controls Sidebar -->
+        <div class="bg-card rounded-2xl p-5 border border-soft/50 shadow-soft space-y-4 sticky top-8">
+          <div class="flex gap-1 bg-app rounded-xl p-1 border border-soft/50">
+            <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === todayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${todayStr}">Today</button>
+            <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === yesterdayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${yesterdayStr}">Yesterday</button>
+          </div>
+          <div class="flex items-center justify-center px-2 py-3 bg-app/50 rounded-xl border border-soft/30">
+            <input type="date" id="daily-date-picker" value="${dailyReportDate}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-main focus:ring-0 cursor-pointer p-0 text-center">
+          </div>
+          
+          <!-- Daily Pie -->
+          <div class="pt-4 space-y-6">
+            <h4 class="text-[9px] font-black text-dim uppercase tracking-widest px-1">Daily Mix</h4>
+            <div class="h-48 relative">
+              <canvas id="daily-pie"></canvas>
             </div>
+            <div id="daily-pie-legend" class="space-y-2 px-1"></div>
+          </div>
         </div>
-    `;
+      </div>
+    </div>
+  `;
 
-    const modal = modalPortal.querySelector('#edit-modal');
-    const modalContent = modalPortal.querySelector('#edit-modal-content');
-    const editForm = modalPortal.querySelector('#edit-form');
-
-    const openModal = (entry) => {
-        const formatDate = (dateStr) => {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            const z = (n) => n.toString().padStart(2, '0');
-            return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
-        };
-
-        editForm.id.value = entry.id;
-        editForm.project_id.value = entry.project_id || '';
-        editForm.description.value = entry.description || '';
-        editForm.start_time.value = formatDate(entry.start_time);
-        editForm.end_time.value = formatDate(entry.end_time);
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        setTimeout(() => {
-            modalContent.classList.remove('scale-95', 'opacity-0');
-            modalContent.classList.add('scale-100', 'opacity-100');
-        }, 10);
-    };
-
-    const closeModal = () => {
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modalContent.classList.add('scale-95', 'opacity-0');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 200);
-    };
-
-    modalPortal.querySelector('#close-edit-modal').onclick = closeModal;
-
-    editForm.onsubmit = async (event) => {
-        event.preventDefault();
-        const formData = new FormData(editForm);
-        const data = Object.fromEntries(formData.entries());
-        data.start_time = new Date(data.start_time).toISOString();
-        data.end_time = new Date(data.end_time).toISOString();
-
-        try {
-            await api.post('time-entries.php', data);
-            store.update('timeEntries', await api.get('time-entries.php'));
-            closeModal();
-            refreshView();
-        } catch (err) {
-            alert('Update failed');
-        }
-    };
-
-    container.addEventListener('change', (event) => {
-        if (event.target.id === 'filter-project') {
-            selectedProject = event.target.value;
-            currentPage = 1;
-            refreshView();
-        }
-        if (event.target.id === 'filter-member') {
-            selectedMember = event.target.value;
-            currentPage = 1;
-            refreshView();
-        }
-    });
-
-    container.addEventListener('click', async (event) => {
-        if (event.target.id === 'clear-filters') {
-            selectedProject = '';
-            selectedMember = '';
-            currentPage = 1;
-            refreshView();
-        }
-        if (event.target.closest('#prev-page')) {
-            if (currentPage > 1) {
-                currentPage--;
-                refreshView();
+  // --- CHART INITIALIZATION ---
+  setTimeout(() => {
+    // 1. Cumulative Build-up
+    const cumCtx = container.querySelector('#cumulative-build-chart');
+    if (cumCtx) {
+      new Chart(cumCtx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: 1440 }, (_, i) => `${Math.floor(i/60)}:${String(i%60).padStart(2,'0')}`),
+          datasets: [
+            {
+              label: 'Time Logged',
+              data: cumulativePoints,
+              borderColor: '#338a81',
+              backgroundColor: 'rgba(51, 138, 129, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Target (8h)',
+              data: Array(1440).fill(480),
+              borderColor: '#ef4444',
+              borderWidth: 1,
+              borderDash: [5, 5],
+              fill: false,
+              pointRadius: 0
             }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i/60}:00` : '' } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${(v/60).toFixed(0)}h` } }
+          }
         }
-        if (event.target.closest('#next-page')) {
-            if (currentPage < totalPages) {
-                currentPage++;
-                refreshView();
-            }
-        }
-
-        const deleteBtn = event.target.closest('.delete-btn');
-        if (deleteBtn) {
-            if (confirm('Delete this entry?')) {
-                const id = deleteBtn.dataset.id;
-                await api.delete(`time-entries.php?id=${id}`);
-                store.update('timeEntries', await api.get('time-entries.php'));
-                refreshView();
-            }
-            return;
-        }
-
-        const editBtn = event.target.closest('.edit-btn');
-        if (editBtn) {
-            const id = editBtn.dataset.id;
-            const entry = entries.find(e => e.id == id);
-            if (entry) openModal(entry);
-        }
-    });
-
-    async function refreshView() {
-        const app = document.getElementById('app');
-        app.innerHTML = '';
-        app.appendChild(await renderReports());
+      });
     }
 
-    return container;
+    // 2. Daily Stacked Bar
+    const dailyBarCtx = container.querySelector('#daily-stacked-bar');
+    if (dailyBarCtx) {
+      const datasets = Object.entries(dailyProjectData).map(([pid, data]) => ({
+        label: projects.find(p => p.id == pid)?.name || 'Unknown',
+        data: data.hourly,
+        backgroundColor: projects.find(p => p.id == pid)?.color || '#eceff1',
+        borderRadius: 4,
+        borderWidth: 0
+      }));
+      new Chart(dailyBarCtx, {
+        type: 'bar',
+        data: { labels: Array.from({ length: 24 }, (_, i) => `${i}:00`), datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
+          scales: {
+            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 4 === 0 ? `${i}:00` : '' } },
+            y: { stacked: true, beginAtZero: true, max: 60, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', stepSize: 15, callback: (v) => `${v}m` } }
+          }
+        }
+      });
+    }
+
+    // 3. Daily Pie
+    const dailyPieCtx = container.querySelector('#daily-pie');
+    if (dailyPieCtx) {
+      const pieData = Object.entries(dailyProjectData).map(([pid, data]) => ({
+        total: data.total,
+        color: projects.find(p => p.id == pid)?.color || '#eceff1',
+        name: projects.find(p => p.id == pid)?.name || 'Unknown'
+      }));
+      new Chart(dailyPieCtx, {
+        type: 'doughnut',
+        data: { labels: pieData.map(d => d.name), datasets: [{ data: pieData.map(d => d.total / 60), backgroundColor: pieData.map(d => d.color), borderWidth: 0, cutout: '80%' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+      container.querySelector('#daily-pie-legend').innerHTML = pieData.map(d => `
+        <div class="flex items-center justify-between text-[10px] font-bold">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${d.color}"></div>
+            <span class="text-slate-400 truncate">${d.name}</span>
+          </div>
+          <span class="text-white font-black ml-2">${formatDuration(d.total)}</span>
+        </div>
+      `).join('');
+    }
+
+    // 4. Comparison Grouped Bar
+    const compBarCtx = container.querySelector('#comparison-grouped-bar');
+    if (compBarCtx) {
+      const labels = displayedComparisonPids.map(pid => projects.find(p => p.id == pid)?.name || 'Unknown');
+      const actualData = displayedComparisonPids.map(pid => comparisonData[pid]?.actual || 0);
+      const plannedData = displayedComparisonPids.map(pid => comparisonData[pid]?.planned || 0);
+      new Chart(compBarCtx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Actual Work', data: actualData, backgroundColor: '#338a81', borderRadius: 4, barThickness: 24 },
+            { label: 'Planned Time', data: plannedData, backgroundColor: '#475569', borderRadius: 4, barThickness: 24 }
+          ]
+        },
+        options: {
+          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+          plugins: { 
+            legend: { position: 'top', align: 'end', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' }, color: '#94a3b8' } },
+            afterDatasetsDraw: (chart) => {
+              const { ctx, data } = chart;
+              ctx.save(); ctx.font = 'bold 10px Outfit'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+              data.datasets.forEach((dataset, i) => {
+                chart.getDatasetMeta(i).data.forEach((bar, index) => {
+                  const val = dataset.data[index];
+                  if (val > 0) ctx.fillText(`${val.toFixed(1)}h`, bar.x + 8, bar.y);
+                });
+              });
+              ctx.restore();
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${v}h` }, suggestedMax: Math.max(...actualData, ...plannedData) * 1.2 },
+            y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' }, color: '#f8fafc' } }
+          }
+        }
+      });
+    }
+  }, 100);
+
+  // --- EVENT HANDLERS ---
+  container.addEventListener('click', async (e) => {
+    const dayBtn = e.target.closest('.day-select-btn');
+    if (dayBtn) { dailyReportDate = dayBtn.dataset.date; refreshView(); }
+    if (e.target.id === 'toggle-all-projects') { showAllProjects = !showAllProjects; refreshView(); }
+    if (e.target.closest('#prev-page') && currentPage > 1) { currentPage--; refreshView(); }
+    if (e.target.closest('#next-page') && currentPage < totalPages) { currentPage++; refreshView(); }
+    
+    const deleteBtn = e.target.closest('.delete-btn');
+    if (deleteBtn && confirm('Delete this entry?')) {
+      await api.delete(`time-entries.php?id=${deleteBtn.dataset.id}`);
+      store.update('timeEntries', await api.get('time-entries.php'));
+      refreshView();
+    }
+
+    const editBtn = e.target.closest('.edit-btn');
+    if (editBtn) {
+      const entry = entries.find(ent => ent.id == editBtn.dataset.id);
+      if (entry) openModal(entry);
+    }
+  });
+
+  container.querySelector('#daily-date-picker').onchange = (e) => { dailyReportDate = e.target.value; refreshView(); };
+  container.querySelector('#filter-project').onchange = (e) => { selectedProject = e.target.value; currentPage = 1; refreshView(); };
+
+  async function refreshView() {
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+    app.appendChild(await renderReports());
+  }
+
+  // Modal logic simplified for brevity
+  const openModal = (entry) => {
+    const modalPortal = document.getElementById('modal-portal');
+    modalPortal.innerHTML = `<div id="edit-modal" class="fixed inset-0 bg-secondary/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+      <div class="bg-card rounded-2xl p-10 w-full max-w-lg shadow-2xl border border-soft">
+        <h3 class="text-2xl font-bold text-main mb-8">Edit Entry</h3>
+        <form id="edit-form" class="space-y-6">
+          <input type="hidden" name="id" value="${entry.id}">
+          <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Project</label>
+          <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold">${projects.map(p => `<option value="${p.id}" ${entry.project_id == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}</select></div>
+          <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Description</label>
+          <input type="text" name="description" value="${entry.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Start</label><input type="datetime-local" name="start_time" value="${entry.start_time.slice(0,16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
+            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">End</label><input type="datetime-local" name="end_time" value="${entry.end_time.slice(0,16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
+          </div>
+          <div class="flex gap-4 pt-6">
+            <button type="button" onclick="this.closest('#edit-modal').remove()" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest">Cancel</button>
+            <button type="submit" class="flex-[2] py-4 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+    modalPortal.querySelector('form').onsubmit = async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target).entries());
+      data.start_time = new Date(data.start_time).toISOString();
+      data.end_time = new Date(data.end_time).toISOString();
+      await api.post('time-entries.php', data);
+      store.update('timeEntries', await api.get('time-entries.php'));
+      modalPortal.innerHTML = '';
+      refreshView();
+    };
+  };
+
+  return container;
 }

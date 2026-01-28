@@ -232,7 +232,7 @@ export async function renderPlanner() {
             </div>
         </div>
 
-        <div class="bg-card rounded-[2rem] border border-soft shadow-soft overflow-hidden">
+        <div class="bg-card rounded-2xl border border-soft shadow-soft overflow-hidden">
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full border-collapse">
                     <thead>
@@ -405,7 +405,7 @@ export async function renderPlanner() {
     modalPortal.innerHTML = `
         <div id="planner-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
             <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-card rounded-[2rem] shadow-soft w-full max-w-md p-10 transform transition-all scale-95 opacity-0 text-center relative" id="planner-modal-content">
+                <div class="bg-card rounded-2xl shadow-soft w-full max-w-md p-10 transform transition-all scale-95 opacity-0 text-center relative" id="planner-modal-content">
                     <button id="close-planner-modal" class="absolute top-8 right-10 text-dim hover:text-main text-2xl transition-colors">&times;</button>
 
                     <div class="mb-10">

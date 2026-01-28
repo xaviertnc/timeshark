@@ -24,7 +24,7 @@ export async function renderProjects() {
             ${projects.map(p => {
         const customer = customers.find(c => c.id == p.customer_id);
         return `
-                    <div class="bg-card rounded-3xl p-8 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative project-card" data-id="${p.id}">
+                    <div class="bg-card rounded-2xl p-8 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative project-card" data-id="${p.id}">
                         <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-2">
                              <button class="edit-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${p.id}">
                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -37,7 +37,7 @@ export async function renderProjects() {
                         <div class="flex flex-col h-full pointer-events-none items-center text-center">
                             <div class="w-10 h-1.5 rounded-full mb-6" style="background-color: ${p.color || '#eceff1'}"></div>
                             <h3 class="text-xl font-bold text-main mb-1 leading-tight">${p.name}</h3>
-                            <p class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">${customer ? customer.name : 'No Customer'}</p>
+                            <p class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">${customer ? (customer.is_client ? 'Client: ' : 'Customer: ') + customer.name : 'No Custodian'}</p>
                         </div>
                     </div>
                 `;
@@ -55,7 +55,7 @@ export async function renderProjects() {
     modalPortal.innerHTML = `
         <div id="project-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
             <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-card rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="project-modal-content">
+                <div class="bg-card rounded-2xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="project-modal-content">
                     <button id="close-project-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl transition-colors">&times;</button>
 
                     <div class="mb-10">
@@ -71,11 +71,16 @@ export async function renderProjects() {
                         </div>
 
                         <div class="space-y-3">
-                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Customer</label>
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Custodian (Client or Customer)</label>
                             <div class="relative">
                                 <select name="customer_id" required class="w-full bg-app border-none rounded-2xl py-4 px-6 appearance-none cursor-pointer text-center text-main font-bold">
-                                    <option value="">Select Customer...</option>
-                                    ${customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                    <option value="">Select Custodian...</option>
+                                    <optgroup label="Clients">
+                                        ${customers.filter(c => c.is_client).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="Individual Customers">
+                                        ${customers.filter(c => !c.is_client && !c.client_id).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                    </optgroup>
                                 </select>
                             </div>
                         </div>

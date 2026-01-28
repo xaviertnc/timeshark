@@ -21,7 +21,7 @@ export async function renderTeam() {
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             ${team.map(m => `
-                <div class="bg-card rounded-3xl p-10 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative flex flex-col items-center text-center">
+                <div class="bg-card rounded-2xl p-10 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative flex flex-col items-center text-center">
                      <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1">
                         <button class="edit-member-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${m.id}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -53,7 +53,7 @@ export async function renderTeam() {
     modalPortal.innerHTML = `
         <div id="team-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
             <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-card rounded-3xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="team-modal-content">
+                <div class="bg-card rounded-2xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative" id="team-modal-content">
                     <button id="close-team-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl">&times;</button>
 
                     <div class="mb-10">

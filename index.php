@@ -6,6 +6,7 @@
     <title>Time Shark</title>
     <link rel="icon" type="image/jpeg" href="assets/images/time-chomper-logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="assets/style.css">
     <script>
         tailwind.config = {
@@ -30,8 +31,8 @@
                         }
                     },
                     borderRadius: {
-                        '3xl': '1.5rem',
-                        '4xl': '2rem',
+                        '3xl': '1rem',
+                        '4xl': '1.25rem',
                     },
                     fontFamily: {
                         sans: ['Outfit', 'Inter', 'sans-serif'],
@@ -47,9 +48,9 @@
     <!-- Sidebar: Ultra Zen -->
     <aside class="w-20 lg:w-24 bg-sidebar border-r border-soft flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
         <div class="h-24 flex items-center justify-center">
-            <div class="w-12 h-12 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500">
+            <a href="#" class="w-12 h-12 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500 block">
                  <img src="assets/images/time-chomper-logo.jpg" class="w-full h-full object-cover">
-            </div>
+            </a>
         </div>
 
         <nav class="flex-1 flex flex-col items-center pt-10 space-y-8">

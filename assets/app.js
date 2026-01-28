@@ -38,8 +38,20 @@ async function handleRoute() {
         app.innerHTML = '';
         app.appendChild(content);
 
-        pageTitle.textContent = route.title;
-        setTimeout(() => headerContainer.style.opacity = '1', 100);
+    pageTitle.textContent = route.title;
+    
+    // Hide header timer on dashboard
+    const headerTimer = document.getElementById('active-timer-display');
+    if (headerTimer) {
+      const isDashboard = hash === '' || hash === '#' || hash === '#dashboard';
+      if (isDashboard) {
+        headerTimer.style.display = 'none';
+      } else if (store.get().activeTimer) {
+        headerTimer.style.display = 'flex';
+      }
+    }
+
+    setTimeout(() => headerContainer.style.opacity = '1', 100);
 
         updateActiveLink(hash);
     } catch (e) {
@@ -107,8 +119,14 @@ function startHeaderTicker(timerEntry) {
     const counter = document.getElementById('timer-counter');
     const stopBtn = document.getElementById('stop-timer-btn-header');
 
-    display.classList.remove('hidden');
-    display.classList.add('flex');
+    const hash = window.location.hash;
+    if (hash === '' || hash === '#') {
+        display.style.display = 'none';
+    } else {
+        display.style.display = 'flex';
+        display.classList.remove('hidden');
+    }
+    
     projectName.textContent = timerEntry.project_name;
 
     if (window.timerInterval) clearInterval(window.timerInterval);
