@@ -4,12 +4,8 @@ import { api } from '../utils/api.js';
 /**
  * assets/components/reports.js
  *
- * Reports - 28 Jan 2026
- *
- * Purpose: High-end performance reporting with cumulative build-up, hourly distribution, and planned vs actual analysis.
- *
- * @package Time Shark
- * @author Senpai
+ * Reports - 08 Feb 2026
+ * Fixed modals, project selection logic and interactive pointer events.
  */
 
 let currentPage = 1;
@@ -17,13 +13,11 @@ const DAYS_PER_PAGE = 5;
 let selectedProject = '';
 let selectedMember = '';
 let dailyReportDate = new Date().toLocaleDateString('en-CA');
-let showAllProjects = false;
 
 export async function renderReports() {
   const state = store.get();
   const entries = state.timeEntries || [];
   const projects = state.projects || [];
-  const tasks = state.tasks || [];
 
   const formatDuration = (secs) => {
     const h = Math.floor(secs / 3600);
@@ -37,21 +31,23 @@ export async function renderReports() {
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
-  // --- 1. DAILY INSIGHTS DATA ---
+  const formatDateForInput = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const z = (n) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+  };
+
   const dailyEntries = entries.filter(e => e.end_time && e.start_time.startsWith(dailyReportDate));
   const dailyProjectData = {};
   let dailyTotalSeconds = 0;
-
-  // Cumulative Data Points (Minute-by-Minute)
-  const cumulativePoints = Array(1440).fill(0); // 24h * 60m
+  const cumulativePoints = Array(1440).fill(0);
 
   dailyEntries.forEach(e => {
     const start = new Date(e.start_time);
     const end = new Date(e.end_time);
     const pid = e.project_id;
-
     if (!dailyProjectData[pid]) dailyProjectData[pid] = { total: 0, hourly: Array(24).fill(0) };
-
     let current = new Date(start);
     while (current < end) {
       const minuteOfDay = current.getHours() * 60 + current.getMinutes();
@@ -60,45 +56,18 @@ export async function renderReports() {
       nextHour.setHours(hour + 1, 0, 0, 0);
       const endOfSegment = end < nextHour ? end : nextHour;
       const segmentSeconds = (endOfSegment - current) / 1000;
-
       dailyProjectData[pid].hourly[hour] += segmentSeconds / 60;
       dailyProjectData[pid].total += segmentSeconds;
       dailyTotalSeconds += segmentSeconds;
-
-      // Fill cumulative points
-      for (let i = minuteOfDay; i < 1440; i++) {
-        cumulativePoints[i] += segmentSeconds / 60;
-      }
-
+      for (let i = minuteOfDay; i < 1440; i++) cumulativePoints[i] += segmentSeconds / 60;
       current = endOfSegment;
     }
   });
 
-  // --- 2. PLANNED VS ACTUAL DATA ---
-  const comparisonData = {};
-  entries.filter(e => e.end_time).forEach(e => {
-    const pid = e.project_id;
-    if (!comparisonData[pid]) comparisonData[pid] = { actual: 0, planned: 0 };
-    comparisonData[pid].actual += (new Date(e.end_time) - new Date(e.start_time)) / 3600000;
-  });
-
-  tasks.forEach(t => {
-    const pid = t.project_id;
-    if (!comparisonData[pid]) comparisonData[pid] = { actual: 0, planned: 0 };
-    let plannedHours = 1;
-    if (t.slots && typeof t.slots === 'string') plannedHours = t.slots.split(',').filter(s => s.trim() !== '').length;
-    else plannedHours = (new Date(t.end_date || t.start_date) - new Date(t.start_date)) / 3600000 || 1;
-    comparisonData[pid].planned += plannedHours;
-  });
-
-  const sortedPidsByRecency = [...new Set(entries.filter(e => e.project_id).map(e => e.project_id))];
-  const displayedComparisonPids = showAllProjects ? Object.keys(comparisonData) : sortedPidsByRecency.slice(0, 3);
-
-  // --- 3. HISTORY DATA ---
   const filteredEntries = entries.filter(e => {
     if (!e.end_time) return false;
-    if (selectedProject && e.project_id !== selectedProject) return false;
-    if (selectedMember && (e.resource_id || 'Main') !== selectedMember) return false;
+    if (selectedProject && String(e.project_id) !== String(selectedProject)) return false;
+    if (selectedMember && String(e.resource_id || 'Main') !== String(selectedMember)) return false;
     return true;
   });
 
@@ -131,9 +100,7 @@ export async function renderReports() {
     </div>
 
     <div class="flex flex-col lg:flex-row gap-8">
-      <!-- Main Column -->
       <div class="flex-1 space-y-8 min-w-0">
-        <!-- Dashboard Header -->
         <div class="flex items-center justify-between px-2">
           <div>
             <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2">Daily Performance</h3>
@@ -147,34 +114,16 @@ export async function renderReports() {
           </div>
         </div>
 
-        <!-- Cumulative Build-up Card -->
         <div class="bg-card rounded-2xl p-8 border border-soft shadow-soft relative overflow-hidden group">
           <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-8">Cumulative Build-up (8h Goal)</h4>
-          <div class="h-64">
-            <canvas id="cumulative-build-chart"></canvas>
-          </div>
+          <div class="h-64"><canvas id="cumulative-build-chart"></canvas></div>
         </div>
 
-        <!-- Hourly Distribution Card -->
         <div class="bg-card rounded-2xl p-8 border border-soft shadow-soft">
           <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-8">Hourly Project Intensity</h4>
-          <div class="h-64">
-            <canvas id="daily-stacked-bar"></canvas>
-          </div>
+          <div class="h-64"><canvas id="daily-stacked-bar"></canvas></div>
         </div>
 
-        <!-- Planned vs Actual Card -->
-        <div class="space-y-4 pt-4">
-          <div class="flex items-center justify-between px-2">
-            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Resource Allocation</h3>
-            <button id="toggle-all-projects" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">${showAllProjects ? 'Top 3 Projects' : 'View All Projects'}</button>
-          </div>
-          <div class="bg-card rounded-2xl p-8 border border-soft shadow-soft min-h-[400px]">
-            <canvas id="comparison-grouped-bar"></canvas>
-          </div>
-        </div>
-
-        <!-- Detailed History -->
         <div class="space-y-6 pt-8">
           <div class="flex items-center justify-between px-2">
             <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Time History</h3>
@@ -203,18 +152,14 @@ export async function renderReports() {
                   </div>
                   <div class="space-y-2">
                     ${group.entries.map(e => {
-      const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
-      const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
+      const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
       return `
                         <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-soft hover:border-primary/30 transition-all group/row flex items-center justify-between">
                           <div class="flex items-center gap-4 flex-1 min-w-0">
                             <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
                             <div class="min-w-0">
                               <h4 class="text-sm font-bold text-main truncate">${e.description || 'No description'}</h4>
-                              <p class="text-[10px] font-bold text-dim uppercase tracking-wider">
-                                ${proj.name}
-                                ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}
-                              </p>
+                              <p class="text-[10px] font-bold text-dim uppercase tracking-wider">${proj.name}</p>
                             </div>
                           </div>
                           <div class="flex items-center gap-6">
@@ -238,9 +183,7 @@ export async function renderReports() {
         </div>
       </div>
 
-      <!-- Sidebar -->
       <div class="lg:w-[320px] space-y-8 flex-shrink-0">
-        <!-- Controls Sidebar -->
         <div class="bg-card rounded-2xl p-5 border border-soft shadow-soft space-y-4 sticky top-8">
           <div class="flex gap-1 bg-app rounded-xl p-1 border border-soft">
             <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === todayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${todayStr}">Today</button>
@@ -249,13 +192,9 @@ export async function renderReports() {
           <div class="flex items-center justify-center px-2 py-3 bg-app/50 rounded-xl border border-soft">
             <input type="date" id="daily-date-picker" value="${dailyReportDate}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-main focus:ring-0 cursor-pointer p-0 text-center">
           </div>
-          
-          <!-- Daily Pie -->
           <div class="pt-4 space-y-6">
             <h4 class="text-[9px] font-black text-dim uppercase tracking-widest px-1">Daily Mix</h4>
-            <div class="h-48 relative">
-              <canvas id="daily-pie"></canvas>
-            </div>
+            <div class="h-48 relative"><canvas id="daily-pie"></canvas></div>
             <div id="daily-pie-legend" class="space-y-2 px-1"></div>
           </div>
         </div>
@@ -263,81 +202,32 @@ export async function renderReports() {
     </div>
   `;
 
-  // --- CHART INITIALIZATION ---
   setTimeout(() => {
-    // 1. Cumulative Build-up
     const cumCtx = container.querySelector('#cumulative-build-chart');
     if (cumCtx) {
       new Chart(cumCtx, {
         type: 'line',
         data: {
           labels: Array.from({ length: 1440 }, (_, i) => `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`),
-          datasets: [
-            {
-              label: 'Time Logged',
-              data: cumulativePoints,
-              borderColor: '#338a81',
-              backgroundColor: 'rgba(51, 138, 129, 0.1)',
-              borderWidth: 3,
-              fill: true,
-              pointRadius: 0,
-              tension: 0.2
-            },
-            {
-              label: 'Target (8h)',
-              data: Array(1440).fill(480),
-              borderColor: '#ef4444',
-              borderWidth: 1,
-              borderDash: [5, 5],
-              fill: false,
-              pointRadius: 0
-            }
-          ]
+          datasets: [{ label: 'Time Logged', data: cumulativePoints, borderColor: '#338a81', backgroundColor: 'rgba(51, 138, 129, 0.1)', borderWidth: 3, fill: true, pointRadius: 0, tension: 0.2 }, { label: 'Target (8h)', data: Array(1440).fill(480), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], fill: false, pointRadius: 0 }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i / 60}:00` : '' } },
-            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${(v / 60).toFixed(0)}h` } }
-          }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i / 60}:00` : '' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${(v / 60).toFixed(0)}h` } } } }
       });
     }
 
-    // 2. Daily Stacked Bar
     const dailyBarCtx = container.querySelector('#daily-stacked-bar');
     if (dailyBarCtx) {
-      const datasets = Object.entries(dailyProjectData).map(([pid, data]) => ({
-        label: projects.find(p => p.id == pid)?.name || 'Unknown',
-        data: data.hourly,
-        backgroundColor: projects.find(p => p.id == pid)?.color || '#eceff1',
-        borderRadius: 4,
-        borderWidth: 0
-      }));
+      const datasets = Object.entries(dailyProjectData).map(([pid, data]) => ({ label: projects.find(p => String(p.id) === String(pid))?.name || 'Unassigned', data: data.hourly, backgroundColor: projects.find(p => String(p.id) === String(pid))?.color || '#eceff1', borderRadius: 4, borderWidth: 0 }));
       new Chart(dailyBarCtx, {
         type: 'bar',
         data: { labels: Array.from({ length: 24 }, (_, i) => `${i}:00`), datasets },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
-          scales: {
-            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 4 === 0 ? `${i}:00` : '' } },
-            y: { stacked: true, beginAtZero: true, max: 60, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', stepSize: 15, callback: (v) => `${v}m` } }
-          }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index' } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 4 === 0 ? `${i}:00` : '' } }, y: { stacked: true, beginAtZero: true, max: 60, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', stepSize: 15, callback: (v) => `${v}m` } } } }
       });
     }
 
-    // 3. Daily Pie
     const dailyPieCtx = container.querySelector('#daily-pie');
     if (dailyPieCtx) {
-      const pieData = Object.entries(dailyProjectData).map(([pid, data]) => ({
-        total: data.total,
-        color: projects.find(p => p.id == pid)?.color || '#eceff1',
-        name: projects.find(p => p.id == pid)?.name || 'Unknown'
-      }));
+      const pieData = Object.entries(dailyProjectData).map(([pid, data]) => ({ total: data.total, color: projects.find(p => String(p.id) === String(pid))?.color || '#eceff1', name: projects.find(p => String(p.id) === String(pid))?.name || 'Unassigned' }));
       new Chart(dailyPieCtx, {
         type: 'doughnut',
         data: { labels: pieData.map(d => d.name), datasets: [{ data: pieData.map(d => d.total / 60), backgroundColor: pieData.map(d => d.color), borderWidth: 0, cutout: '80%' }] },
@@ -353,65 +243,22 @@ export async function renderReports() {
         </div>
       `).join('');
     }
-
-    // 4. Comparison Grouped Bar
-    const compBarCtx = container.querySelector('#comparison-grouped-bar');
-    if (compBarCtx) {
-      const labels = displayedComparisonPids.map(pid => projects.find(p => p.id == pid)?.name || 'Unknown');
-      const actualData = displayedComparisonPids.map(pid => comparisonData[pid]?.actual || 0);
-      const plannedData = displayedComparisonPids.map(pid => comparisonData[pid]?.planned || 0);
-      new Chart(compBarCtx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label: 'Actual Work', data: actualData, backgroundColor: '#338a81', borderRadius: 4, barThickness: 24 },
-            { label: 'Planned Time', data: plannedData, backgroundColor: '#475569', borderRadius: 4, barThickness: 24 }
-          ]
-        },
-        options: {
-          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top', align: 'end', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' }, color: '#94a3b8' } },
-            afterDatasetsDraw: (chart) => {
-              const { ctx, data } = chart;
-              ctx.save(); ctx.font = 'bold 10px Outfit'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-              data.datasets.forEach((dataset, i) => {
-                chart.getDatasetMeta(i).data.forEach((bar, index) => {
-                  const val = dataset.data[index];
-                  if (val > 0) ctx.fillText(`${val.toFixed(1)}h`, bar.x + 8, bar.y);
-                });
-              });
-              ctx.restore();
-            }
-          },
-          scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${v}h` }, suggestedMax: Math.max(...actualData, ...plannedData) * 1.2 },
-            y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' }, color: '#f8fafc' } }
-          }
-        }
-      });
-    }
   }, 100);
 
-  // --- EVENT HANDLERS ---
   container.addEventListener('click', async (e) => {
     const dayBtn = e.target.closest('.day-select-btn');
     if (dayBtn) { dailyReportDate = dayBtn.dataset.date; refreshView(); }
-    if (e.target.id === 'toggle-all-projects') { showAllProjects = !showAllProjects; refreshView(); }
     if (e.target.closest('#prev-page') && currentPage > 1) { currentPage--; refreshView(); }
     if (e.target.closest('#next-page') && currentPage < totalPages) { currentPage++; refreshView(); }
-
     const deleteBtn = e.target.closest('.delete-btn');
     if (deleteBtn && confirm('Delete this entry?')) {
       await api.delete(`time-entries.php?id=${deleteBtn.dataset.id}`);
       store.update('timeEntries', await api.get('time-entries.php'));
       refreshView();
     }
-
     const editBtn = e.target.closest('.edit-btn');
     if (editBtn) {
-      const entry = entries.find(ent => ent.id == editBtn.dataset.id);
+      const entry = entries.find(ent => String(ent.id) === String(editBtn.dataset.id));
       if (entry) openModal(entry);
     }
   });
@@ -425,38 +272,77 @@ export async function renderReports() {
     app.appendChild(await renderReports());
   }
 
-  // Modal logic simplified for brevity
   const openModal = (entry) => {
     const modalPortal = document.getElementById('modal-portal');
-    modalPortal.innerHTML = `<div id="edit-modal" class="fixed inset-0 bg-secondary/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-      <div class="bg-card rounded-2xl p-10 w-full max-w-lg shadow-2xl border border-soft">
-        <h3 class="text-2xl font-bold text-main mb-8">Edit Entry</h3>
-        <form id="edit-form" class="space-y-6">
-          <input type="hidden" name="id" value="${entry.id}">
-          <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Project</label>
-          <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold">${projects.map(p => `<option value="${p.id}" ${entry.project_id == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}</select></div>
-          <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Description</label>
-          <input type="text" name="description" value="${entry.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Start</label><input type="datetime-local" name="start_time" value="${entry.start_time.slice(0, 16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
-            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">End</label><input type="datetime-local" name="end_time" value="${entry.end_time.slice(0, 16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
+    const currentPid = entry.project_id ? String(entry.project_id) : '';
+    const projExists = projects.some(p => String(p.id) === currentPid);
+
+    const closeModal = () => {
+      const content = modalPortal.querySelector('#modal-content');
+      if (content) content.classList.remove('scale-100', 'opacity-100');
+      setTimeout(() => { modalPortal.innerHTML = ''; }, 300);
+    };
+
+    modalPortal.innerHTML = `
+      <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
+        <div id="modal-content" class="bg-card rounded-2xl p-10 w-full max-w-lg shadow-2xl border border-soft transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
+          <button id="close-modal-x" class="absolute top-6 right-6 text-2xl text-dim hover:text-red-500 transition-all">&times;</button>
+          <div class="text-center mb-8">
+            <h3 class="text-2xl font-bold">Edit Entry</h3>
+            <p class="text-[9px] font-black text-dim uppercase tracking-widest mt-2">Log Adjustment</p>
           </div>
-          <div class="flex gap-4 pt-6">
-            <button type="button" onclick="this.closest('#edit-modal').remove()" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest">Cancel</button>
-            <button type="submit" class="flex-[2] py-4 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">Save Changes</button>
-          </div>
-        </form>
-      </div>
-    </div>`;
-    modalPortal.querySelector('form').onsubmit = async (e) => {
+          <form id="edit-form" class="space-y-6">
+            <input type="hidden" name="id" value="${entry.id}">
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
+              <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
+                <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
+                ${projects.map(p => `<option value="${p.id}" ${currentPid === String(p.id) ? 'selected' : ''}>${p.name}</option>`).join('')}
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
+              <input type="text" name="description" value="${entry.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Notes (Internal)</label>
+              <input type="text" name="notes" value="${entry.notes || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Start Time</label>
+                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">End Time</label>
+                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+              </div>
+            </div>
+            <div class="flex gap-4 pt-6">
+              <button type="button" id="cancel-modal" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest hover:text-main">Cancel</button>
+              <button type="submit" class="flex-[2] py-4 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-dark">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+    setTimeout(() => {
+      const content = modalPortal.querySelector('#modal-content');
+      if (content) content.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    modalPortal.querySelector('#close-modal-x').onclick = closeModal;
+    modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+    modalPortal.querySelector('#edit-form').onsubmit = async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(e.target).entries());
       data.start_time = new Date(data.start_time).toISOString();
       data.end_time = new Date(data.end_time).toISOString();
-      await api.post('time-entries.php', data);
-      store.update('timeEntries', await api.get('time-entries.php'));
-      modalPortal.innerHTML = '';
-      refreshView();
+      data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
+      try {
+        await api.post('time-entries.php', data);
+        store.update('timeEntries', await api.get('time-entries.php'));
+        closeModal();
+        setTimeout(refreshView, 350);
+      } catch (err) { alert('Update failed'); }
     };
   };
 

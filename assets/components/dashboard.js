@@ -4,18 +4,8 @@ import { api } from '../utils/api.js';
 /**
  * assets/components/dashboard.js
  *
- * Dashboard - 28 Jan 2026
- *
- * Purpose: Consolidated time tracking view with active timer and history.
- *
- * @package Time Shark
- *
- * @author Senpai
- *
- * Last 3 version commits:
- * @version 1.4 - UPD - 28 Jan 2026 - Compact layout and smaller radiuses
- * @version 1.3 - UPD - 28 Jan 2026 - Added history edit functionality
- * @version 1.2 - UPD - 28 Jan 2026 - Consolidated active timer and history
+ * Dashboard - 08 Feb 2026
+ * Fixed modals, pointer events and strict project selection logic.
  */
 
 export async function renderDashboard() {
@@ -24,12 +14,13 @@ export async function renderDashboard() {
   const activeTimer = state.activeTimer;
   const entries = state.timeEntries || [];
   const customers = state.customers || [];
+  const modalPortal = document.getElementById('modal-portal');
 
   const formatDuration = (secs) => {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = Math.floor(secs % 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
+    return h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
   };
 
   const formatTime = (dateStr) => {
@@ -48,9 +39,9 @@ export async function renderDashboard() {
   const container = document.createElement('div');
   container.className = 'max-w-5xl mx-auto pb-10 space-y-8';
 
-  // Helper for color shifting
-  const shiftColor = (hex, percent) => {
-    const num = parseInt(hex.replace('#', ''), 16);
+  const shiftColor = (color, percent) => {
+    if (!color || typeof color !== 'string' || !color.startsWith('#')) return color;
+    const num = parseInt(color.replace('#', ''), 16);
     const amt = Math.round(2.55 * percent);
     const R = (num >> 16) + amt;
     const G = (num >> 8 & 0x00FF) + amt;
@@ -71,7 +62,7 @@ export async function renderDashboard() {
               </div>
               <h3 class="text-4xl font-bold text-main mb-1 tracking-tight transition-colors">${activeTimer.description || 'Focusing'}</h3>
               <p class="text-muted font-medium text-lg leading-relaxed">
-                ${projects.find(p => p.id == activeTimer.project_id)?.name || activeTimer.project_name}
+                ${projects.find(p => String(p.id) === String(activeTimer.project_id))?.name || activeTimer.project_name || 'Unassigned'}
               </p>
               ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${activeTimer.notes}</p>` : ''}
               <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity bg-card shadow-soft rounded-full p-1.5 text-primary border border-soft">
@@ -123,18 +114,18 @@ export async function renderDashboard() {
 
       <div class="space-y-3">
         ${entries.filter(e => e.end_time).slice(0, 10).map(e => {
-    const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
+    const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
     const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
     const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
     const taskColor = shiftColor(proj.color, -10);
 
     return `
-            <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between">
+            <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main">
               <div class="flex items-center gap-4 flex-1">
                 <div class="w-1 h-8 rounded-full" style="background-color: ${taskColor}"></div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 mb-0.5">
-                    <h4 class="text-sm font-bold text-main tracking-tight">${e.description || 'No description'}</h4>
+                    <h4 class="text-sm font-bold tracking-tight">${e.description || 'No description'}</h4>
                     <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${e.resource_id || 'Main'}</span>
                   </div>
                   <p class="text-xs font-medium text-muted truncate">${proj.name} ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}</p>
@@ -145,7 +136,7 @@ export async function renderDashboard() {
               <div class="flex items-center gap-6">
                 <div class="text-right whitespace-nowrap">
                   <div class="text-[9px] font-black text-dim uppercase tracking-widest mb-0.5 opacity-40">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
-                  <div class="text-base font-bold text-main tracking-tighter tabular-nums">${formatDuration(duration)}</div>
+                  <div class="text-base font-bold tracking-tighter tabular-nums">${formatDuration(duration)}</div>
                 </div>
                 <div class="flex gap-1">
                   <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all"
@@ -170,98 +161,39 @@ export async function renderDashboard() {
         ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-[9px] opacity-30">No history yet</p>' : ''}
       </div>
     </div>
-
-    <!-- Edit History Entry Modal -->
-    <div id="edit-history-panel" class="fixed inset-0 bg-secondary/40 hidden z-[60] backdrop-blur-md items-center justify-center p-4">
-      <div class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300" id="edit-history-content">
-        <div class="mb-6 text-center">
-          <h3 class="text-xl font-bold text-main tracking-tight">Edit Entry</h3>
-          <p class="text-[9px] font-black text-dim uppercase tracking-[0.3em] mt-2">Log Adjustment</p>
-        </div>
-        <form id="edit-history-form" class="space-y-4">
-          <input type="hidden" name="id">
-          <div class="space-y-1.5">
-            <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-            <select name="project_id" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm appearance-none cursor-pointer">
-              ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-            </select>
-          </div>
-          <div class="space-y-1.5">
-            <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
-            <input type="text" name="description" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm">
-          </div>
-          <div class="space-y-1.5">
-            <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes</label>
-            <input type="text" name="notes" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm">
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Start</label>
-              <input type="datetime-local" name="start_time" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm">
-            </div>
-            <div class="space-y-1.5">
-              <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">End</label>
-              <input type="datetime-local" name="end_time" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm">
-            </div>
-          </div>
-          <div class="flex gap-3 pt-4">
-            <button type="button" id="close-edit-history" class="flex-1 h-12 bg-app hover:bg-border-soft text-muted font-black text-[10px] uppercase tracking-widest rounded-xl transition-all">Cancel</button>
-            <button type="submit" class="flex-[2] h-12 bg-primary hover:bg-primary-dark text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all">Save Changes</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Edit Active Task Modal -->
-    <div id="edit-active-panel" class="fixed inset-0 bg-secondary/40 hidden z-[60] backdrop-blur-md items-center justify-center p-4">
-      <div class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300" id="edit-active-content">
-        <div class="mb-6 text-center">
-          <h3 class="text-xl font-bold text-main tracking-tight">Edit Current Task</h3>
-          <p class="text-[9px] font-black text-dim uppercase tracking-[0.3em] mt-2">Live Log Adjustment</p>
-        </div>
-        <form id="edit-active-form" class="space-y-4">
-          <div class="space-y-1.5">
-            <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-            <select name="project_id" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm appearance-none cursor-pointer">
-              ${projects.map(p => `<option value="${p.id}" ${activeTimer?.project_id == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-            </select>
-          </div>
-          <div class="space-y-1.5">
-            <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
-            <input type="text" name="description" value="${activeTimer?.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm">
-          </div>
-          <div class="space-y-1.5">
-            <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes</label>
-            <input type="text" name="notes" value="${activeTimer?.notes || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm">
-          </div>
-          <div class="flex gap-3 pt-4">
-            <button type="button" id="close-edit-active" class="flex-1 h-12 bg-app hover:bg-border-soft text-muted font-black text-[10px] uppercase tracking-widest rounded-xl transition-all">Cancel</button>
-            <button type="submit" class="flex-[2] h-12 bg-primary hover:bg-primary-dark text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
   `;
+
+  // --- ACTIONS ---
+
+  const refreshView = async () => {
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+    app.appendChild(await renderDashboard());
+  };
+
+  const closeModal = () => {
+    const content = modalPortal.querySelector('#modal-content');
+    if (content) content.classList.remove('scale-100', 'opacity-100');
+    setTimeout(() => { modalPortal.innerHTML = ''; }, 300);
+  };
 
   // Timer Ticker
   if (activeTimer) {
     const counterEl = container.querySelector('#active-timer-counter');
     const startTime = new Date(activeTimer.start_time).getTime();
-
     const updateCounter = () => {
       const now = new Date().getTime();
       const diff = now - startTime;
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-      counterEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      const hString = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const mString = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const sString = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      if (counterEl) {
+        counterEl.textContent = hString + ':' + mString + ':' + sString;
+      }
     };
-
     const interval = setInterval(updateCounter, 1000);
     updateCounter();
-
-    // Cleanup interval on remove
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(() => {
       if (!document.body.contains(container)) {
         clearInterval(interval);
         observer.disconnect();
@@ -270,23 +202,20 @@ export async function renderDashboard() {
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  // Event Handlers
+  // Active Timer Actions
   const startForm = container.querySelector('#start-timer-form');
-
   if (startForm) {
     startForm.onsubmit = async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(startForm).entries());
-      const project = projects.find(p => p.id == data.project_id);
-      if (!project) return;
-      data.project_name = project.name;
+      const proj = projects.find(p => String(p.id) === String(data.project_id));
+      if (!proj) return;
+      data.project_name = proj.name;
       data.resource_id = state.team?.[0]?.name || 'Main';
-
       try {
         const result = await api.post('time-entries.php?action=start', data);
         store.update('activeTimer', result);
-        const newEntries = await api.get('time-entries.php');
-        store.update('timeEntries', newEntries);
+        store.update('timeEntries', await api.get('time-entries.php'));
         refreshView();
       } catch (err) { alert('Failed to start'); }
     };
@@ -298,141 +227,184 @@ export async function renderDashboard() {
       try {
         await api.post('time-entries.php?action=stop', { id: activeTimer.id });
         store.update('activeTimer', null);
-        const newEntries = await api.get('time-entries.php');
-        store.update('timeEntries', newEntries);
+        store.update('timeEntries', await api.get('time-entries.php'));
         refreshView();
-      } catch (err) { alert('Error stopping'); }
+      } catch (err) { alert('Stop failed'); }
     };
   }
 
+  // Resume Action
   container.querySelectorAll('.resume-btn').forEach(btn => {
     btn.onclick = async () => {
       const data = {
         project_id: btn.dataset.projectId,
         description: btn.dataset.description,
         notes: btn.dataset.notes,
-        project_name: projects.find(p => p.id == btn.dataset.projectId)?.name || 'Unknown',
+        project_name: projects.find(p => String(p.id) === String(btn.dataset.projectId))?.name || 'Unassigned',
         resource_id: state.team?.[0]?.name || 'Main'
       };
       try {
         const result = await api.post('time-entries.php?action=start', data);
         store.update('activeTimer', result);
-        const newEntries = await api.get('time-entries.php');
-        store.update('timeEntries', newEntries);
+        store.update('timeEntries', await api.get('time-entries.php'));
         refreshView();
-      } catch (err) { alert('Failed to resume'); }
+      } catch (err) { alert('Resume failed'); }
     };
   });
 
-  // Edit Panel Logic
-  const editDisplay = container.querySelector('#active-task-display');
-  const editPanel = container.querySelector('#edit-active-panel');
-  const editContent = container.querySelector('#edit-active-content');
-  const closeEdit = container.querySelector('#close-edit-active');
-  const editForm = container.querySelector('#edit-active-form');
+  // Edit Active Task
+  const editTaskDisplay = container.querySelector('#active-task-display');
+  if (editTaskDisplay) {
+    editTaskDisplay.onclick = () => {
+      const currentPid = activeTimer.project_id ? String(activeTimer.project_id) : '';
+      const projExists = projects.some(p => String(p.id) === currentPid);
 
-  if (editDisplay) {
-    editDisplay.onclick = () => {
-      editPanel.classList.remove('hidden');
-      editPanel.classList.add('flex');
-      setTimeout(() => editContent.classList.add('scale-100', 'opacity-100'), 10);
+      modalPortal.innerHTML = `
+        <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
+          <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
+            <button id="close-modal-x" class="absolute top-6 right-6 text-2xl text-dim hover:text-red-500 transition-all">&times;</button>
+            <div class="text-center mb-8">
+              <h3 class="text-xl font-bold">Edit Current Task</h3>
+              <p class="text-[9px] font-black text-dim uppercase tracking-widest mt-2">Live Update</p>
+            </div>
+            <form id="edit-active-form" class="space-y-4">
+              <div class="space-y-1.5">
+                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
+                <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
+                  <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
+                  ${projects.map(p => {
+        const pid = String(p.id);
+        const isSelected = currentPid === pid;
+        return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
+      }).join('')}
+                </select>
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
+                <input type="text" name="description" value="${activeTimer.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes</label>
+                <input type="text" name="notes" value="${activeTimer.notes || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+              </div>
+              <div class="flex gap-4 pt-4">
+                <button type="button" id="cancel-modal" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest hover:text-main">Cancel</button>
+                <button type="submit" class="flex-[2] py-4 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      setTimeout(() => {
+        const content = modalPortal.querySelector('#modal-content');
+        if (content) content.classList.add('scale-100', 'opacity-100');
+      }, 10);
+      modalPortal.querySelector('#close-modal-x').onclick = closeModal;
+      modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+      modalPortal.querySelector('#edit-active-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        data.id = activeTimer.id;
+        data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
+        try {
+          const result = await api.post('time-entries.php', data);
+          store.update('activeTimer', result);
+          store.update('timeEntries', await api.get('time-entries.php'));
+          closeModal();
+          setTimeout(refreshView, 350);
+        } catch (err) { alert('Update failed'); }
+      };
     };
   }
 
-  const closeEditPanel = () => {
-    editContent.classList.remove('scale-100', 'opacity-100');
-    setTimeout(() => {
-      editPanel.classList.add('hidden');
-      editPanel.classList.remove('flex');
-    }, 300);
-  };
-
-  if (closeEdit) closeEdit.onclick = closeEditPanel;
-
-  if (editForm) {
-    editForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(editForm).entries());
-      data.id = activeTimer.id;
-      data.project_name = projects.find(p => p.id == data.project_id)?.name;
-      try {
-        const result = await api.post('time-entries.php?action=start', data);
-        store.update('activeTimer', result);
-        closeEditPanel();
-        setTimeout(refreshView, 350);
-      } catch (err) { alert('Update failed'); }
-    };
-  }
-
-  // History Edit Logic
-  const editHistoryPanel = container.querySelector('#edit-history-panel');
-  const editHistoryContent = container.querySelector('#edit-history-content');
-  const closeEditHistory = container.querySelector('#close-edit-history');
-  const editHistoryForm = container.querySelector('#edit-history-form');
-
+  // Edit History Entry
   container.querySelectorAll('.edit-history-btn').forEach(btn => {
     btn.onclick = () => {
-      const entry = entries.find(e => e.id == btn.dataset.id);
+      const entry = entries.find(e => String(e.id) === String(btn.dataset.id));
       if (!entry) return;
+      const currentPid = entry.project_id ? String(entry.project_id) : '';
+      const projExists = projects.some(p => String(p.id) === currentPid);
 
-      editHistoryForm.id.value = entry.id;
-      editHistoryForm.project_id.value = entry.project_id;
-      editHistoryForm.description.value = entry.description || '';
-      editHistoryForm.notes.value = entry.notes || '';
-      editHistoryForm.start_time.value = formatDateForInput(entry.start_time);
-      editHistoryForm.end_time.value = formatDateForInput(entry.end_time);
-
-      editHistoryPanel.classList.remove('hidden');
-      editHistoryPanel.classList.add('flex');
-      setTimeout(() => editHistoryContent.classList.add('scale-100', 'opacity-100'), 10);
+      modalPortal.innerHTML = `
+        <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
+          <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
+            <button id="close-modal-x" class="absolute top-6 right-6 text-2xl text-dim hover:text-red-500 transition-all">&times;</button>
+            <div class="text-center mb-8">
+              <h3 class="text-xl font-bold">Edit History Entry</h3>
+              <p class="text-[9px] font-black text-dim uppercase tracking-widest mt-2">Log Adjustment</p>
+            </div>
+            <form id="edit-history-form" class="space-y-4">
+              <input type="hidden" name="id" value="${entry.id}">
+              <div class="space-y-1.5">
+                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
+                <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
+                  <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
+                  ${projects.map(p => {
+        const pid = String(p.id);
+        const isSelected = currentPid === pid;
+        return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
+      }).join('')}
+                </select>
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
+                <input type="text" name="description" value="${entry.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes</label>
+                <input type="text" name="notes" value="${entry.notes || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Start</label>
+                  <input type="datetime-local" name="start_time" required value="${formatDateForInput(entry.start_time)}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">End</label>
+                  <input type="datetime-local" name="end_time" required value="${formatDateForInput(entry.end_time)}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main">
+                </div>
+              </div>
+              <div class="flex gap-4 pt-4">
+                <button type="button" id="cancel-modal" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest hover:text-main">Cancel</button>
+                <button type="submit" class="flex-[2] py-4 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      setTimeout(() => {
+        const content = modalPortal.querySelector('#modal-content');
+        if (content) content.classList.add('scale-100', 'opacity-100');
+      }, 10);
+      modalPortal.querySelector('#close-modal-x').onclick = closeModal;
+      modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+      modalPortal.querySelector('#edit-history-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        data.start_time = new Date(data.start_time).toISOString();
+        data.end_time = new Date(data.end_time).toISOString();
+        data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
+        try {
+          await api.post('time-entries.php', data);
+          store.update('timeEntries', await api.get('time-entries.php'));
+          closeModal();
+          setTimeout(refreshView, 350);
+        } catch (err) { alert('Update failed'); }
+      };
     };
   });
 
-  const closeEditHistoryPanel = () => {
-    editHistoryContent.classList.remove('scale-100', 'opacity-100');
-    setTimeout(() => {
-      editHistoryPanel.classList.add('hidden');
-      editHistoryPanel.classList.remove('flex');
-    }, 300);
-  };
-
-  if (closeEditHistory) closeEditHistory.onclick = closeEditHistoryPanel;
-
-  if (editHistoryForm) {
-    editHistoryForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(editHistoryForm).entries());
-      data.start_time = new Date(data.start_time).toISOString();
-      data.end_time = new Date(data.end_time).toISOString();
-      data.project_name = projects.find(p => p.id == data.project_id)?.name;
-
-      try {
-        await api.post('time-entries.php', data);
-        const newEntries = await api.get('time-entries.php');
-        store.update('timeEntries', newEntries);
-        closeEditHistoryPanel();
-        setTimeout(refreshView, 350);
-      } catch (err) { alert('Update failed'); }
-    };
-  }
-
+  // Delete History Entry
   container.querySelectorAll('.delete-history-btn').forEach(btn => {
     btn.onclick = async () => {
       if (!confirm('Delete this entry?')) return;
       try {
         await api.delete(`time-entries.php?id=${btn.dataset.id}`);
-        const newEntries = await api.get('time-entries.php');
-        store.update('timeEntries', newEntries);
+        store.update('timeEntries', await api.get('time-entries.php'));
         refreshView();
       } catch (err) { alert('Delete failed'); }
     };
   });
-
-  async function refreshView() {
-    const app = document.getElementById('app');
-    app.innerHTML = '';
-    app.appendChild(await renderDashboard());
-  }
 
   return container;
 }

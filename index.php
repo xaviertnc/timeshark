@@ -92,7 +92,7 @@
         </div>
     </main>
 
-    <div id="modal-portal" class="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"></div>
+    <div id="modal-portal" class="fixed inset-0 z-[100] pointer-events-none"></div>
     <script type="module" src="assets/app.js?v=<?=time()?>"></script>
 </body>
 </html>
