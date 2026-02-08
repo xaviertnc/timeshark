@@ -223,49 +223,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Drag & Drop Utilities */
+/* Table Row Specific Highlights */
+tr.drag-over-top td {
+    box-shadow: inset 0 3px 0 0 var(--primary) !important;
+}
+
+tr.drag-over-bottom td {
+    box-shadow: inset 0 -3px 0 0 var(--primary) !important;
+}
+
+/* Card Specific Highlights (Grid View) */
+.project-card.drag-over-top {
+    box-shadow: 0 -5px 0 0 var(--primary), var(--shadow-soft) !important;
+}
+
+.project-card.drag-over-bottom {
+    box-shadow: 0 5px 0 0 var(--primary), var(--shadow-soft) !important;
+}
+
 .dragging {
     opacity: 0.4;
     cursor: move;
-}
-
-.drag-over-top,
-.drag-over-bottom {
-    background-color: var(--primary-soft) !important;
-    position: relative;
-}
-
-.drag-over-top::before,
-.drag-over-bottom::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--primary);
-    box-shadow: 0 0 10px var(--primary);
-    z-index: 50;
-    pointer-events: none;
-    animation: pointer-reveal 0.2s ease-out;
-}
-
-.drag-over-top::before {
-    top: 0;
-}
-
-.drag-over-bottom::after {
-    bottom: 0;
-}
-
-@keyframes pointer-reveal {
-    from {
-        transform: scaleX(0);
-        opacity: 0;
-    }
-
-    to {
-        transform: scaleX(1);
-        opacity: 1;
-    }
 }
 
 [draggable="true"] {

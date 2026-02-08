@@ -19,12 +19,30 @@ import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 
 
+const applyAlpha = (color, alpha) => {
+  if (!color) return 'transparent';
+  if (color.startsWith('#')) {
+    const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+    return color + a;
+  }
+  if (color.startsWith('hsl')) {
+    return color.replace('hsl', 'hsla').replace(')', `, ${alpha})`);
+  }
+  return color;
+};
+
+
 let viewMode = localStorage.getItem('project_view_mode') || 'grid';
 
 
 export async function renderProjects() {
   const state = store.get();
-  const projects = [...(state.projects || [])].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const projects = [...(state.projects || [])].sort((a, b) => {
+    const orderA = a.sort_order ?? 0;
+    const orderB = b.sort_order ?? 0;
+    if (orderA !== orderB) return orderA - orderB;
+    return String(a.id).localeCompare(String(b.id));
+  });
   const customers = state.customers || [];
 
   const container = document.createElement('div');
@@ -70,7 +88,7 @@ export async function renderProjects() {
             <div class="bg-card rounded-[2.5rem] p-8 border border-soft shadow-sm group hover:-translate-y-2 transition-all duration-500 relative project-card overflow-hidden h-full flex flex-col cursor-grab active:cursor-grabbing" data-id="${p.id}" draggable="true">
               
               <div class="flex justify-between items-start mb-10">
-                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-sm transition-all group-hover:shadow-lg" style="background-color: ${p.color}15; border-color: ${p.color}35">
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-sm transition-all group-hover:shadow-lg" style="background-color: ${applyAlpha(p.color, 0.1)}; border-color: ${applyAlpha(p.color, 0.2)}">
                   <span class="text-[9px] font-black uppercase tracking-widest" style="color: ${p.color}">${status}</span>
                 </div>
                 
@@ -97,7 +115,7 @@ export async function renderProjects() {
                     <span class="text-main font-black">${progress}%</span>
                   </div>
                   <div class="w-full bg-app rounded-full h-3 overflow-hidden border-2 border-soft p-[2px] shadow-inner">
-                    <div class="h-full rounded-full transition-all duration-1000 ease-out" style="width: ${progress}%; background-color: ${p.color}; box-shadow: 0 0 15px ${p.color}80"></div>
+                    <div class="h-full rounded-full transition-all duration-1000 ease-out" style="width: ${progress}%; background-color: ${p.color}; box-shadow: 0 0 15px ${applyAlpha(p.color, 0.5)}"></div>
                   </div>
                 </div>
               </div>
@@ -138,7 +156,7 @@ export async function renderProjects() {
                     </div>
                   </td>
                   <td class="p-6">
-                    <span class="text-[8px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border" style="background-color: ${p.color}15; border-color: ${p.color}35; color: ${p.color}">${p.status || 'Active'}</span>
+                    <span class="text-[8px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border" style="background-color: ${applyAlpha(p.color, 0.1)}; border-color: ${applyAlpha(p.color, 0.2)}; color: ${p.color}">${p.status || 'Active'}</span>
                   </td>
                   <td class="p-6">
                     <span class="text-xs font-black text-dim uppercase tracking-widest">${org ? org.name : 'Individual'}</span>
@@ -266,12 +284,15 @@ export async function renderProjects() {
             </div>
 
             <div class="space-y-6 pt-10 border-t-2 border-soft border-dashed">
-              <label class="text-[10px] font-black text-dim uppercase tracking-[0.5em] block text-center opacity-60">Visual ID Palette</label>
-              <div class="flex gap-5 justify-center flex-wrap max-w-lg mx-auto">
-                ${['#00c853', '#ffd600', '#2c3e50', '#aa00ff', '#ff3d00', '#2979ff', '#ff0055', '#00b0ff', '#00e676', '#ffab00', '#3e2723', '#00e5ff', '#212121', '#c6ff00', '#6200ea'].map((color, idx) => `
+              <div class="flex items-center justify-between mb-4">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.5em] opacity-60">Visual ID Palette</label>
+                <button type="button" id="randomize-colors" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline px-4 py-2 bg-app rounded-lg border border-soft shadow-inner">Generate New Palette</button>
+              </div>
+              <div id="palette-container" class="flex gap-5 justify-center flex-wrap max-w-lg mx-auto">
+                ${['#338a81', '#800000', '#4a148c', '#1a237e', '#006064', '#1b5e20', '#827717', '#e65100', '#bf360c', '#3e2723', '#263238', '#c2185b', '#00c853', '#ffd600', '#2c3e50'].map((color, idx) => `
                   <label class="cursor-pointer group relative">
                     <input type="radio" name="color" value="${color}" class="peer sr-only" ${idx === 0 ? 'checked' : ''}>
-                    <div class="w-11 h-11 rounded-full bg-[${color}] peer-checked:ring-offset-4 peer-checked:ring-4 peer-checked:ring-primary/20 transition-all border-4 border-white/5 hover:scale-125 shadow-lg active:scale-90" style="background-color: ${color}; box-shadow: 0 5px 15px ${color}30"></div>
+                    <div class="w-11 h-11 rounded-full peer-checked:ring-offset-4 peer-checked:ring-4 peer-checked:ring-primary/20 transition-all border-4 border-white/5 hover:scale-125 shadow-lg active:scale-90" style="background-color: ${color}; box-shadow: 0 5px 15px ${applyAlpha(color, 0.3)}"></div>
                   </label>
                 `).join('')}
               </div>
@@ -316,6 +337,52 @@ export async function renderProjects() {
 
   orgSelect.onchange = (e) => updateClientOptions(e.target.value);
 
+  const defaultPalette = ['#338a81', '#800000', '#4a148c', '#1a237e', '#006064', '#1b5e20', '#827717', '#e65100', '#bf360c', '#3e2723', '#263238', '#c2185b', '#00c853', '#ffd600', '#2c3e50'];
+  let currentPalette = JSON.parse(localStorage.getItem('project_palette')) || defaultPalette;
+
+  const renderPalette = (selectedColor = null) => {
+    const paletteContainer = modalPortal.querySelector('#palette-container');
+    if (!paletteContainer) return;
+
+    let displayPalette = [...currentPalette];
+    if (selectedColor && !displayPalette.includes(selectedColor)) {
+      displayPalette.unshift(selectedColor);
+      if (displayPalette.length > 20) displayPalette.pop();
+    }
+
+    paletteContainer.innerHTML = displayPalette.map((color, idx) => `
+      <label class="cursor-pointer group relative">
+        <input type="radio" name="color" value="${color}" class="peer sr-only" ${(selectedColor ? color === selectedColor : idx === 0) ? 'checked' : ''}>
+        <div class="w-11 h-11 rounded-full peer-checked:ring-offset-4 peer-checked:ring-4 peer-checked:ring-primary/20 transition-all border-4 border-white/5 hover:scale-125 shadow-lg active:scale-90" style="background-color: ${color}; box-shadow: 0 5px 15px ${color}30"></div>
+      </label>
+    `).join('');
+  };
+
+  const randomizeColors = () => {
+    const colors = [];
+    for (let i = 0; i < 15; i++) {
+      const h = Math.floor(Math.random() * 360);
+      const s = 40 + Math.floor(Math.random() * 50); // 40% to 90%
+      const l = 25 + Math.floor(Math.random() * 45); // 25% to 70%
+
+      const l2 = l / 100;
+      const a = (s * Math.min(l2, 1 - l2)) / 100;
+      const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l2 - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+      };
+      colors.push(`#${f(0)}${f(8)}${f(4)}`);
+    }
+    currentPalette = colors;
+    localStorage.setItem('project_palette', JSON.stringify(colors));
+
+    const currentColor = projectForm.querySelector('input[name="color"]:checked')?.value;
+    renderPalette(currentColor);
+  };
+
+  modalPortal.querySelector('#randomize-colors').onclick = randomizeColors;
+
   const openProjModal = (project = null) => {
     if (project) {
       modalTitle.textContent = 'Update Registry';
@@ -331,14 +398,14 @@ export async function renderProjects() {
       projectForm.customer_id.value = org ? org.id : '';
 
       updateClientOptions(projectForm.customer_id.value, project.client_id);
-      const colorRadio = projectForm.querySelector(`input[name="color"][value="${project.color}"]`);
-      if (colorRadio) colorRadio.checked = true;
+      renderPalette(project.color);
     } else {
       modalTitle.textContent = 'Project Initialization';
       submitBtn.textContent = 'Initialize Project';
       projectForm.reset();
       projectForm.id.value = '';
       updateClientOptions('');
+      renderPalette();
     }
 
     projModal.classList.remove('hidden');
@@ -458,25 +525,33 @@ export async function renderProjects() {
   container.addEventListener('dragover', (e) => {
     e.preventDefault();
     const target = e.target.closest('[draggable="true"]');
+
+    // Clear other highlights
+    container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+      if (el !== target) el.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+
     if (!target || target.dataset.id === draggedId) return;
 
-    // Clear previous
-    target.classList.remove('drag-over-top', 'drag-over-bottom');
-
     const rect = target.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
+    const isTop = e.clientY < rect.top + (rect.height / 2);
 
-    if (e.clientY < midpoint) {
+    if (isTop) {
+      target.classList.remove('drag-over-bottom');
       target.classList.add('drag-over-top');
     } else {
+      target.classList.remove('drag-over-top');
       target.classList.add('drag-over-bottom');
     }
   });
 
   container.addEventListener('dragleave', (e) => {
+    // Only clear if completely leaving a target or the container
     const target = e.target.closest('[draggable="true"]');
-    if (target) {
-      target.classList.remove('drag-over-top', 'drag-over-bottom');
+    if (!target) {
+      container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+        el.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
     }
   });
 
@@ -488,31 +563,27 @@ export async function renderProjects() {
     const rect = target.getBoundingClientRect();
     const isBottom = e.clientY > rect.top + rect.height / 2;
 
-    target.classList.remove('drag-over-top', 'drag-over-bottom');
-    const droppedOnId = target.dataset.id;
-    if (draggedId === droppedOnId) return;
+    container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+      el.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+
+    if (target.dataset.id === draggedId) return;
 
     const dragIdx = projects.findIndex(p => p.id == draggedId);
-    let dropIdx = projects.findIndex(p => p.id == droppedOnId);
+    let dropIdx = projects.findIndex(p => p.id == target.dataset.id);
 
     if (dragIdx === -1 || dropIdx === -1) return;
 
-    // Shift drop index if dropped on the bottom half
     if (isBottom) dropIdx++;
-    // Adjust for the item being removed before insertion
     if (dragIdx < dropIdx) dropIdx--;
-
     if (dragIdx === dropIdx) return;
 
-    // Reorder array locally
     const [movedProject] = projects.splice(dragIdx, 1);
     projects.splice(dropIdx, 0, movedProject);
 
-    // Batch update models
     projects.forEach((p, idx) => p.sort_order = idx);
     const reorder = projects.map(p => ({ id: p.id, sort_order: p.sort_order }));
 
-    // Optimistic Update
     store.update('projects', [...projects]);
     refreshView();
 
@@ -520,7 +591,6 @@ export async function renderProjects() {
       await api.post('projects.php', { reorder });
     } catch (err) {
       console.error('Batch reorder failed:', err);
-      // Optional: Refresh from server on error
       const fresh = await api.get('projects.php');
       store.update('projects', fresh);
       refreshView();
@@ -528,15 +598,18 @@ export async function renderProjects() {
   });
 
   container.addEventListener('dragend', (e) => {
-    const target = e.target.closest('[draggable="true"]');
-    if (target) target.classList.remove('dragging', 'drag-over');
+    container.querySelectorAll('.dragging, .drag-over-top, .drag-over-bottom').forEach(el => {
+      el.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom');
+    });
     draggedId = null;
   });
 
   async function refreshView() {
     const app = document.getElementById('app');
+    const newContent = await renderProjects();
     app.innerHTML = '';
-    app.appendChild(await renderProjects());
+    app.appendChild(newContent);
+    // Maintain scroll position if needed, but for reorder, scroll to top helps confirm change
   }
 
   return container;
