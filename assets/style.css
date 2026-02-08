@@ -186,7 +186,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Custom Tooltip */
-.chomper-tooltip {
+.shark-tooltip {
     position: fixed;
     z-index: 9999;
     padding: 10px 14px;
@@ -206,12 +206,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     white-space: nowrap;
 }
 
-.chomper-tooltip.visible {
+.shark-tooltip.visible {
     opacity: 1;
     transform: translateY(0);
 }
 
-.chomper-tooltip::after {
+.shark-tooltip::after {
     content: '';
     position: absolute;
     top: 100%;

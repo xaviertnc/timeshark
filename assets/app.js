@@ -13,7 +13,7 @@ import { renderOrganizations } from './components/organizations.js';
  *
  * Purpose: Application initialization and routing.
  *
- * @package Chompy
+ * @package Time Shark
  *
  * @author Senpai
  *
@@ -54,20 +54,20 @@ async function handleRoute() {
         app.innerHTML = '';
         app.appendChild(content);
 
-    pageTitle.textContent = route.title;
-    
-    // Hide header timer on dashboard
-    const headerTimer = document.getElementById('active-timer-display');
-    if (headerTimer) {
-      const isDashboard = hash === '' || hash === '#' || hash === '#dashboard';
-      if (isDashboard) {
-        headerTimer.style.display = 'none';
-      } else if (store.get().activeTimer) {
-        headerTimer.style.display = 'flex';
-      }
-    }
+        pageTitle.textContent = route.title;
 
-    setTimeout(() => headerContainer.style.opacity = '1', 100);
+        // Hide header timer on dashboard
+        const headerTimer = document.getElementById('active-timer-display');
+        if (headerTimer) {
+            const isDashboard = hash === '' || hash === '#' || hash === '#dashboard';
+            if (isDashboard) {
+                headerTimer.style.display = 'none';
+            } else if (store.get().activeTimer) {
+                headerTimer.style.display = 'flex';
+            }
+        }
+
+        setTimeout(() => headerContainer.style.opacity = '1', 100);
 
         updateActiveLink(hash);
     } catch (e) {
@@ -142,7 +142,7 @@ function startHeaderTicker(timerEntry) {
         display.style.display = 'flex';
         display.classList.remove('hidden');
     }
-    
+
     projectName.textContent = timerEntry.project_name;
 
     if (window.timerInterval) clearInterval(window.timerInterval);

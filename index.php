@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Shark</title>
-    <link rel="icon" type="image/jpeg" href="assets/images/time-chomper-logo.jpg">
+    <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="assets/style.css">
@@ -24,7 +24,7 @@
                             DEFAULT: '#f59e0b', // Amber/Gold
                             light: '#fef3c7'
                         },
-                        chomper: {
+                        shark: {
                             teal: '#14b8a6',
                             deep: '#0f172a',
                             sand: '#f8fafc'
@@ -50,7 +50,7 @@
     <aside class="w-20 lg:w-24 bg-sidebar border-r border-soft flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
         <div class="h-24 flex items-center justify-center">
             <a href="#" class="w-12 h-12 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500 block">
-                 <img src="assets/images/time-chomper-logo.jpg" class="w-full h-full object-cover">
+                 <img src="assets/images/time-shark-logo.jpg" class="w-full h-full object-cover">
             </a>
         </div>
 
@@ -60,7 +60,7 @@
 
         <div class="p-6 flex flex-col items-center gap-6">
             <div class="w-10 h-10 rounded-xl bg-app border border-soft flex items-center justify-center text-[10px] font-black opacity-40">
-                TC
+                TS
             </div>
         </div>
     </aside>

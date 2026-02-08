@@ -363,9 +363,9 @@ export async function renderPlanner() {
                                                                     <div class="opacity-60 font-black uppercase tracking-widest text-[8px] line-clamp-1 ${textColorClass}">
                                                                         ${proj.name}
                                                                         ${(() => {
-                                                                            const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
-                                                                            return org ? ` • ${org.name}` : '';
-                                                                        })()}
+                        const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
+                        return org ? ` • ${org.name}` : '';
+                    })()}
                                                                     </div>
 
                                                                     ${(() => {
@@ -655,11 +655,11 @@ export async function renderPlanner() {
     });
 
     // Custom Tooltip Logic
-    let tooltipEl = document.getElementById('chomper-tooltip');
+    let tooltipEl = document.getElementById('shark-tooltip');
     if (!tooltipEl) {
         tooltipEl = document.createElement('div');
-        tooltipEl.id = 'chomper-tooltip';
-        tooltipEl.className = 'chomper-tooltip';
+        tooltipEl.id = 'shark-tooltip';
+        tooltipEl.className = 'shark-tooltip';
         document.body.appendChild(tooltipEl);
     }
 

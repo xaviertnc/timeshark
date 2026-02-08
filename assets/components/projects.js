@@ -5,7 +5,7 @@
  *
  * Purpose: Manage projects and link them to Organizations and Clients.
  *
- * @package Chompy
+ * @package Time Shark
  *
  * @author Senpai
  *
@@ -61,33 +61,33 @@ export async function renderProjects() {
 
     ${viewMode === 'grid' ? `
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        ${ projects.map( p => {
-          const org = customers.find( c => c.id == p.customer_id && c.is_client == 1 );
-          const client = customers.find( c => c.id == p.client_id && c.is_client == 0 );
-          const progress = calculateProgress(p);
-          const status = p.status || 'Active';
-          const statusColor = status === 'Active' ? 'text-primary bg-primary/10' : (status === 'Completed' ? 'text-green-500 bg-green-500/10' : 'text-dim bg-app');
+        ${projects.map(p => {
+    const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
+    const client = customers.find(c => c.id == p.client_id && c.is_client == 0);
+    const progress = calculateProgress(p);
+    const status = p.status || 'Active';
+    const statusColor = status === 'Active' ? 'text-primary bg-primary/10' : (status === 'Completed' ? 'text-green-500 bg-green-500/10' : 'text-dim bg-app');
 
-          return `
-            <div class="bg-card rounded-2xl p-8 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative project-card" data-id="${ p.id }">
+    return `
+            <div class="bg-card rounded-2xl p-8 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative project-card" data-id="${p.id}">
               <div class="absolute top-6 left-6">
                 <span class="text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-md ${statusColor}">${status}</span>
               </div>
               <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-2">
-                <button class="edit-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${ p.id }">
+                <button class="edit-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${p.id}">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                 </button>
-                <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${ p.id }">
+                <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${p.id}">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
               </div>
 
               <div class="flex flex-col h-full pointer-events-none items-center text-center">
-                <div class="w-10 h-1.5 rounded-full mb-6" style="background-color: ${ p.color || '#eceff1' }"></div>
-                <h3 class="text-xl font-bold text-main mb-1 leading-tight">${ p.name }</h3>
+                <div class="w-10 h-1.5 rounded-full mb-6" style="background-color: ${p.color || '#eceff1'}"></div>
+                <h3 class="text-xl font-bold text-main mb-1 leading-tight">${p.name}</h3>
                 <p class="text-[10px] font-black text-dim uppercase tracking-[0.2em] mb-6">
-                  ${ org ? org.name : 'Individual' }
-                  ${ client ? `<span class="opacity-40 mx-1">/</span> <span class="text-primary">${ client.name }</span>` : '' }
+                  ${org ? org.name : 'Individual'}
+                  ${client ? `<span class="opacity-40 mx-1">/</span> <span class="text-primary">${client.name}</span>` : ''}
                 </p>
                 
                 <div class="w-full bg-app rounded-full h-1.5 mb-2 overflow-hidden">
@@ -100,7 +100,7 @@ export async function renderProjects() {
               </div>
             </div>
           `;
-        } ).join('') }
+  }).join('')}
       </div>
     ` : `
       <div class="bg-card rounded-2xl border border-soft shadow-sm overflow-hidden">
@@ -117,13 +117,13 @@ export async function renderProjects() {
             </tr>
           </thead>
           <tbody>
-            ${ projects.map( (p, idx) => {
-              const org = customers.find( c => c.id == p.customer_id && c.is_client == 1 );
-              const client = customers.find( c => c.id == p.client_id && c.is_client == 0 );
-              const progress = calculateProgress(p);
-              const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
-              
-              return `
+            ${projects.map((p, idx) => {
+    const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
+    const client = customers.find(c => c.id == p.client_id && c.is_client == 0);
+    const progress = calculateProgress(p);
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+
+    return `
                 <tr class="border-b border-soft last:border-b-0 hover:bg-app/50 transition-colors group">
                   <td class="p-4">
                     <div class="flex flex-col items-center gap-0.5">
@@ -186,17 +186,17 @@ export async function renderProjects() {
                   </td>
                 </tr>
               `;
-            }).join('') }
+  }).join('')}
           </tbody>
         </table>
       </div>
     `}
 
-    ${ projects.length === 0 ? `
+    ${projects.length === 0 ? `
       <div class="text-center py-20 opacity-30">
         <p class="text-[10px] font-black uppercase tracking-[0.4em]">Ready for work</p>
       </div>
-    ` : '' }
+    ` : ''}
   `;
 
   const modalPortal = document.getElementById('modal-portal');
@@ -255,7 +255,7 @@ export async function renderProjects() {
                   <div class="relative group">
                     <select name="customer_id" class="w-full bg-app border-none rounded-2xl py-4 px-6 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20">
                       <option value="">Individual / None</option>
-                      ${ customers.filter( c => c.is_client == 1 ).map( c => `<option value="${ c.id }">${ c.name }</option>` ).join('') }
+                      ${customers.filter(c => c.is_client == 1).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                     </select>
                     <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
@@ -292,12 +292,12 @@ export async function renderProjects() {
             <div class="space-y-4 pt-4 border-t border-soft">
               <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Color Label</label>
               <div class="flex gap-4 justify-center flex-wrap">
-                ${ ['#26a69a', '#fbc02d', '#607d8b', '#ab47bc', '#f4511e', '#5c6bc0'].map( ( color, idx ) => `
+                ${['#26a69a', '#fbc02d', '#607d8b', '#ab47bc', '#f4511e', '#5c6bc0', '#ec407a', '#29b6f6', '#66bb6a', '#ffa726', '#8d6e63', '#26c6da'].map((color, idx) => `
                   <label class="cursor-pointer group">
-                    <input type="radio" name="color" value="${ color }" class="peer sr-only" ${ idx === 0 ? 'checked' : '' }>
-                    <div class="w-12 h-12 rounded-2xl bg-[${ color }] peer-checked:ring-offset-2 peer-checked:ring-2 peer-checked:ring-primary/40 transition-all border border-white/10 hover:scale-110 shadow-sm" style="background-color: ${ color }"></div>
+                    <input type="radio" name="color" value="${color}" class="peer sr-only" ${idx === 0 ? 'checked' : ''}>
+                    <div class="w-12 h-12 rounded-2xl bg-[${color}] peer-checked:ring-offset-2 peer-checked:ring-2 peer-checked:ring-primary/40 transition-all border border-white/10 hover:scale-110 shadow-sm" style="background-color: ${color}"></div>
                   </label>
-                ` ).join('') }
+                ` ).join('')}
               </div>
             </div>
 
@@ -320,27 +320,27 @@ export async function renderProjects() {
   const orgSelect = projectForm.querySelector('select[name="customer_id"]');
   const clientSelect = projectForm.querySelector('select[name="client_id"]');
 
-  const updateClientOptions = ( orgId, selectedClientId = null ) => {
+  const updateClientOptions = (orgId, selectedClientId = null) => {
     let filteredClients = [];
-    if ( orgId ) {
-      filteredClients = customers.filter( c => {
-        if ( c.is_client == 1 ) return false;
-        if ( c.client_id === orgId ) return true;
-        if ( c.organization_ids && Array.isArray( c.organization_ids ) && c.organization_ids.includes( orgId ) ) return true;
+    if (orgId) {
+      filteredClients = customers.filter(c => {
+        if (c.is_client == 1) return false;
+        if (c.client_id === orgId) return true;
+        if (c.organization_ids && Array.isArray(c.organization_ids) && c.organization_ids.includes(orgId)) return true;
         return false;
-      } );
+      });
     } else {
-      filteredClients = customers.filter( c => c.is_client == 0 && ( ! c.client_id && ( ! c.organization_ids || c.organization_ids.length === 0 ) ) );
+      filteredClients = customers.filter(c => c.is_client == 0 && (!c.client_id && (!c.organization_ids || c.organization_ids.length === 0)));
     }
 
     clientSelect.innerHTML = '<option value="">Select Client...</option>' +
-      filteredClients.map( c => `<option value="${ c.id }" ${ c.id == selectedClientId ? 'selected' : '' }>${ c.name }</option>` ).join('');
+      filteredClients.map(c => `<option value="${c.id}" ${c.id == selectedClientId ? 'selected' : ''}>${c.name}</option>`).join('');
   };
 
-  orgSelect.onchange = ( e ) => updateClientOptions( e.target.value );
+  orgSelect.onchange = (e) => updateClientOptions(e.target.value);
 
-  const openProjModal = ( project = null ) => {
-    if ( project ) {
+  const openProjModal = (project = null) => {
+    if (project) {
       modalTitle.textContent = 'Edit Project';
       submitBtn.textContent = 'Update';
       projectForm.id.value = project.id;
@@ -349,37 +349,37 @@ export async function renderProjects() {
       projectForm.started_at.value = project.started_at ? project.started_at.split('T')[0] : '';
       projectForm.completed_at.value = project.completed_at ? project.completed_at.split('T')[0] : '';
       projectForm.progress.value = project.progress || 0;
-      
+
       const org = customers.find(c => c.id == project.customer_id && c.is_client == 1);
       projectForm.customer_id.value = org ? org.id : '';
-      
-      updateClientOptions( projectForm.customer_id.value, project.client_id );
-      const colorRadio = projectForm.querySelector( `input[name="color"][value="${ project.color }"]` );
-      if ( colorRadio ) colorRadio.checked = true;
+
+      updateClientOptions(projectForm.customer_id.value, project.client_id);
+      const colorRadio = projectForm.querySelector(`input[name="color"][value="${project.color}"]`);
+      if (colorRadio) colorRadio.checked = true;
     } else {
       modalTitle.textContent = 'New Project';
       submitBtn.textContent = 'Create';
       projectForm.reset();
       projectForm.id.value = '';
-      updateClientOptions( '' );
+      updateClientOptions('');
     }
 
     projModal.classList.remove('hidden');
     projModal.classList.add('flex');
-    setTimeout( () => {
+    setTimeout(() => {
       projModalContent.classList.remove('scale-95', 'opacity-0');
       projModalContent.classList.add('scale-100', 'opacity-100');
-    }, 10 );
+    }, 10);
   };
 
   const closeProjModal = () => {
     projModalContent.classList.remove('scale-100', 'opacity-100');
     projModalContent.classList.add('scale-95', 'opacity-0');
-    setTimeout( () => {
+    setTimeout(() => {
       projModal.classList.add('hidden');
       projModal.classList.remove('flex');
       projectForm.reset();
-    }, 200 );
+    }, 200);
   };
 
   container.querySelector('#add-project-btn').onclick = () => openProjModal();
@@ -396,24 +396,24 @@ export async function renderProjects() {
     refreshView();
   };
 
-  projectForm.onsubmit = async ( e ) => {
+  projectForm.onsubmit = async (e) => {
     e.preventDefault();
-    const data = Object.fromEntries( new FormData( projectForm ).entries() );
+    const data = Object.fromEntries(new FormData(projectForm).entries());
     try {
-      await api.post( 'projects.php', data );
-      store.update( 'projects', await api.get('projects.php') );
+      await api.post('projects.php', data);
+      store.update('projects', await api.get('projects.php'));
       closeProjModal();
       refreshView();
-    } catch ( err ) {
+    } catch (err) {
       alert('Operation failed');
     }
   };
 
-  container.addEventListener( 'click', async ( e ) => {
+  container.addEventListener('click', async (e) => {
     const moveUpBtn = e.target.closest('.move-up-btn');
     const moveDownBtn = e.target.closest('.move-down-btn');
 
-    if ( moveUpBtn || moveDownBtn ) {
+    if (moveUpBtn || moveDownBtn) {
       const id = (moveUpBtn || moveDownBtn).dataset.id;
       const index = projects.findIndex(p => p.id == id);
       const newProjects = [...projects];
@@ -423,7 +423,7 @@ export async function renderProjects() {
         // Swap sort orders
         const currentOrder = newProjects[index].sort_order || 0;
         const targetOrder = newProjects[targetIndex].sort_order || 0;
-        
+
         newProjects[index].sort_order = targetOrder;
         newProjects[targetIndex].sort_order = currentOrder;
 
@@ -444,35 +444,35 @@ export async function renderProjects() {
       return;
     }
 
-    if ( e.target.closest('.delete-btn') ) {
+    if (e.target.closest('.delete-btn')) {
       e.stopPropagation();
       const id = e.target.closest('.delete-btn').dataset.id;
-      if ( confirm('Delete project?') ) {
-        await api.delete( `projects.php?id=${ id }` );
-        const [ newProjects, newTasks, newTimeEntries ] = await Promise.all([
+      if (confirm('Delete project?')) {
+        await api.delete(`projects.php?id=${id}`);
+        const [newProjects, newTasks, newTimeEntries] = await Promise.all([
           api.get('projects.php'),
           api.get('planner.php'),
           api.get('time-entries.php')
         ]);
-        store.update( 'projects', newProjects );
-        store.update( 'tasks', newTasks );
-        store.update( 'timeEntries', newTimeEntries );
+        store.update('projects', newProjects);
+        store.update('tasks', newTasks);
+        store.update('timeEntries', newTimeEntries);
         refreshView();
       }
     }
 
-    if ( e.target.closest('.edit-btn') ) {
+    if (e.target.closest('.edit-btn')) {
       e.stopPropagation();
       const id = e.target.closest('.edit-btn').dataset.id;
-      const project = projects.find( p => p.id == id );
-      if ( project ) openProjModal( project );
+      const project = projects.find(p => p.id == id);
+      if (project) openProjModal(project);
     }
-  } );
+  });
 
   async function refreshView() {
     const app = document.getElementById('app');
     app.innerHTML = '';
-    app.appendChild( await renderProjects() );
+    app.appendChild(await renderProjects());
   }
 
   return container;

@@ -5,7 +5,7 @@
  *
  * Purpose: Manage organizations (companies) and clients (people).
  *
- * @package Chompy
+ * @package Time Shark
  *
  * @author Senpai
  *
@@ -43,46 +43,46 @@ export async function renderOrganizations() {
     </div>
 
     <div class="space-y-20">
-      ${ customers.filter( c => c.is_client == 1 ).map( org => {
-        const orgClients = customers.filter( c => {
-          if ( c.is_client == 1 ) return false;
-          if ( c.client_id === org.id ) return true;
-          if ( c.organization_ids && Array.isArray( c.organization_ids ) && c.organization_ids.includes( org.id ) ) return true;
-          return false;
-        } );
+      ${customers.filter(c => c.is_client == 1).map(org => {
+    const orgClients = customers.filter(c => {
+      if (c.is_client == 1) return false;
+      if (c.client_id === org.id) return true;
+      if (c.organization_ids && Array.isArray(c.organization_ids) && c.organization_ids.includes(org.id)) return true;
+      return false;
+    });
 
-        return `
+    return `
           <div class="space-y-8">
             <div class="flex items-center gap-4 px-2 border-b border-soft pb-6">
-              <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style="background-color: ${ org.color }20; border: 2px solid ${ org.color }40">
-                <svg class="w-6 h-6" style="color: ${ org.color }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style="background-color: ${org.color}20; border: 2px solid ${org.color}40">
+                <svg class="w-6 h-6" style="color: ${org.color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
               </div>
               <div>
-                <h2 class="text-3xl font-bold text-main tracking-tight leading-none">${ org.name }</h2>
+                <h2 class="text-3xl font-bold text-main tracking-tight leading-none">${org.name}</h2>
                 <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-3 opacity-50">Organization Profile</p>
               </div>
               <div class="flex gap-2 ml-auto">
-                <button class="add-client-to-org-btn bg-primary/10 hover:bg-primary/20 text-primary transition-all px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2" data-org-id="${ org.id }">
+                <button class="add-client-to-org-btn bg-primary/10 hover:bg-primary/20 text-primary transition-all px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2" data-org-id="${org.id}">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                   Add Client
                 </button>
-                <button class="edit-org-btn text-dim/50 hover:text-primary transition-colors p-3 bg-app rounded-xl" data-id="${ org.id }">
+                <button class="edit-org-btn text-dim/50 hover:text-primary transition-colors p-3 bg-app rounded-xl" data-id="${org.id}">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                 </button>
-                <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-3 bg-app rounded-xl" data-id="${ org.id }">
+                <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-3 bg-app rounded-xl" data-id="${org.id}">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              ${ orgClients.map( client => `
+              ${orgClients.map(client => `
                 <div class="bg-card rounded-3xl p-10 border border-soft shadow-sm group hover:border-primary/30 transition-all duration-500 relative overflow-hidden">
-                  <div class="absolute top-0 left-0 w-1 h-full" style="background-color: ${ org.color }40"></div>
+                  <div class="absolute top-0 left-0 w-1 h-full" style="background-color: ${org.color}40"></div>
                   <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1">
-                    <button class="edit-client-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${ client.id }">
+                    <button class="edit-client-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${client.id}">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     </button>
-                    <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${ client.id }">
+                    <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${client.id}">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                   </div>
@@ -91,35 +91,35 @@ export async function renderOrganizations() {
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                     <div class="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2 opacity-40">Client Contact</div>
-                    <h3 class="text-xl font-bold text-main mb-1 tracking-tight">${ client.name }</h3>
-                    <p class="text-muted font-medium text-sm truncate opacity-70">${ client.email || 'No email provided' }</p>
+                    <h3 class="text-xl font-bold text-main mb-1 tracking-tight">${client.name}</h3>
+                    <p class="text-muted font-medium text-sm truncate opacity-70">${client.email || 'No email provided'}</p>
                   </div>
                 </div>
-              ` ).join('') }
-              ${ orgClients.length === 0 ? `
+              ` ).join('')}
+              ${orgClients.length === 0 ? `
                 <div class="col-span-full py-12 opacity-30 text-center border-2 border-dashed border-soft rounded-3xl bg-app/50">
                   <p class="text-[10px] font-black uppercase tracking-[0.5em]">No clients assigned to this organization</p>
                 </div>
-              ` : '' }
+              ` : ''}
             </div>
           </div>
         `;
-      } ).join('') }
+  }).join('')}
 
-      ${ customers.some( c => c.is_client == 0 && ( ! c.client_id && ( ! c.organization_ids || c.organization_ids.length === 0 ) ) ) ? `
+      ${customers.some(c => c.is_client == 0 && (!c.client_id && (!c.organization_ids || c.organization_ids.length === 0))) ? `
         <div class="space-y-8">
           <div class="px-2 border-b border-soft pb-6">
             <h2 class="text-3xl font-bold text-main tracking-tight">Individual Clients</h2>
             <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-3 opacity-50">Private / Unassociated Contacts</p>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            ${ customers.filter( c => c.is_client == 0 && ( ! c.client_id && ( ! c.organization_ids || c.organization_ids.length === 0 ) ) ).map( client => `
+            ${customers.filter(c => c.is_client == 0 && (!c.client_id && (!c.organization_ids || c.organization_ids.length === 0))).map(client => `
               <div class="bg-card rounded-3xl p-10 border border-soft shadow-sm group hover:border-primary/30 transition-all duration-500 relative overflow-hidden">
                 <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1">
-                  <button class="edit-client-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${ client.id }">
+                  <button class="edit-client-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${client.id}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                   </button>
-                  <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${ client.id }">
+                  <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${client.id}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
                 </div>
@@ -128,21 +128,21 @@ export async function renderOrganizations() {
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                   </div>
                   <div class="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2 opacity-40">Individual Client</div>
-                  <h3 class="text-xl font-bold text-main mb-1 tracking-tight">${ client.name }</h3>
-                  <p class="text-muted font-medium text-sm truncate opacity-70">${ client.email || 'No email provided' }</p>
+                  <h3 class="text-xl font-bold text-main mb-1 tracking-tight">${client.name}</h3>
+                  <p class="text-muted font-medium text-sm truncate opacity-70">${client.email || 'No email provided'}</p>
                 </div>
               </div>
-            ` ).join('') }
+            ` ).join('')}
           </div>
         </div>
-      ` : '' }
+      ` : ''}
     </div>
 
-    ${ customers.length === 0 ? `
+    ${customers.length === 0 ? `
       <div class="col-span-full py-32 opacity-20 text-center">
         <p class="text-[10px] font-black uppercase tracking-[0.4em]">The registry is currently empty</p>
       </div>
-    ` : '' }
+    ` : ''}
   `;
 
   const modalPortal = document.getElementById('modal-portal');
@@ -171,19 +171,19 @@ export async function renderOrganizations() {
             <div class="space-y-2" id="org-select-field">
               <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Belongs to Organization(s)</label>
               <select name="organization_ids" multiple class="w-full text-center py-4 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main font-bold appearance-none min-h-[120px]">
-                ${ customers.filter( c => c.is_client == 1 ).map( c => `<option value="${ c.id }">${ c.name }</option>` ).join('') }
+                ${customers.filter(c => c.is_client == 1).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
               </select>
               <p class="text-[8px] text-dim mt-1">Hold Ctrl (Cmd) to select multiple organizations</p>
             </div>
             <div class="space-y-3" id="color-field">
               <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Brand Color</label>
               <div class="flex gap-3 justify-center flex-wrap">
-                ${ ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'].map( ( color, idx ) => `
+                ${['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'].map((color, idx) => `
                   <label class="cursor-pointer group">
-                    <input type="radio" name="color" value="${ color }" class="peer sr-only" ${ idx === 0 ? 'checked' : '' }>
-                    <div class="w-8 h-8 rounded-full bg-[${ color }] peer-checked:ring-offset-2 peer-checked:ring-2 peer-checked:ring-primary/40 transition-all border border-white/10 hover:scale-110" style="background-color: ${ color }"></div>
+                    <input type="radio" name="color" value="${color}" class="peer sr-only" ${idx === 0 ? 'checked' : ''}>
+                    <div class="w-8 h-8 rounded-full bg-[${color}] peer-checked:ring-offset-2 peer-checked:ring-2 peer-checked:ring-primary/40 transition-all border border-white/10 hover:scale-110" style="background-color: ${color}"></div>
                   </label>
-                ` ).join('') }
+                ` ).join('')}
               </div>
             </div>
             <div class="pt-6">
@@ -205,28 +205,28 @@ export async function renderOrganizations() {
   const nameLabel = modalPortal.querySelector('#name-label');
   const submitBtn = modalPortal.querySelector('#submit-btn');
 
-  const openModal = ( data = null, isOrg = false, orgId = null ) => {
+  const openModal = (data = null, isOrg = false, orgId = null) => {
     form.reset();
     form.is_client.value = isOrg ? '1' : '0';
     modalPortal.querySelector('#email-field').style.display = isOrg ? 'none' : 'block';
     modalPortal.querySelector('#org-select-field').style.display = isOrg ? 'none' : 'block';
     modalPortal.querySelector('#color-field').style.display = isOrg ? 'block' : 'none';
-    
+
     nameLabel.textContent = isOrg ? 'Organization Name' : 'Client Name';
     modalSubtitle.textContent = isOrg ? 'Organization Profile' : 'Client Profile';
 
-    if ( orgId ) {
+    if (orgId) {
       const select = form.querySelector('select[name="organization_ids"]');
       Array.from(select.options).forEach(opt => opt.selected = opt.value === orgId);
     }
 
-    if ( data ) {
+    if (data) {
       modalTitle.textContent = isOrg ? 'Edit Organization' : 'Edit Client';
       form.id.value = data.id;
       form.name.value = data.name;
-      if ( isOrg ) {
-        const colorRadio = form.querySelector( `input[name="color"][value="${ data.color }"]` );
-        if ( colorRadio ) colorRadio.checked = true;
+      if (isOrg) {
+        const colorRadio = form.querySelector(`input[name="color"][value="${data.color}"]`);
+        if (colorRadio) colorRadio.checked = true;
       } else {
         form.email.value = data.email || '';
         const orgIds = data.organization_ids || (data.client_id ? [data.client_id] : []);
@@ -240,82 +240,82 @@ export async function renderOrganizations() {
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    setTimeout( () => {
+    setTimeout(() => {
       modalContent.classList.remove('scale-95', 'opacity-0');
       modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10 );
+    }, 10);
   };
 
   const addOrgBtn = container.querySelector('#add-org-btn');
-  if (addOrgBtn) addOrgBtn.onclick = () => openModal( null, true );
+  if (addOrgBtn) addOrgBtn.onclick = () => openModal(null, true);
   const addClientBtn = container.querySelector('#add-client-btn');
-  if (addClientBtn) addClientBtn.onclick = () => openModal( null, false );
+  if (addClientBtn) addClientBtn.onclick = () => openModal(null, false);
 
-  container.addEventListener( 'click', async ( e ) => {
+  container.addEventListener('click', async (e) => {
     const addClientToOrgBtn = e.target.closest('.add-client-to-org-btn');
-    if ( addClientToOrgBtn ) {
-      openModal( null, false, addClientToOrgBtn.dataset.orgId );
+    if (addClientToOrgBtn) {
+      openModal(null, false, addClientToOrgBtn.dataset.orgId);
     }
 
     const editOrgBtn = e.target.closest('.edit-org-btn');
-    if ( editOrgBtn ) {
-      const org = customers.find( c => c.id == editOrgBtn.dataset.id );
-      openModal( org, true );
+    if (editOrgBtn) {
+      const org = customers.find(c => c.id == editOrgBtn.dataset.id);
+      openModal(org, true);
     }
 
     const editClientBtn = e.target.closest('.edit-client-btn');
-    if ( editClientBtn ) {
-      const client = customers.find( c => c.id == editClientBtn.dataset.id );
-      openModal( client, false );
+    if (editClientBtn) {
+      const client = customers.find(c => c.id == editClientBtn.dataset.id);
+      openModal(client, false);
     }
 
-    if ( e.target.closest('.delete-btn') ) {
+    if (e.target.closest('.delete-btn')) {
       const id = e.target.closest('.delete-btn').dataset.id;
-      const item = customers.find( c => c.id == id );
+      const item = customers.find(c => c.id == id);
       const label = item.is_client == 1 ? 'organization' : 'client';
-      if ( confirm( `Delete ${ label }?` ) ) {
-        await api.delete( `organizations.php?id=${ id }` );
-        const [ newCustomers, newProjects ] = await Promise.all([
+      if (confirm(`Delete ${label}?`)) {
+        await api.delete(`organizations.php?id=${id}`);
+        const [newCustomers, newProjects] = await Promise.all([
           api.get('organizations.php'),
           api.get('projects.php')
         ]);
-        store.update( 'customers', newCustomers );
-        store.update( 'projects', newProjects );
+        store.update('customers', newCustomers);
+        store.update('projects', newProjects);
         refreshView();
       }
     }
-  } );
+  });
 
   const closeModal = () => {
     modalContent.classList.remove('scale-100', 'opacity-100');
     modalContent.classList.add('scale-95', 'opacity-0');
-    setTimeout( () => {
+    setTimeout(() => {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
       form.reset();
-    }, 200 );
+    }, 200);
   };
 
   modalPortal.querySelector('#close-modal-btn').onclick = closeModal;
 
-  form.onsubmit = async ( e ) => {
+  form.onsubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData( form );
-    const data = Object.fromEntries( formData.entries() );
-    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
     // Handle multiple selection for organization_ids
-    if ( data.is_client === '0' ) {
+    if (data.is_client === '0') {
       data.organization_ids = Array.from(formData.getAll('organization_ids'));
       // Keep client_id for backward compatibility (use first selected org)
       data.client_id = data.organization_ids[0] || '';
     }
 
     try {
-      await api.post( 'organizations.php', data );
-      store.update( 'customers', await api.get('organizations.php') );
+      await api.post('organizations.php', data);
+      store.update('customers', await api.get('organizations.php'));
       closeModal();
       refreshView();
-    } catch ( err ) {
+    } catch (err) {
       alert('Operation failed');
     }
   };
@@ -323,7 +323,7 @@ export async function renderOrganizations() {
   async function refreshView() {
     const app = document.getElementById('app');
     app.innerHTML = '';
-    app.appendChild( await renderOrganizations() );
+    app.appendChild(await renderOrganizations());
   }
 
   return container;

@@ -8,7 +8,7 @@ import { api } from '../utils/api.js';
  *
  * Purpose: High-end performance reporting with cumulative build-up, hourly distribution, and planned vs actual analysis.
  *
- * @package Chompy
+ * @package Time Shark
  * @author Senpai
  */
 
@@ -41,17 +41,17 @@ export async function renderReports() {
   const dailyEntries = entries.filter(e => e.end_time && e.start_time.startsWith(dailyReportDate));
   const dailyProjectData = {};
   let dailyTotalSeconds = 0;
-  
+
   // Cumulative Data Points (Minute-by-Minute)
   const cumulativePoints = Array(1440).fill(0); // 24h * 60m
-  
+
   dailyEntries.forEach(e => {
     const start = new Date(e.start_time);
     const end = new Date(e.end_time);
     const pid = e.project_id;
-    
+
     if (!dailyProjectData[pid]) dailyProjectData[pid] = { total: 0, hourly: Array(24).fill(0) };
-    
+
     let current = new Date(start);
     while (current < end) {
       const minuteOfDay = current.getHours() * 60 + current.getMinutes();
@@ -60,16 +60,16 @@ export async function renderReports() {
       nextHour.setHours(hour + 1, 0, 0, 0);
       const endOfSegment = end < nextHour ? end : nextHour;
       const segmentSeconds = (endOfSegment - current) / 1000;
-      
+
       dailyProjectData[pid].hourly[hour] += segmentSeconds / 60;
       dailyProjectData[pid].total += segmentSeconds;
       dailyTotalSeconds += segmentSeconds;
-      
+
       // Fill cumulative points
       for (let i = minuteOfDay; i < 1440; i++) {
         cumulativePoints[i] += segmentSeconds / 60;
       }
-      
+
       current = endOfSegment;
     }
   });
@@ -138,12 +138,12 @@ export async function renderReports() {
           <div>
             <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2">Daily Performance</h3>
             <p class="text-lg font-bold text-slate-200 uppercase tracking-widest">
-              ${ new Date(dailyReportDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }
+              ${new Date(dailyReportDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
           <div class="text-right">
             <div class="text-[10px] font-black text-dim uppercase tracking-widest mb-1 opacity-50">Total Burned</div>
-            <div class="text-4xl font-black text-primary tracking-tighter tabular-nums leading-none">${ formatDuration(dailyTotalSeconds) }</div>
+            <div class="text-4xl font-black text-primary tracking-tighter tabular-nums leading-none">${formatDuration(dailyTotalSeconds)}</div>
           </div>
         </div>
 
@@ -194,8 +194,8 @@ export async function renderReports() {
           </div>
           <div class="space-y-10">
             ${paginatedDays.map(dayKey => {
-              const group = grouped[dayKey];
-              return `
+    const group = grouped[dayKey];
+    return `
                 <div class="space-y-3">
                   <div class="flex items-center justify-between px-2 opacity-40">
                     <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${group.date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>
@@ -203,9 +203,9 @@ export async function renderReports() {
                   </div>
                   <div class="space-y-2">
                     ${group.entries.map(e => {
-                      const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
-                      const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
-                      return `
+      const proj = projects.find(p => p.id == e.project_id) || { name: 'Unassigned', color: '#eceff1' };
+      const org = proj.customer_id ? state.customers?.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
+      return `
                         <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-soft hover:border-primary/30 transition-all group/row flex items-center justify-between">
                           <div class="flex items-center gap-4 flex-1 min-w-0">
                             <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
@@ -229,11 +229,11 @@ export async function renderReports() {
                           </div>
                         </div>
                       `;
-                    }).join('')}
+    }).join('')}
                   </div>
                 </div>
               `;
-            }).join('')}
+  }).join('')}
           </div>
         </div>
       </div>
@@ -271,7 +271,7 @@ export async function renderReports() {
       new Chart(cumCtx, {
         type: 'line',
         data: {
-          labels: Array.from({ length: 1440 }, (_, i) => `${Math.floor(i/60)}:${String(i%60).padStart(2,'0')}`),
+          labels: Array.from({ length: 1440 }, (_, i) => `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`),
           datasets: [
             {
               label: 'Time Logged',
@@ -299,8 +299,8 @@ export async function renderReports() {
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i/60}:00` : '' } },
-            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${(v/60).toFixed(0)}h` } }
+            x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i / 60}:00` : '' } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${(v / 60).toFixed(0)}h` } }
           }
         }
       });
@@ -371,7 +371,7 @@ export async function renderReports() {
         },
         options: {
           indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-          plugins: { 
+          plugins: {
             legend: { position: 'top', align: 'end', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' }, color: '#94a3b8' } },
             afterDatasetsDraw: (chart) => {
               const { ctx, data } = chart;
@@ -401,7 +401,7 @@ export async function renderReports() {
     if (e.target.id === 'toggle-all-projects') { showAllProjects = !showAllProjects; refreshView(); }
     if (e.target.closest('#prev-page') && currentPage > 1) { currentPage--; refreshView(); }
     if (e.target.closest('#next-page') && currentPage < totalPages) { currentPage++; refreshView(); }
-    
+
     const deleteBtn = e.target.closest('.delete-btn');
     if (deleteBtn && confirm('Delete this entry?')) {
       await api.delete(`time-entries.php?id=${deleteBtn.dataset.id}`);
@@ -438,8 +438,8 @@ export async function renderReports() {
           <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Description</label>
           <input type="text" name="description" value="${entry.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
           <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Start</label><input type="datetime-local" name="start_time" value="${entry.start_time.slice(0,16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
-            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">End</label><input type="datetime-local" name="end_time" value="${entry.end_time.slice(0,16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
+            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">Start</label><input type="datetime-local" name="start_time" value="${entry.start_time.slice(0, 16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
+            <div class="space-y-2"><label class="text-[10px] font-black text-dim uppercase">End</label><input type="datetime-local" name="end_time" value="${entry.end_time.slice(0, 16)}" class="w-full bg-app border-none rounded-xl px-4 py-3 text-main font-bold"></div>
           </div>
           <div class="flex gap-4 pt-6">
             <button type="button" onclick="this.closest('#edit-modal').remove()" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest">Cancel</button>
