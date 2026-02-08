@@ -21,9 +21,41 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
-            if (!empty($data['id']) && $store->find($file, $data['id'])) {
+            if (!empty($data['id']) && $original = $store->find($file, $data['id'])) {
                 // Update
                 $result = $store->update($file, $data['id'], $data);
+                
+                // If name changed, sync with other stores
+                if (isset($data['name']) && $data['name'] !== $original['name']) {
+                    $pid = $data['id'];
+                    $newName = $data['name'];
+
+                    // Update time entries
+                    $timeEntries = $store->get('time-entries');
+                    $updatedEntries = false;
+                    foreach ($timeEntries as &$entry) {
+                        if (($entry['project_id'] ?? '') == $pid) {
+                            $entry['project_name'] = $newName;
+                            $updatedEntries = true;
+                        }
+                    }
+                    if ($updatedEntries) {
+                        $store->save('time-entries', $timeEntries);
+                    }
+
+                    // Update tasks (planner)
+                    $tasks = $store->get('tasks');
+                    $updatedTasks = false;
+                    foreach ($tasks as &$task) {
+                        if (($task['project_id'] ?? '') == $pid) {
+                            $task['project_name'] = $newName; // Planner might use this too
+                            $updatedTasks = true;
+                        }
+                    }
+                    if ($updatedTasks) {
+                        $store->save('tasks', $tasks);
+                    }
+                }
             } elseif (!empty($data['reorder']) && is_array($data['reorder'])) {
                 // Batch Reorder
                 $projects = $store->get($file);

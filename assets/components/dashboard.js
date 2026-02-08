@@ -71,7 +71,7 @@ export async function renderDashboard() {
               </div>
               <h3 class="text-4xl font-bold text-main mb-1 tracking-tight transition-colors">${activeTimer.description || 'Focusing'}</h3>
               <p class="text-muted font-medium text-lg leading-relaxed">
-                ${activeTimer.project_name}
+                ${projects.find(p => p.id == activeTimer.project_id)?.name || activeTimer.project_name}
               </p>
               ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${activeTimer.notes}</p>` : ''}
               <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity bg-card shadow-soft rounded-full p-1.5 text-primary border border-soft">
