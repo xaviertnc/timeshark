@@ -12,8 +12,7 @@
  * Last 3 version commits:
  * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
  * @version 1.1 - UPD - 28 Jan 2026 - Align with Organizations & Clients terminology
- * @version 1.2 - UPD - 28 Jan 2026 - Fixed form logic and multi-org support
- * @version 1.3 - UPD - 28 Jan 2026 - Added List/Grid toggle, reordering, and progress tracking
+ * @version 1.4 - UPD - 08 Feb 2026 - Redesign and fix syntax errors
  */
 
 import { store } from '../utils/store.js';
@@ -25,11 +24,11 @@ let viewMode = localStorage.getItem('project_view_mode') || 'grid';
 
 export async function renderProjects() {
   const state = store.get();
-  const projects = (state.projects || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const projects = [...(state.projects || [])].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const customers = state.customers || [];
 
   const container = document.createElement('div');
-  container.className = 'max-w-6xl mx-auto animate-slide-up pb-20';
+  container.className = 'max-w-7xl mx-auto animate-slide-up pb-20 px-4';
 
   const calculateProgress = (p) => {
     if (p.progress !== undefined) return p.progress;
@@ -39,63 +38,67 @@ export async function renderProjects() {
   };
 
   container.innerHTML = `
-    <div class="flex items-end justify-between mb-16 px-2">
+    <div class="flex items-end justify-between mb-16 px-2 pt-12">
       <div>
         <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-3">Portfolio</h2>
-        <h1 class="text-3xl font-light text-main tracking-tight">Active <span class="font-bold italic text-primary">Projects.</span></h1>
+        <h1 class="text-4xl font-light text-main tracking-tight">Active <span class="font-bold italic text-primary">Projects.</span></h1>
       </div>
       <div class="flex items-center gap-6">
-        <div class="flex bg-app p-1 rounded-xl border border-soft">
-          <button id="toggle-grid" class="p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-main'}">
+        <div class="flex bg-app p-1 rounded-2xl border border-soft shadow-inner">
+          <button id="toggle-grid" class="p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-main'}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
           </button>
-          <button id="toggle-list" class="p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-main'}">
+          <button id="toggle-list" class="p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-main'}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
         </div>
-        <button id="add-project-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl shadow-sm transition-all flex items-center font-black uppercase tracking-[0.2em] text-[10px]">
+        <button id="add-project-btn" class="bg-primary hover:bg-primary-dark text-white px-10 py-5 rounded-2xl shadow-lg shadow-primary/20 transition-all flex items-center font-black uppercase tracking-[0.2em] text-[11px] transform active:scale-95 leading-none">
           Create Project
         </button>
       </div>
     </div>
 
     ${viewMode === 'grid' ? `
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8">
         ${projects.map(p => {
     const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
     const client = customers.find(c => c.id == p.client_id && c.is_client == 0);
     const progress = calculateProgress(p);
     const status = p.status || 'Active';
-    const statusColor = status === 'Active' ? 'text-primary bg-primary/10' : (status === 'Completed' ? 'text-green-500 bg-green-500/10' : 'text-dim bg-app');
 
     return `
-            <div class="bg-card rounded-2xl p-8 border border-soft shadow-sm group hover:-translate-y-1 transition-all duration-300 relative project-card" data-id="${p.id}">
-              <div class="absolute top-6 left-6">
-                <span class="text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-md ${statusColor}">${status}</span>
-              </div>
-              <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-2">
-                <button class="edit-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${p.id}">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                </button>
-                <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${p.id}">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
+            <div class="bg-card rounded-[2.5rem] p-8 border border-soft shadow-sm group hover:-translate-y-2 transition-all duration-500 relative project-card overflow-hidden h-full flex flex-col cursor-grab active:cursor-grabbing" data-id="${p.id}" draggable="true">
+              
+              <div class="flex justify-between items-start mb-10">
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-sm transition-all group-hover:shadow-lg" style="background-color: ${p.color}15; border-color: ${p.color}35">
+                  <span class="text-[9px] font-black uppercase tracking-widest" style="color: ${p.color}">${status}</span>
+                </div>
+                
+                <div class="opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1 -mr-3 -mt-2">
+                  <button class="edit-btn text-dim/40 hover:text-primary transition-all p-2.5 hover:scale-125" data-id="${p.id}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  </button>
+                  <button class="delete-btn text-dim/40 hover:text-red-500 transition-all p-2.5 hover:scale-125" data-id="${p.id}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </div>
               </div>
 
-              <div class="flex flex-col h-full pointer-events-none items-center text-center">
-                <div class="w-10 h-1.5 rounded-full mb-6" style="background-color: ${p.color || '#eceff1'}"></div>
-                <h3 class="text-xl font-bold text-main mb-1 leading-tight">${p.name}</h3>
-                <p class="text-[10px] font-black text-dim uppercase tracking-[0.2em] mb-6">
-                  ${org ? org.name : 'Individual'}
-                  ${client ? `<span class="opacity-40 mx-1">/</span> <span class="text-primary">${client.name}</span>` : ''}
-                </p>
-                
-                <div class="w-full bg-app rounded-full h-1.5 mb-2 overflow-hidden">
-                  <div class="h-full bg-primary transition-all duration-1000" style="width: ${progress}%"></div>
+              <div class="flex flex-col flex-1 pointer-events-none items-center text-center">
+                <h3 class="text-2xl font-black text-main mb-3 leading-tight tracking-tight group-hover:text-primary transition-colors duration-300 px-2">${p.name}</h3>
+                <div class="flex flex-col items-center gap-1.5 mb-auto pb-12">
+                    <span class="text-[11px] font-black text-dim uppercase tracking-[0.25em] bg-app px-3 py-1 rounded-lg border border-soft shadow-inner">${org ? org.name : 'Individual'}</span>
+                    ${client ? `<span class="text-[10px] font-bold text-primary italic opacity-70 mt-1">${client.name}</span>` : ''}
                 </div>
-                <div class="flex justify-between w-full text-[8px] font-black uppercase tracking-widest text-dim">
-                  <span>Progress</span>
-                  <span class="text-main">${progress}%</span>
+                
+                <div class="w-full space-y-4">
+                  <div class="flex justify-between w-full text-[10px] font-black uppercase tracking-[0.2em] text-dim/70">
+                    <span>Performance</span>
+                    <span class="text-main font-black">${progress}%</span>
+                  </div>
+                  <div class="w-full bg-app rounded-full h-3 overflow-hidden border-2 border-soft p-[2px] shadow-inner">
+                    <div class="h-full rounded-full transition-all duration-1000 ease-out" style="width: ${progress}%; background-color: ${p.color}; box-shadow: 0 0 15px ${p.color}80"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -103,84 +106,58 @@ export async function renderProjects() {
   }).join('')}
       </div>
     ` : `
-      <div class="bg-card rounded-2xl border border-soft shadow-sm overflow-hidden">
+      <div class="bg-card rounded-[2rem] border border-soft shadow-sm overflow-hidden">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-app border-b border-soft">
-              <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest w-12 text-center">#</th>
-              <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest">Project</th>
-              <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest">Status</th>
-              <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest">Owner / Contact</th>
-              <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest">Timeline</th>
-              <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest w-40">Progress</th>
-              <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest w-24 text-right">Actions</th>
+              <th class="p-6 text-[10px] font-black text-dim uppercase tracking-widest w-16 text-center">#</th>
+              <th class="p-6 text-[10px] font-black text-dim uppercase tracking-widest">Project</th>
+              <th class="p-6 text-[10px] font-black text-dim uppercase tracking-widest">Status</th>
+              <th class="p-6 text-[10px] font-black text-dim uppercase tracking-widest">Organization</th>
+              <th class="p-6 text-[10px] font-black text-dim uppercase tracking-widest w-48">Progress</th>
+              <th class="p-6 text-[10px] font-black text-dim uppercase tracking-widest w-24 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${projects.map((p, idx) => {
     const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
-    const client = customers.find(c => c.id == p.client_id && c.is_client == 0);
     const progress = calculateProgress(p);
-    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
 
     return `
-                <tr class="border-b border-soft last:border-b-0 hover:bg-app/50 transition-colors group">
-                  <td class="p-4">
-                    <div class="flex flex-col items-center gap-0.5">
-                      <button class="move-up-btn text-dim/20 hover:text-primary transition-colors ${idx === 0 ? 'invisible' : ''}" data-id="${p.id}">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path></svg>
-                      </button>
-                      <button class="move-down-btn text-dim/20 hover:text-primary transition-colors ${idx === projects.length - 1 ? 'invisible' : ''}" data-id="${p.id}">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
-                      </button>
-                    </div>
-                  </td>
-                  <td class="p-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-1 h-6 rounded-full" style="background-color: ${p.color || '#eceff1'}"></div>
-                      <span class="font-bold text-main text-sm tracking-tight">${p.name}</span>
-                    </div>
-                  </td>
-                  <td class="p-4">
-                    <span class="text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-app border border-soft ${p.status === 'Active' ? 'text-primary' : (p.status === 'Completed' ? 'text-green-500' : 'text-dim')}">${p.status || 'Active'}</span>
-                  </td>
-                  <td class="p-4">
+                <tr class="border-b border-soft last:border-b-0 hover:bg-app/50 transition-all group cursor-grab active:cursor-grabbing" data-id="${p.id}" draggable="true">
+                  <td class="p-6">
                     <div class="flex items-center gap-2">
-                      <span class="text-xs font-bold text-main">${org ? org.name : 'Individual'}</span>
-                      ${client ? `<span class="text-[10px] text-dim/50">•</span> <span class="text-[10px] text-dim font-medium">${client.name}</span>` : ''}
-                    </div>
-                  </td>
-                  <td class="p-4">
-                    <div class="flex items-center gap-4 text-[9px] font-black uppercase tracking-tighter">
-                      <div class="flex flex-col">
-                        <span class="text-dim/30 text-[7px]">Created</span>
-                        <span class="text-main">${formatDate(p.created_at)}</span>
-                      </div>
-                      <div class="flex flex-col">
-                        <span class="text-dim/30 text-[7px]">Started</span>
-                        <span class="text-main">${formatDate(p.started_at)}</span>
-                      </div>
-                      <div class="flex flex-col">
-                        <span class="text-dim/30 text-[7px]">Done</span>
-                        <span class="text-main">${formatDate(p.completed_at)}</span>
+                      <div class="drag-handle p-1 opacity-20 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 8h16M4 16h16"></path></svg>
                       </div>
                     </div>
                   </td>
-                  <td class="p-4">
-                    <div class="flex items-center gap-3">
-                      <div class="flex-1 bg-app rounded-full h-1 overflow-hidden border border-soft">
-                        <div class="h-full bg-primary transition-all duration-1000" style="width: ${progress}%"></div>
-                      </div>
-                      <span class="text-[9px] font-black text-main tabular-nums">${progress}%</span>
+                  <td class="p-6">
+                    <div class="flex items-center gap-4">
+                      <span class="font-black text-main text-base tracking-tight">${p.name}</span>
                     </div>
                   </td>
-                  <td class="p-4 text-right">
-                    <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button class="edit-btn p-1.5 text-dim/50 hover:text-primary transition-colors" data-id="${p.id}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  <td class="p-6">
+                    <span class="text-[8px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border" style="background-color: ${p.color}15; border-color: ${p.color}35; color: ${p.color}">${p.status || 'Active'}</span>
+                  </td>
+                  <td class="p-6">
+                    <span class="text-xs font-black text-dim uppercase tracking-widest">${org ? org.name : 'Individual'}</span>
+                  </td>
+                  <td class="p-6">
+                    <div class="flex items-center gap-4">
+                      <div class="flex-1 bg-app rounded-full h-2.5 overflow-hidden border border-soft shadow-inner p-[1px]">
+                        <div class="h-full rounded-full transition-all duration-1000" style="width: ${progress}%; background-color: ${p.color}"></div>
+                      </div>
+                      <span class="text-[10px] font-black text-main tabular-nums tracking-widest">${progress}%</span>
+                    </div>
+                  </td>
+                  <td class="p-6 text-right">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                      <button class="edit-btn p-2 text-dim/40 hover:text-primary transition-all transform hover:scale-125" data-id="${p.id}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                       </button>
-                      <button class="delete-btn p-1.5 text-dim/50 hover:text-red-400 transition-colors" data-id="${p.id}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      <button class="delete-btn p-2 text-dim/40 hover:text-red-500 transition-all transform hover:scale-125" data-id="${p.id}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                       </button>
                     </div>
                   </td>
@@ -193,117 +170,116 @@ export async function renderProjects() {
     `}
 
     ${projects.length === 0 ? `
-      <div class="text-center py-20 opacity-30">
-        <p class="text-[10px] font-black uppercase tracking-[0.4em]">Ready for work</p>
+      <div class="text-center py-32 opacity-20 border-2 border-dashed border-soft rounded-[3rem]">
+        <p class="text-xs font-black uppercase tracking-[0.5em]">The portfolio is currently empty</p>
       </div>
     ` : ''}
   `;
 
   const modalPortal = document.getElementById('modal-portal');
   modalPortal.innerHTML = `
-    <div id="project-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
+    <div id="project-modal" class="fixed inset-0 bg-secondary/60 hidden z-50 backdrop-blur-xl pointer-events-auto items-center justify-center overflow-y-auto">
       <div class="min-h-screen w-full flex items-center justify-center p-4">
-        <div class="bg-card rounded-3xl shadow-xl w-full max-w-2xl p-10 transform transition-all scale-95 opacity-0 text-center relative" id="project-modal-content">
-          <button id="close-project-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl transition-colors">&times;</button>
+        <div class="bg-card rounded-[3rem] shadow-2xl w-full max-w-2xl p-12 lg:p-16 transform transition-all scale-95 opacity-0 text-center relative border border-soft" id="project-modal-content">
+          <button id="close-project-modal" class="absolute top-8 right-10 text-dim hover:text-red-500 text-3xl transition-all hover:rotate-90 hover:scale-125">&times;</button>
 
-          <div class="mb-10">
-            <h3 class="text-2xl font-bold text-main tracking-tight" id="modal-title">New Project</h3>
-            <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Project Specification</p>
+          <div class="mb-12">
+            <h3 class="text-3xl font-black text-main tracking-tighter" id="modal-title">Define Project</h3>
+            <p class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mt-3 opacity-60">System Registry Entry</p>
           </div>
 
-          <form id="project-form" class="space-y-8">
+          <form id="project-form" class="space-y-10">
             <input type="hidden" name="id">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Project Name</label>
-                  <input type="text" name="name" required placeholder="Enter name" class="w-full py-4 px-6 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main font-bold">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 text-left">
+              <div class="space-y-8">
+                <div class="space-y-3">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Project Name</label>
+                  <input type="text" name="name" required placeholder="Launch Campaign" class="w-full py-5 px-8 bg-app border-none rounded-2xl focus:ring-4 focus:ring-primary/10 text-main font-bold placeholder:opacity-30">
                 </div>
 
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Status</label>
+                <div class="space-y-3">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Operational Status</label>
                   <div class="relative group">
-                    <select name="status" class="w-full bg-app border-none rounded-2xl py-4 px-6 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20">
-                      <option value="Active">Active</option>
-                      <option value="On Hold">On Hold</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Cancelled">Cancelled</option>
+                    <select name="status" class="w-full bg-app border-none rounded-2xl py-5 px-8 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
+                      <option value="Active">Active State</option>
+                      <option value="On Hold">Suspended</option>
+                      <option value="Completed">Finalized</option>
+                      <option value="Cancelled">Terminated</option>
                     </select>
-                    <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
                 </div>
 
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Manual Progress (%)</label>
-                  <div class="bg-app p-6 rounded-2xl space-y-3">
-                    <input type="range" name="progress" min="0" max="100" value="0" class="w-full accent-primary">
-                    <div class="flex justify-between text-[8px] font-black text-dim uppercase">
-                      <span>0%</span>
-                      <span>50%</span>
-                      <span>100%</span>
+                <div class="space-y-3">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Manual Progress Metric (%)</label>
+                  <div class="bg-app p-8 rounded-3xl space-y-5 shadow-inner">
+                    <input type="range" name="progress" min="0" max="100" value="0" class="w-full h-2 bg-card rounded-lg appearance-none cursor-pointer accent-primary shadow-sm border border-soft">
+                    <div class="flex justify-between text-[9px] font-black text-dim/40 uppercase tracking-widest px-1">
+                      <span>Minimum</span>
+                      <span>Target Reach</span>
+                      <span>Maximum</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Organization</label>
+              <div class="space-y-8">
+                <div class="space-y-3">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Parent Organization</label>
                   <div class="relative group">
-                    <select name="customer_id" class="w-full bg-app border-none rounded-2xl py-4 px-6 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20">
-                      <option value="">Individual / None</option>
+                    <select name="customer_id" class="w-full bg-app border-none rounded-2xl py-5 px-8 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
+                      <option value="">Global / Internal</option>
                       ${customers.filter(c => c.is_client == 1).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                     </select>
-                    <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
                 </div>
 
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Client Contact</label>
+                <div class="space-y-3">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Lead Contact</label>
                   <div class="relative group">
-                    <select name="client_id" class="w-full bg-app border-none rounded-2xl py-4 px-6 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20">
-                      <option value="">Select Client...</option>
-                      <!-- Populated dynamically -->
+                    <select name="client_id" class="w-full bg-app border-none rounded-2xl py-5 px-8 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
+                      <option value="">Assign Later...</option>
                     </select>
-                    <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Start Date</label>
-                    <input type="date" name="started_at" class="w-full py-4 px-6 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main font-bold">
+                <div class="grid grid-cols-2 gap-6">
+                  <div class="space-y-3">
+                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Start Date</label>
+                    <input type="date" name="started_at" class="w-full py-5 px-8 bg-app border-none rounded-2xl focus:ring-4 focus:ring-primary/10 text-main font-bold">
                   </div>
-                  <div class="space-y-2">
-                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Completed Date</label>
-                    <input type="date" name="completed_at" class="w-full py-4 px-6 bg-app border-none rounded-2xl focus:ring-2 focus:ring-primary/20 text-main font-bold">
+                  <div class="space-y-3">
+                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Deadline</label>
+                    <input type="date" name="completed_at" class="w-full py-5 px-8 bg-app border-none rounded-2xl focus:ring-4 focus:ring-primary/10 text-main font-bold">
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="space-y-4 pt-4 border-t border-soft">
-              <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Color Label</label>
-              <div class="flex gap-4 justify-center flex-wrap">
-                ${['#26a69a', '#fbc02d', '#607d8b', '#ab47bc', '#f4511e', '#5c6bc0', '#ec407a', '#29b6f6', '#66bb6a', '#ffa726', '#8d6e63', '#26c6da'].map((color, idx) => `
-                  <label class="cursor-pointer group">
+            <div class="space-y-6 pt-10 border-t-2 border-soft border-dashed">
+              <label class="text-[10px] font-black text-dim uppercase tracking-[0.5em] block text-center opacity-60">Visual ID Palette</label>
+              <div class="flex gap-5 justify-center flex-wrap max-w-lg mx-auto">
+                ${['#00c853', '#ffd600', '#2c3e50', '#aa00ff', '#ff3d00', '#2979ff', '#ff0055', '#00b0ff', '#00e676', '#ffab00', '#3e2723', '#00e5ff', '#212121', '#c6ff00', '#6200ea'].map((color, idx) => `
+                  <label class="cursor-pointer group relative">
                     <input type="radio" name="color" value="${color}" class="peer sr-only" ${idx === 0 ? 'checked' : ''}>
-                    <div class="w-12 h-12 rounded-2xl bg-[${color}] peer-checked:ring-offset-2 peer-checked:ring-2 peer-checked:ring-primary/40 transition-all border border-white/10 hover:scale-110 shadow-sm" style="background-color: ${color}"></div>
+                    <div class="w-11 h-11 rounded-full bg-[${color}] peer-checked:ring-offset-4 peer-checked:ring-4 peer-checked:ring-primary/20 transition-all border-4 border-white/5 hover:scale-125 shadow-lg active:scale-90" style="background-color: ${color}; box-shadow: 0 5px 15px ${color}30"></div>
                   </label>
-                ` ).join('')}
+                `).join('')}
               </div>
             </div>
 
-            <div class="pt-6">
-              <button type="submit" id="submit-btn" class="w-full h-18 bg-primary hover:bg-primary-dark text-white font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 active:scale-95 py-6">
-                Save Project
+            <div class="pt-8">
+              <button type="submit" id="submit-btn" class="w-full h-22 bg-primary hover:bg-primary-dark text-white font-black text-[12px] uppercase tracking-[0.5em] rounded-3xl shadow-2xl shadow-primary/30 transition-all hover:-translate-y-2 active:scale-95 py-8 leading-none transform">
+                Authorize Changes
               </button>
             </div>
           </form>
@@ -311,6 +287,7 @@ export async function renderProjects() {
       </div>
     </div>
   `;
+
 
   const projModal = modalPortal.querySelector('#project-modal');
   const projModalContent = modalPortal.querySelector('#project-modal-content');
@@ -333,7 +310,7 @@ export async function renderProjects() {
       filteredClients = customers.filter(c => c.is_client == 0 && (!c.client_id && (!c.organization_ids || c.organization_ids.length === 0)));
     }
 
-    clientSelect.innerHTML = '<option value="">Select Client...</option>' +
+    clientSelect.innerHTML = '<option value="">Assign Later...</option>' +
       filteredClients.map(c => `<option value="${c.id}" ${c.id == selectedClientId ? 'selected' : ''}>${c.name}</option>`).join('');
   };
 
@@ -341,8 +318,8 @@ export async function renderProjects() {
 
   const openProjModal = (project = null) => {
     if (project) {
-      modalTitle.textContent = 'Edit Project';
-      submitBtn.textContent = 'Update';
+      modalTitle.textContent = 'Update Registry';
+      submitBtn.textContent = 'Authorize Changes';
       projectForm.id.value = project.id;
       projectForm.name.value = project.name;
       projectForm.status.value = project.status || 'Active';
@@ -357,8 +334,8 @@ export async function renderProjects() {
       const colorRadio = projectForm.querySelector(`input[name="color"][value="${project.color}"]`);
       if (colorRadio) colorRadio.checked = true;
     } else {
-      modalTitle.textContent = 'New Project';
-      submitBtn.textContent = 'Create';
+      modalTitle.textContent = 'Project Initialization';
+      submitBtn.textContent = 'Initialize Project';
       projectForm.reset();
       projectForm.id.value = '';
       updateClientOptions('');
@@ -405,7 +382,7 @@ export async function renderProjects() {
       closeProjModal();
       refreshView();
     } catch (err) {
-      alert('Operation failed');
+      alert('Security violation: Project update failed');
     }
   };
 
@@ -420,14 +397,12 @@ export async function renderProjects() {
       const targetIndex = moveUpBtn ? index - 1 : index + 1;
 
       if (targetIndex >= 0 && targetIndex < projects.length) {
-        // Swap sort orders
         const currentOrder = newProjects[index].sort_order || 0;
         const targetOrder = newProjects[targetIndex].sort_order || 0;
 
         newProjects[index].sort_order = targetOrder;
         newProjects[targetIndex].sort_order = currentOrder;
 
-        // If orders are same (uninitialized), fix them
         if (currentOrder === targetOrder) {
           newProjects[index].sort_order = index > targetIndex ? index : targetIndex;
           newProjects[targetIndex].sort_order = index > targetIndex ? targetIndex : index;
@@ -447,7 +422,7 @@ export async function renderProjects() {
     if (e.target.closest('.delete-btn')) {
       e.stopPropagation();
       const id = e.target.closest('.delete-btn').dataset.id;
-      if (confirm('Delete project?')) {
+      if (confirm('Critical: Wipe project data permanently?')) {
         await api.delete(`projects.php?id=${id}`);
         const [newProjects, newTasks, newTimeEntries] = await Promise.all([
           api.get('projects.php'),
@@ -467,6 +442,95 @@ export async function renderProjects() {
       const project = projects.find(p => p.id == id);
       if (project) openProjModal(project);
     }
+  });
+
+  // Drag & Drop Ordering
+  let draggedId = null;
+
+  container.addEventListener('dragstart', (e) => {
+    const target = e.target.closest('[draggable="true"]');
+    if (!target) return;
+    draggedId = target.dataset.id;
+    target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('[draggable="true"]');
+    if (!target || target.dataset.id === draggedId) return;
+
+    // Clear previous
+    target.classList.remove('drag-over-top', 'drag-over-bottom');
+
+    const rect = target.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+
+    if (e.clientY < midpoint) {
+      target.classList.add('drag-over-top');
+    } else {
+      target.classList.add('drag-over-bottom');
+    }
+  });
+
+  container.addEventListener('dragleave', (e) => {
+    const target = e.target.closest('[draggable="true"]');
+    if (target) {
+      target.classList.remove('drag-over-top', 'drag-over-bottom');
+    }
+  });
+
+  container.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    const target = e.target.closest('[draggable="true"]');
+    if (!target) return;
+
+    const rect = target.getBoundingClientRect();
+    const isBottom = e.clientY > rect.top + rect.height / 2;
+
+    target.classList.remove('drag-over-top', 'drag-over-bottom');
+    const droppedOnId = target.dataset.id;
+    if (draggedId === droppedOnId) return;
+
+    const dragIdx = projects.findIndex(p => p.id == draggedId);
+    let dropIdx = projects.findIndex(p => p.id == droppedOnId);
+
+    if (dragIdx === -1 || dropIdx === -1) return;
+
+    // Shift drop index if dropped on the bottom half
+    if (isBottom) dropIdx++;
+    // Adjust for the item being removed before insertion
+    if (dragIdx < dropIdx) dropIdx--;
+
+    if (dragIdx === dropIdx) return;
+
+    // Reorder array locally
+    const [movedProject] = projects.splice(dragIdx, 1);
+    projects.splice(dropIdx, 0, movedProject);
+
+    // Batch update models
+    projects.forEach((p, idx) => p.sort_order = idx);
+    const reorder = projects.map(p => ({ id: p.id, sort_order: p.sort_order }));
+
+    // Optimistic Update
+    store.update('projects', [...projects]);
+    refreshView();
+
+    try {
+      await api.post('projects.php', { reorder });
+    } catch (err) {
+      console.error('Batch reorder failed:', err);
+      // Optional: Refresh from server on error
+      const fresh = await api.get('projects.php');
+      store.update('projects', fresh);
+      refreshView();
+    }
+  });
+
+  container.addEventListener('dragend', (e) => {
+    const target = e.target.closest('[draggable="true"]');
+    if (target) target.classList.remove('dragging', 'drag-over');
+    draggedId = null;
   });
 
   async function refreshView() {

@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/style.css?v=<?=time()?>">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -93,6 +93,6 @@
     </main>
 
     <div id="modal-portal" class="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"></div>
-    <script type="module" src="assets/app.js"></script>
+    <script type="module" src="assets/app.js?v=<?=time()?>"></script>
 </body>
 </html>

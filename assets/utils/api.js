@@ -2,7 +2,8 @@ const API_BASE = 'api/';
 
 export const api = {
     async get(endpoint) {
-        const response = await fetch(`${API_BASE}${endpoint}`);
+        const sep = endpoint.includes('?') ? '&' : '?';
+        const response = await fetch(`${API_BASE}${endpoint}${sep}cb=${Date.now()}`);
         if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
         return await response.json();
     },
@@ -20,7 +21,8 @@ export const api = {
     },
 
     async delete(endpoint) {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
+        const sep = endpoint.includes('?') ? '&' : '?';
+        const response = await fetch(`${API_BASE}${endpoint}${sep}cb=${Date.now()}`, {
             method: 'DELETE'
         });
         if (!response.ok) throw new Error(`API Error: ${response.statusText}`);

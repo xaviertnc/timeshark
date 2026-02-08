@@ -24,6 +24,19 @@ try {
             if (!empty($data['id']) && $store->find($file, $data['id'])) {
                 // Update
                 $result = $store->update($file, $data['id'], $data);
+            } elseif (!empty($data['reorder']) && is_array($data['reorder'])) {
+                // Batch Reorder
+                $projects = $store->get($file);
+                foreach ($data['reorder'] as $item) {
+                    foreach ($projects as &$p) {
+                        if ($p['id'] == $item['id']) {
+                            $p['sort_order'] = $item['sort_order'];
+                            break;
+                        }
+                    }
+                }
+                $store->save($file, $projects);
+                $result = ['success' => true];
             } else {
                 // Create
                 if (!isset($data['status'])) {
