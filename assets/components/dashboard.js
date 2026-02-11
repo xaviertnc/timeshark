@@ -49,6 +49,9 @@ export async function renderDashboard() {
     return '#' + (0x1000000 + (R < 255 ? R < 0 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 0 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 0 ? 0 : B : 255)).toString(16).slice(1);
   };
 
+  const activeProj = activeTimer ? projects.find(p => String(p.id) === String(activeTimer.project_id)) : null;
+  const pColor = activeProj?.color || '#338a81';
+
   container.innerHTML = `
     <!-- Active Timer Widget -->
     <div class="relative overflow-hidden transition-all duration-300">
@@ -56,13 +59,13 @@ export async function renderDashboard() {
         ${activeTimer ? `
           <div class="flex flex-col md:flex-row items-center justify-between gap-8 bg-card/40 backdrop-blur-sm rounded-2xl pb-4 shadow-sm">
             <div id="active-task-display" class="flex-1 cursor-pointer group/task relative py-3 px-5 rounded-xl hover:bg-primary/5 transition-all">
-              <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-primary/10 text-[9px] font-black text-primary uppercase tracking-widest mb-3">
-                <span class="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+              <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-3" style="background-color: ${pColor}1a; color: ${pColor}">
+                <span class="w-1 h-1 rounded-full animate-pulse" style="background-color: ${pColor}"></span>
                 Chomping
               </div>
               <h3 class="text-4xl font-bold text-main mb-1 tracking-tight transition-colors">${activeTimer.description || 'Focusing'}</h3>
               <p class="text-muted font-medium text-lg leading-relaxed">
-                ${projects.find(p => String(p.id) === String(activeTimer.project_id))?.name || activeTimer.project_name || 'Unassigned'}
+                ${activeProj?.name || activeTimer.project_name || 'Unassigned'}
               </p>
               ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${activeTimer.notes}</p>` : ''}
               <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity bg-card shadow-soft rounded-full p-1.5 text-primary border border-soft">
