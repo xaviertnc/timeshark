@@ -56,9 +56,10 @@ export const PlannerTimeline = {
             </div>
             <div class="relative flex-grow h-12 overflow-hidden" style="width: ${totalWidth}px">
                 ${config.dates.map((d, i) => `
-                    <div class="absolute top-0 bottom-0 border-r border-soft flex items-center justify-center text-[9px] font-bold text-dim uppercase"
-                         style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${d.toDateString() === today.toDateString() ? 'rgba(var(--color-primary), 0.05)' : 'transparent'}">
-                         ${d.getDate()} <span class="opacity-50 ml-1">${d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
+                    <div class="absolute top-0 bottom-0 border-r border-soft flex flex-col items-center justify-center text-[10px] font-bold text-dim uppercase"
+                         style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${d.toDateString() === today.toDateString() ? 'rgba(var(--color-primary), 0.1)' : 'transparent'}">
+                         <span class="${d.toDateString() === today.toDateString() ? 'text-primary' : ''}">${d.getDate()}</span>
+                         <span class="opacity-50 text-[8px]">${d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
                     </div>
                 `).join('')}
             </div>
@@ -79,7 +80,7 @@ export const PlannerTimeline = {
                     <div class="w-8 h-8 rounded-lg bg-card border border-soft flex items-center justify-center text-[10px] font-black text-dim">
                         ${row.resource.substring(0, 2).toUpperCase()}
                     </div>
-                    <span class="text-sm font-bold text-main truncate">${row.resource}</span>
+                    <span class="text-base font-bold text-main truncate">${row.resource}</span>
                 </div>
                 <div class="relative flex-grow h-16" style="width: ${totalWidth}px">
                      <!-- Grid Lines -->

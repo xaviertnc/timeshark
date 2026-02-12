@@ -11,6 +11,10 @@ import { PlannerState } from './planner/planner-state.js';
  */
 
 export async function renderDashboard() {
+  // Modal & State Initialization for Unified Planner interaction
+  PlannerModal.render('modal-portal');
+  if (!store.get().tasks) await PlannerState.init();
+
   const state = store.get();
   const projects = state.projects || [];
   const activeTimer = state.activeTimer;
@@ -195,10 +199,6 @@ export async function renderDashboard() {
   }
 
   // --- ACTIONS ---
-
-  // Modal & State Initialization for Unified Planner interaction
-  PlannerModal.render('modal-portal');
-  if (!state.tasks) await PlannerState.init();
 
   const activeTaskDisplay = container.querySelector('#active-task-display');
   if (activeTaskDisplay && activeTimer?.task_id) {
@@ -404,7 +404,7 @@ export async function renderDashboard() {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         data.id = activeTimer.id;
-        data.task_id = data.task_id ? parseInt(data.task_id) : null;
+        data.task_id = data.task_id || null;
         data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
         try {
           const result = await api.post('time-entries.php', data);
@@ -503,7 +503,7 @@ export async function renderDashboard() {
       modalPortal.querySelector('#edit-history-form').onsubmit = async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
-        data.task_id = data.task_id ? parseInt(data.task_id) : null;
+        data.task_id = data.task_id || null;
         data.start_time = new Date(data.start_time).toISOString();
         data.end_time = new Date(data.end_time).toISOString();
         data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';

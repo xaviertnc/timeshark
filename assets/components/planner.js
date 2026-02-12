@@ -15,6 +15,7 @@ import { PlannerModal } from './planner/planner-modal.js';
 let currentScale = 'week';
 let timeOffset = 0;
 let projectFilter = 'all';
+let currentView = 'timeline';
 
 export async function renderPlanner() {
 
@@ -91,10 +92,20 @@ export async function renderPlanner() {
             </div>
 
             <!-- Timeline: Gantt (75%) -->
-            <div class="flex-grow flex flex-col bg-card rounded-2xl border border-soft shadow-soft overflow-hidden relative">
+            <div id="timeline-wrapper" class="flex-grow flex flex-col bg-card rounded-2xl border border-soft shadow-soft overflow-hidden relative">
                  <div id="planner-timeline-container" class="flex-grow overflow-x-auto overflow-y-auto custom-scrollbar relative">
                     <!-- Timeline Content -->
                  </div>
+            </div>
+
+            <!-- Full List View (Alternative to Timeline) -->
+            <div id="full-list-wrapper" class="hidden flex-grow flex flex-col bg-card rounded-2xl border border-soft shadow-soft overflow-hidden relative">
+                <div class="p-4 border-b border-soft bg-app/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-8">
+                    <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">Planned Tasks</h3>
+                </div>
+                <div id="planner-full-list-container" class="flex-grow overflow-y-auto p-8 custom-scrollbar">
+                    <!-- List Content -->
+                </div>
             </div>
         </div>
     `;
@@ -111,9 +122,34 @@ export async function renderPlanner() {
 
         const listContainer = container.querySelector('#planner-list-container');
         const timelineContainer = container.querySelector('#planner-timeline-container');
+        const timelineWrapper = container.querySelector('#timeline-wrapper');
+        const listWrapper = container.querySelector('#full-list-wrapper');
+        const scaleContainer = container.querySelector('#scale-toggle-container');
+
+        // Update Toggle Button States
+        container.querySelectorAll('.view-toggle').forEach(btn => {
+            if (btn.dataset.view === currentView) {
+                btn.classList.add('bg-card', 'text-primary', 'shadow-sm');
+                btn.classList.remove('text-dim');
+            } else {
+                btn.classList.remove('bg-card', 'text-primary', 'shadow-sm');
+                btn.classList.add('text-dim');
+            }
+        });
+
+        if (currentView === 'timeline') {
+            timelineWrapper.classList.remove('hidden');
+            listWrapper.classList.add('hidden');
+            scaleContainer?.classList.remove('hidden');
+            PlannerTimeline.render(timelineContainer, data, config, today);
+        } else {
+            timelineWrapper.classList.add('hidden');
+            listWrapper.classList.remove('hidden');
+            scaleContainer?.classList.add('hidden');
+            PlannerList.render('planner-full-list-container', data.rows.flatMap(r => r.tasks), data.projects, { fullWidth: true });
+        }
 
         PlannerList.render(listContainer, data.backlog, data.projects);
-        PlannerTimeline.render(timelineContainer, data, config, today);
     };
 
     updateUI();
@@ -146,9 +182,10 @@ export async function renderPlanner() {
             return;
         }
 
-        // Add Task (Header Btn)
-        if (e.target.closest('#add-task-btn')) {
-            PlannerModal.open();
+        // View Mode
+        if (e.target.closest('.view-toggle')) {
+            currentView = e.target.closest('.view-toggle').dataset.view;
+            updateUI();
             return;
         }
 
@@ -169,6 +206,7 @@ export async function renderPlanner() {
             }
             return;
         }
+
 
         // Task Click (List or Timeline)
         const taskEl = e.target.closest('[data-task-id]');
@@ -244,6 +282,13 @@ export async function renderPlanner() {
         projectFilter = e.target.value;
         updateUI();
     };
+
+    // Keyboard Listeners
+    container.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.id === 'quick-add-input') {
+            container.querySelector('#quick-add-btn')?.click();
+        }
+    });
 
     return container;
 }
