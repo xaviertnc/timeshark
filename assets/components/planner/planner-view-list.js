@@ -59,6 +59,9 @@ export const PlannerList = {
                              data-task-id="${t.id}">
                             <div class="flex items-start justify-between gap-2">
                                 <span class="text-xs font-bold text-main leading-snug line-clamp-2">${t.title}</span>
+                                <button class="track-btn opacity-0 group-hover/item:opacity-100 text-teal-600 hover:bg-teal-600/10 p-1 rounded transition-all" title="Start Tracking" data-task-id="${t.id}">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </button>
                                 <button class="plan-btn opacity-0 group-hover/item:opacity-100 text-primary hover:bg-primary/10 p-1 rounded transition-all" title="Schedule">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </button>

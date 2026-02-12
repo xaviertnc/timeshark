@@ -59,18 +59,23 @@ export async function renderPlanner() {
                     </div>
                 </div>
 
-                <!-- Scale Toggle -->
+                <!-- View Toggle -->
                 <div class="bg-app p-1 rounded-xl flex items-center">
+                    ${['timeline', 'list'].map(v => `
+                        <button class="view-toggle px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted'}" data-view="${v}">
+                            ${v}
+                        </button>
+                    `).join('')}
+                </div>
+
+                <!-- Scale Toggle (Only if in timeline view) -->
+                <div id="scale-toggle-container" class="bg-app p-1 rounded-xl flex items-center ${currentView === 'list' ? 'hidden' : ''}">
                     ${['week', 'month'].map(s => `
                         <button class="scale-toggle px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted'}" data-scale="${s}">
                             ${s}
                         </button>
                     `).join('')}
                 </div>
-
-                <button id="add-task-btn" class="bg-primary hover:bg-primary-dark text-white px-5 py-3 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center font-black uppercase tracking-[0.1em] text-[10px]">
-                    Create Task
-                </button>
             </div>
         </div>
 
@@ -185,13 +190,34 @@ export async function renderPlanner() {
             return;
         }
 
-        // Schedule Button in List (Plan icon)
-        const planBtn = e.target.closest('.plan-btn');
-        if (planBtn) {
-            // Handled by task click above since btn is inside task-item
-            // But if we want specific behavior (like defaulting to today), we can intercept.
-            // For now, opening modal is fine.
+        // Track Button in List (Play icon)
+        const trackBtn = e.target.closest('.track-btn');
+        if (trackBtn) {
+            const taskId = trackBtn.dataset.taskId;
+            const state = PlannerState.getCombinedData('all');
+            const task = state.backlog.find(t => t.id == taskId);
+
+            if (task) {
+                const startData = {
+                    task_id: task.id,
+                    project_id: task.project_id,
+                    description: task.title,
+                    project_name: state.projects.find(p => p.id == task.project_id)?.name || 'Unassigned',
+                    resource_id: store.get().team?.[0]?.name || 'Main'
+                };
+
+                api.post('time-entries.php?action=start', startData).then(result => {
+                    store.update('activeTimer', result);
+                    // Optionally notify user or switch to dashboard
+                    // For now, let's just refresh to show the timer state if we add a global timer display
+                    // But usually, the user would want to see the dashboard timer running.
+                    window.location.hash = '#dashboard';
+                });
+            }
+            return;
         }
+
+        // Schedule Button in List (Plan icon)
     });
 
     // Enter on Quick Add

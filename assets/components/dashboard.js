@@ -1,5 +1,7 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
+import { PlannerModal } from './planner/planner-modal.js';
+import { PlannerState } from './planner/planner-state.js';
 
 /**
  * assets/components/dashboard.js
@@ -93,7 +95,8 @@ export async function renderDashboard() {
                 </div>
                 <div class="space-y-1.5">
                   <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">What are you doing?</label>
-                  <input type="text" name="description" placeholder="Task description..." class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm focus:ring-2 focus:ring-primary/20">
+                  <input type="text" name="description" list="todo-datalist" placeholder="Task description..." class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm focus:ring-2 focus:ring-primary/20">
+                  <datalist id="todo-datalist"></datalist>
                 </div>
                 <div class="space-y-1.5">
                   <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes (Optional)</label>
@@ -132,7 +135,19 @@ export async function renderDashboard() {
                     <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${e.resource_id || 'Main'}</span>
                   </div>
                   <p class="text-xs font-medium text-muted truncate">${proj.name} ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}</p>
-                  ${e.notes ? `<p class="text-[9px] text-dim italic mt-0.5">${e.notes}</p>` : ''}
+                  ${(() => {
+        if (e.task_id) {
+          const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
+          return `<div class="mt-1 flex items-center gap-1.5">
+                      <span class="text-[8px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 flex items-center gap-1 uppercase tracking-tighter">
+                        <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        Linked Todo: ${t ? t.title : 'Deleted Todo'}
+                      </span>
+                    </div>`;
+        }
+        return '';
+      })()}
+                  ${e.notes ? `<p class="text-[9px] text-dim italic mt-1.5">${e.notes}</p>` : ''}
                 </div>
               </div>
 
@@ -166,7 +181,32 @@ export async function renderDashboard() {
     </div>
   `;
 
+  // Filter Tasks for Datalist
+  if (!activeTimer) {
+    const projectSelect = container.querySelector('select[name="project_id"]');
+    const datalist = container.querySelector('#todo-datalist');
+    const updateDatalist = () => {
+      const pid = projectSelect.value;
+      const tasks = (state.tasks || []).filter(t => String(t.project_id) === String(pid));
+      datalist.innerHTML = tasks.map(t => `<option value="${t.title}">${t.title}</option>`).join('');
+    };
+    projectSelect.addEventListener('change', updateDatalist);
+    updateDatalist();
+  }
+
   // --- ACTIONS ---
+
+  // Modal & State Initialization for Unified Planner interaction
+  PlannerModal.render('modal-portal');
+  if (!state.tasks) await PlannerState.init();
+
+  const activeTaskDisplay = container.querySelector('#active-task-display');
+  if (activeTaskDisplay && activeTimer?.task_id) {
+    activeTaskDisplay.onclick = () => {
+      const task = (store.get().tasks || []).find(t => String(t.id) === String(activeTimer.task_id));
+      if (task) PlannerModal.open(task);
+    };
+  }
 
   const refreshView = async () => {
     const app = document.getElementById('app');
@@ -208,13 +248,47 @@ export async function renderDashboard() {
   // Active Timer Actions
   const startForm = container.querySelector('#start-timer-form');
   if (startForm) {
+    const projectSelect = startForm.querySelector('select[name="project_id"]');
+    const descInput = startForm.querySelector('input[name="description"]');
+
     startForm.onsubmit = async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(startForm).entries());
       const proj = projects.find(p => String(p.id) === String(data.project_id));
       if (!proj) return;
+
       data.project_name = proj.name;
       data.resource_id = state.team?.[0]?.name || 'Main';
+
+      // Unified Task Logic: Check if task exists for this project/description
+      const allTasks = state.tasks || [];
+      const existingTask = allTasks.find(t =>
+        String(t.project_id) === String(data.project_id) &&
+        t.title.toLowerCase().trim() === data.description.toLowerCase().trim()
+      );
+
+      if (existingTask) {
+        data.task_id = existingTask.id;
+      } else if (data.description.trim() !== '') {
+        // No existing task, ask to create one
+        if (confirm(`No existing todo found for "${data.description}". Create it under ${proj.name}?`)) {
+          try {
+            const newTask = await api.post('planner.php', {
+              title: data.description,
+              project_id: data.project_id,
+              resource_id: data.resource_id,
+              start_date: null,
+              end_date: null
+            });
+            data.task_id = newTask.id;
+            // Update local state to include new task
+            store.update('tasks', [...allTasks, newTask]);
+          } catch (err) {
+            console.error("Failed to auto-gen todo", err);
+          }
+        }
+      }
+
       try {
         const result = await api.post('time-entries.php?action=start', data);
         store.update('activeTimer', result);
@@ -271,16 +345,24 @@ export async function renderDashboard() {
               <p class="text-[9px] font-black text-dim uppercase tracking-widest mt-2">Live Update</p>
             </div>
             <form id="edit-active-form" class="space-y-4">
-              <div class="space-y-1.5">
-                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-                <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
-                  <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
-                  ${projects.map(p => {
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
+                  <select name="project_id" id="active-project-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer text-xs">
+                    <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
+                    ${projects.map(p => {
         const pid = String(p.id);
         const isSelected = currentPid === pid;
         return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
       }).join('')}
-                </select>
+                  </select>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Linked Todo</label>
+                  <select name="task_id" id="active-task-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer text-xs">
+                    <option value="">No Linked Todo</option>
+                  </select>
+                </div>
               </div>
               <div class="space-y-1.5">
                 <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
@@ -304,10 +386,25 @@ export async function renderDashboard() {
       }, 10);
       modalPortal.querySelector('#close-modal-x').onclick = closeModal;
       modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+
+      const projectSelect = modalPortal.querySelector('#active-project-select');
+      const taskSelect = modalPortal.querySelector('#active-task-select');
+
+      const updateTasks = () => {
+        const pid = projectSelect.value;
+        const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid));
+        taskSelect.innerHTML = `<option value="">No Linked Todo</option>` +
+          tasks.map(t => `<option value="${t.id}" ${String(t.id) === String(activeTimer.task_id) ? 'selected' : ''}>${t.title}</option>`).join('');
+      };
+
+      projectSelect.onchange = updateTasks;
+      updateTasks();
+
       modalPortal.querySelector('#edit-active-form').onsubmit = async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         data.id = activeTimer.id;
+        data.task_id = data.task_id ? parseInt(data.task_id) : null;
         data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
         try {
           const result = await api.post('time-entries.php', data);
@@ -338,16 +435,24 @@ export async function renderDashboard() {
             </div>
             <form id="edit-history-form" class="space-y-4">
               <input type="hidden" name="id" value="${entry.id}">
-              <div class="space-y-1.5">
-                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-                <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
-                  <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
-                  ${projects.map(p => {
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
+                  <select name="project_id" id="history-project-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
+                    <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
+                    ${projects.map(p => {
         const pid = String(p.id);
         const isSelected = currentPid === pid;
         return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
       }).join('')}
-                </select>
+                  </select>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Linked Todo</label>
+                  <select name="task_id" id="history-task-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
+                    <option value="">No Linked Todo</option>
+                  </select>
+                </div>
               </div>
               <div class="space-y-1.5">
                 <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
@@ -381,9 +486,24 @@ export async function renderDashboard() {
       }, 10);
       modalPortal.querySelector('#close-modal-x').onclick = closeModal;
       modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+
+      const projectSelect = modalPortal.querySelector('#history-project-select');
+      const taskSelect = modalPortal.querySelector('#history-task-select');
+
+      const updateTasks = () => {
+        const pid = projectSelect.value;
+        const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid));
+        taskSelect.innerHTML = `<option value="">No Linked Todo</option>` +
+          tasks.map(t => `<option value="${t.id}" ${String(t.id) === String(entry.task_id) ? 'selected' : ''}>${t.title}</option>`).join('');
+      };
+
+      projectSelect.onchange = updateTasks;
+      updateTasks();
+
       modalPortal.querySelector('#edit-history-form').onsubmit = async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
+        data.task_id = data.task_id ? parseInt(data.task_id) : null;
         data.start_time = new Date(data.start_time).toISOString();
         data.end_time = new Date(data.end_time).toISOString();
         data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';

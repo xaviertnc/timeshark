@@ -129,9 +129,10 @@ export const PlannerTimeline = {
                      ${(() => {
                     let html = '';
                     row.entries.forEach(entry => {
-                        if (!entry.start_time || !entry.end_time) return;
+                        if (!entry.start_time) return;
                         const s = new Date(entry.start_time);
-                        const e = new Date(entry.end_time);
+                        const isActive = !entry.end_time;
+                        const e = isActive ? new Date() : new Date(entry.end_time);
 
                         // Map time to X
                         // X needs to be mapped to hours too for actuals?
@@ -153,9 +154,9 @@ export const PlannerTimeline = {
 
                         // Visual: a thin darker line or pill
                         html += `
-                                <div class="absolute bottom-1 h-2 rounded-full bg-slate-800/80 shadow-sm pointer-events-none z-20"
+                                <div class="absolute bottom-1 h-2 rounded-full shadow-sm pointer-events-none z-20 ${isActive ? 'bg-primary animate-pulse' : 'bg-slate-800/80'}"
                                      style="left: ${dayX + hOffset}px; width: ${Math.max(4, w)}px;"
-                                     title="Actual Work: ${PlannerUtils.formatDuration((e - s) / 1000)}">
+                                     title="${isActive ? 'Tracking Now' : 'Actual Work'}: ${PlannerUtils.formatDuration((e - s) / 1000)}">
                                 </div>
                             `;
                     });

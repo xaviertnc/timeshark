@@ -37,6 +37,7 @@ try {
                 }
 
                 $newEntry = [
+                    'task_id' => $data['task_id'] ?? null,
                     'project_id' => $data['project_id'],
                     'project_name' => $data['project_name'] ?? 'Unknown Project', // Cache for display
                     'description' => $data['description'] ?? '',

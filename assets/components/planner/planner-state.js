@@ -69,8 +69,7 @@ export const PlannerState = {
 
             // Time entries for this resource
             const assignedEntries = timeEntries.filter(te =>
-                (te.resource_id === resourceName || (!te.resource_id && resourceName === 'General')) &&
-                te.end_time // Only completed entries? Or active ones too? Active ones have no end_time usually.
+                (te.resource_id === resourceName || (!te.resource_id && resourceName === 'General'))
             );
 
             // Filter out empty rows if filter is applied? 
