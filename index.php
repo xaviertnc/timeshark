@@ -48,20 +48,17 @@
 
     <!-- Sidebar: Ultra Zen -->
     <aside class="w-20 lg:w-24 bg-sidebar border-r border-soft flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
-        <div class="h-24 flex items-center justify-center">
-            <a href="#" class="w-12 h-12 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500 block">
+        <div class="h-16 flex items-center justify-center shrink-0">
+            <a href="#" class="w-11 h-11 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500 block">
                  <img src="assets/images/time-shark-logo.jpg" class="w-full h-full object-cover">
             </a>
         </div>
 
-        <nav class="flex-1 flex flex-col items-center pt-10 space-y-8">
+        <nav class="flex-1 flex flex-col items-center pt-4 space-y-3 overflow-y-auto overflow-x-hidden">
             <!-- Navigation icons will be injected here. We'll simplify sidebar.js too -->
         </nav>
 
-        <div class="p-6 flex flex-col items-center gap-6">
-            <div class="w-10 h-10 rounded-xl bg-app border border-soft flex items-center justify-center text-[10px] font-black opacity-40">
-                TS
-            </div>
+        <div class="p-3 flex flex-col items-center shrink-0">
         </div>
     </aside>
 
@@ -80,8 +77,8 @@
                     <div class="text-[10px] text-dim font-black uppercase tracking-widest whitespace-nowrap" id="timer-project-name">Project</div>
                 </div>
                 <div class="font-mono text-lg font-black tabular-nums tracking-tighter text-main" id="timer-counter">00:00:00</div>
-                <button id="stop-timer-btn-header" class="text-dim hover:text-red-500 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1" stroke-width="2.5"/></svg>
+                <button id="stop-timer-btn-header" class="w-8 h-8 rounded-full border-2 border-red-500/30 flex items-center justify-center text-dim hover:text-red-500 hover:border-red-500/60 transition-all hover:shadow-[0_0_12px_rgba(239,68,68,0.3)]">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
                 </button>
             </div>
         </header>

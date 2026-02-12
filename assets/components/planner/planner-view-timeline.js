@@ -1,34 +1,60 @@
 /**
  * assets/components/planner/planner-view-timeline.js
  * 
- * Renders the Gantt-style timeline view.
+ * Renders the Gantt-style timeline view with 3 zoom levels:
+ *   compact  – dense, bars only, no text
+ *   regular  – balanced, truncated text on bars, tooltips
+ *   relaxed  – spacious, full text always visible
  */
 
 import { PlannerUtils } from './planner-utils.js';
 
+// Zoom presets per scale
+const ZOOM = {
+    day: {
+        compact: { hoursToShow: 24, rowH: 36, barH: 16, barTop: 8 },
+        regular: { hoursToShow: 10, rowH: 48, barH: 22, barTop: 10 },
+        relaxed: { hoursToShow: 6, rowH: 64, barH: 28, barTop: 14 },
+    },
+    week: {
+        compact: { colWidth: 50, rowH: 36, barH: 16, barTop: 8 },
+        regular: { colWidth: 100, rowH: 48, barH: 22, barTop: 10 },
+        relaxed: { colWidth: 180, rowH: 64, barH: 28, barTop: 14 },
+    },
+    month: {
+        compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9 },
+        regular: { colWidth: 40, rowH: 48, barH: 22, barTop: 10 },
+        relaxed: { colWidth: 80, rowH: 64, barH: 28, barTop: 14 },
+    }
+};
+
 export const PlannerTimeline = {
-    render(container, data, config, today) {
+    render(container, data, config, today, zoom = 'regular') {
         if (typeof container === 'string') container = document.getElementById(container);
         if (!container) return;
 
         container.innerHTML = '';
 
+        const scaleKey = config.isDayView ? 'day' : (config.type || 'week');
+        const zp = ZOOM[scaleKey]?.[zoom] || ZOOM[scaleKey]?.regular || ZOOM.week.regular;
+        const showText = zoom !== 'compact';
+
         // Calculate dimensions
         const startTime = config.startDate.getTime();
-        const resourceWidth = 224; // w-56 = 14rem = 224px
+        const resourceWidth = 224; // w-56  
         const availableWidth = container.offsetWidth - resourceWidth;
 
         let pxPerDay, totalWidth, totalDays;
 
         if (config.isDayView) {
-            totalDays = 1;
-            const hoursToShow = 10; // Fewer hours visible at once = wider slots
-            const pxPerHour = Math.max(160, Math.floor(availableWidth / hoursToShow));
+            const hoursToShow = zp.hoursToShow;
+            const pxPerHour = Math.max(40, Math.floor(availableWidth / hoursToShow));
             pxPerDay = pxPerHour * 24;
             totalWidth = pxPerDay;
+            totalDays = 1;
         } else {
             totalDays = config.dates.length;
-            const minPxPerDay = config.colWidth || 150; // Widen from 60 to 150
+            const minPxPerDay = zp.colWidth || 100;
             pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / totalDays));
             totalWidth = totalDays * pxPerDay;
         }
@@ -47,9 +73,9 @@ export const PlannerTimeline = {
             return (diff / (24 * 60 * 60 * 1000)) * pxPerDay;
         };
 
-        // Header
+        // ───── Header ─────
         const header = document.createElement('div');
-        header.className = 'flex sticky top-0 z-40 bg-app/80 backdrop-blur-xl border-b border-white/2';
+        header.className = 'flex sticky top-0 z-40 bg-app border-b border-white/2';
         header.style.width = `${resourceWidth + totalWidth}px`;
         header.style.minWidth = `${resourceWidth + totalWidth}px`;
 
@@ -58,14 +84,14 @@ export const PlannerTimeline = {
             const now = new Date();
             const hourWidth = pxPerDay / 24;
             for (let h = 0; h < 24; h++) {
-                const label = `${h.toString().padStart(2, '0')}:00`;
+                const label = `${h.toString().padStart(2, '0')}`;
                 const isWorkHour = h >= 8 && h <= 18;
                 const isCurrentHour = now.getHours() === h && config.startDate.toDateString() === now.toDateString();
 
                 headerCols += `
-                    <div class="absolute top-0 bottom-0 border-r border-white/2 flex items-center justify-center transition-colors px-1"
+                    <div class="absolute top-0 bottom-0 border-r border-white/2 flex items-center justify-center transition-colors px-0.5"
                          style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${isCurrentHour ? 'rgba(var(--color-primary), 0.1)' : isWorkHour ? 'transparent' : 'rgba(0,0,0,0.05)'}">
-                         <span class="text-[10px] font-black ${isCurrentHour ? 'text-primary' : 'text-main/60'} tracking-tighter">${label}</span>
+                         <span class="text-[9px] font-black ${isCurrentHour ? 'text-primary' : 'text-main/60'} tracking-tighter">${label}</span>
                     </div>
                 `;
             }
@@ -83,23 +109,24 @@ export const PlannerTimeline = {
             }).join('');
         }
 
+        const headerHeight = zoom === 'compact' ? 'h-10' : 'h-14';
         header.innerHTML = `
-            <div class="w-56 flex-shrink-0 p-5 font-black text-dim text-[10px] uppercase tracking-[0.3em] border-r border-white/2 bg-app/50 sticky left-0 z-50">
+            <div class="w-56 flex-shrink-0 p-4 font-black text-dim text-[10px] uppercase tracking-[0.3em] border-r border-white/2 bg-app sticky left-0 z-50 flex items-center">
                 Resource
             </div>
-            <div class="relative h-14" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
+            <div class="relative ${headerHeight}" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
                 ${headerCols}
             </div>
         `;
         container.appendChild(header);
 
-        // Body
+        // ───── Body ─────
         const body = document.createElement('div');
         body.className = 'relative';
         body.style.width = `${resourceWidth + totalWidth}px`;
         body.style.minWidth = `${resourceWidth + totalWidth}px`;
 
-        // Render Grid Lines once for the whole body
+        // Grid Lines
         const gridLines = document.createElement('div');
         gridLines.className = 'absolute inset-0 pointer-events-none';
         gridLines.style.left = `${resourceWidth}px`;
@@ -124,22 +151,25 @@ export const PlannerTimeline = {
         }
         body.appendChild(gridLines);
 
+        // ───── Rows ─────
         data.rows.forEach(row => {
             const rowEl = document.createElement('div');
-            rowEl.className = 'flex border-b border-white/1 hover:bg-white/5 transition-all group/row relative min-h-[48px]';
+            rowEl.className = `flex border-b border-white/1 hover:bg-white/5 transition-all group/row relative`;
+            rowEl.style.minHeight = `${zp.rowH}px`;
 
             // Resource Column
+            const resCompact = zoom === 'compact';
             rowEl.innerHTML = `
-                <div class="w-56 flex-shrink-0 p-4 border-r border-white/2 bg-app/80 backdrop-blur-md sticky left-0 z-30 flex items-center gap-4">
-                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center text-[10px] font-black text-primary">
+                <div class="w-56 flex-shrink-0 ${resCompact ? 'px-3 py-2' : 'p-4'} border-r border-white/2 bg-app sticky left-0 z-30 flex items-center gap-3">
+                    <div class="${resCompact ? 'w-7 h-7 text-[8px]' : 'w-9 h-9 text-[10px]'} rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center font-black text-primary">
                         ${row.resource.substring(0, 1).toUpperCase()}${row.resource.split(' ')[1]?.substring(0, 1).toUpperCase() || row.resource.substring(1, 2).toUpperCase()}
                     </div>
                     <div class="min-w-0">
                         <span class="block text-xs font-black text-main truncate">${row.resource}</span>
-                        <span class="text-[8px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>
+                        ${resCompact ? '' : '<span class="text-[8px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>'}
                     </div>
                 </div>
-                <div class="relative flex-grow min-h-[48px]" style="width: ${totalWidth}px">
+                <div class="relative flex-grow" style="width: ${totalWidth}px; min-height: ${zp.rowH}px">
                      <!-- Today Indicator Line -->
                      ${(() => {
                     const dateToCheck = config.isDayView ? config.startDate : today;
@@ -180,9 +210,14 @@ export const PlannerTimeline = {
                         // Tooltip Text
                         const tooltipText = `${task.title} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
 
+                        // Task title inside bar (only for regular / relaxed)
+                        const titleHtml = showText && w > 30
+                            ? `<span class="block text-[8px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden">${task.title}</span>`
+                            : '';
+
                         html += `
-                                <div class="task-bar absolute top-2.5 h-6 rounded shadow-sm border border-white/5 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all group/task cursor-pointer"
-                                     style="left: ${x}px; width: ${w}px; background: ${proj.color};"
+                                <div class="task-bar absolute rounded shadow-sm border border-white/5 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all group/task cursor-pointer overflow-hidden"
+                                     style="left: ${x}px; width: ${w}px; height: ${zp.barH}px; top: ${zp.barTop}px; background: ${proj.color};"
                                      data-task-id="${task.id}"
                                      title="${tooltipText}">
                                      
@@ -190,7 +225,7 @@ export const PlannerTimeline = {
                                         <div class="absolute inset-0 bg-black/10 pointer-events-none" style="width: ${task.progress}%"></div>
                                      ` : ''}
 
-                                     <!-- Text removed for cleaner look, tooltip used instead -->
+                                     ${titleHtml}
                                 </div>
                             `;
                     });
@@ -206,13 +241,10 @@ export const PlannerTimeline = {
                         const isActive = !entry.end_time;
                         const e = isActive ? new Date() : new Date(entry.end_time);
 
-                        // Only show if it overlaps with our visible range
                         if (e < config.startDate || s > config.endDate) return;
 
                         const dayX = getX(s);
                         const dayW = getWidth(s, e);
-
-                        // Fix: Ensure we don't render off-screen/broken widths if start time is before view
                         const renderX = Math.max(0, dayX);
                         const renderW = Math.max(4, dayW - (renderX - dayX));
 
@@ -231,9 +263,8 @@ export const PlannerTimeline = {
 
         container.appendChild(body);
 
-        // Initial Scroll for Day View (Start at 05:00)
+        // Initial Scroll for Day View
         if (config.isDayView) {
-            // Check if we already scrolled? For now, force it on render if scrollLeft is roughly 0
             if (container.scrollLeft < 10) {
                 const hourWidth = pxPerDay / 24;
                 container.scrollLeft = 6 * hourWidth;

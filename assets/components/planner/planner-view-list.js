@@ -15,6 +15,8 @@ export const PlannerList = {
         const isFull = options.fullWidth || false;
         const limit = options.limit || 0;
         const showDone = options.showDone || false;
+        const viewMode = options.viewMode || 'list';
+        const useGrid = isFull && viewMode === 'grid';
 
         container.innerHTML = '';
 
@@ -127,7 +129,7 @@ export const PlannerList = {
                     <div class="h-px flex-grow bg-white/5"></div>
                     <span class="text-[9px] font-black text-dim opacity-30">${gTasks.length}</span>
                 </div>
-                <div class="${isFull ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6' : 'flex flex-col'}">
+                <div class="${useGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6' : 'flex flex-col'}">
                     ${gTasks.map(t => renderTaskItem(t)).join('')}
                 </div>
             `;
