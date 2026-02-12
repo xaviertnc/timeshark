@@ -1,0 +1,120 @@
+/**
+ * assets/components/planner/planner-utils.js
+ * 
+ * Utility functions for the Planner component.
+ */
+
+export const PlannerUtils = {
+    // Determine text color based on background hex
+    getContrastColor(hex) {
+        if (!hex || hex === 'transparent') return 'text-slate-800';
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness > 155 ? 'text-slate-900' : 'text-white';
+    },
+
+    // Format duration from seconds to human readable string
+    formatDuration(sec) {
+        if (!sec) return '0m';
+        const h = Math.floor(sec / 3600);
+        const m = Math.round((sec % 3600) / 60);
+        return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    },
+
+    // Get ISO date string (YYYY-MM-DD)
+    toISODate(date) {
+        return date.toISOString().split('T')[0];
+    },
+
+    // Get week number
+    getWeekNum(d) {
+        const date = new Date(d.getTime());
+        date.setHours(0, 0, 0, 0);
+        // Thursday in current week decides the year.
+        date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+        // January 4 is always in week 1.
+        const week1 = new Date(date.getFullYear(), 0, 4);
+        // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+        return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    },
+
+    // Generate timeline configuration based on scale
+    getTimelineConfig(scale, offset, today) {
+        const dates = [];
+        let groups = [];
+
+        const baseDate = new Date(today);
+        // Reset to start of day
+        baseDate.setHours(0, 0, 0, 0);
+
+        if (scale === 'day') baseDate.setDate(today.getDate() + offset);
+        if (scale === 'week') baseDate.setDate(today.getDate() + (offset * 14)); // Show 2 weeks
+        if (scale === 'month') baseDate.setDate(today.getDate() + (offset * 28));
+        if (scale === 'year') baseDate.setFullYear(today.getFullYear() + offset);
+
+        if (scale === 'month') {
+            const start = new Date(baseDate);
+            start.setDate(1);
+            const nextMonth = new Date(start);
+            nextMonth.setMonth(start.getMonth() + 1);
+
+            // Calculate days to avoid infinite loops or wrong sizes
+            const daysInMonth = Math.round((nextMonth - start) / (1000 * 60 * 60 * 24));
+
+            for (let i = 0; i < daysInMonth; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                dates.push(d);
+            }
+
+            groups = [{ label: start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase(), count: dates.length }];
+
+            return {
+                type: 'month',
+                startDate: dates[0],
+                endDate: dates[dates.length - 1],
+                dates,
+                groups,
+                colWidth: 30,
+                totalWidth: dates.length * 30
+            };
+        }
+
+        if (scale === 'week') {
+            const start = new Date(baseDate);
+            // Adjust to Monday
+            const day = start.getDay() || 7;
+            if (day !== 1) start.setDate(start.getDate() - day + 1);
+
+            // Generate 14 days (2 weeks)
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                dates.push(d);
+            }
+
+            const week2Start = new Date(start);
+            week2Start.setDate(start.getDate() + 7);
+
+            groups = [
+                { label: `WEEK ${this.getWeekNum(start)}: ${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}`, count: 7 },
+                { label: `WEEK ${this.getWeekNum(week2Start)}: ${week2Start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}`, count: 7 }
+            ];
+
+            return {
+                type: 'week',
+                startDate: dates[0],
+                endDate: dates[dates.length - 1],
+                dates,
+                groups,
+                colWidth: 80, // px
+                totalWidth: 14 * 80
+            };
+        }
+
+        // Default to week if others not implemented yet or fallthrough
+        return this.getTimelineConfig('week', offset, today);
+    }
+};
