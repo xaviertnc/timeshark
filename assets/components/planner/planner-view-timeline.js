@@ -49,20 +49,23 @@ export const PlannerTimeline = {
 
         // Header
         const header = document.createElement('div');
-        header.className = 'flex sticky top-0 z-40 bg-app/80 backdrop-blur-xl border-b border-soft/50';
+        header.className = 'flex sticky top-0 z-40 bg-app/80 backdrop-blur-xl border-b border-white/2';
+        header.style.width = `${resourceWidth + totalWidth}px`;
+        header.style.minWidth = `${resourceWidth + totalWidth}px`;
 
         let headerCols = '';
         if (config.isDayView) {
             const now = new Date();
+            const hourWidth = pxPerDay / 24;
             for (let h = 0; h < 24; h++) {
                 const label = `${h.toString().padStart(2, '0')}:00`;
                 const isWorkHour = h >= 8 && h <= 18;
                 const isCurrentHour = now.getHours() === h && config.startDate.toDateString() === now.toDateString();
 
                 headerCols += `
-                    <div class="absolute top-0 bottom-0 border-r border-soft/30 flex items-center justify-center transition-colors"
-                         style="left: ${h * (pxPerDay / 24)}px; width: ${pxPerDay / 24}px; background-color: ${isCurrentHour ? 'rgba(var(--color-primary), 0.05)' : isWorkHour ? 'transparent' : 'rgba(0,0,0,0.1)'}">
-                         <span class="text-[10px] font-black ${isCurrentHour ? 'text-primary' : 'text-main'} opacity-60">${label}</span>
+                    <div class="absolute top-0 bottom-0 border-r border-white/2 flex items-center justify-center transition-colors px-1"
+                         style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${isCurrentHour ? 'rgba(var(--color-primary), 0.1)' : isWorkHour ? 'transparent' : 'rgba(0,0,0,0.05)'}">
+                         <span class="text-[10px] font-black ${isCurrentHour ? 'text-primary' : 'text-main/60'} tracking-tighter">${label}</span>
                     </div>
                 `;
             }
@@ -71,20 +74,20 @@ export const PlannerTimeline = {
                 const isToday = d.toDateString() === today.toDateString();
                 const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                 return `
-                    <div class="absolute top-0 bottom-0 border-r border-soft/30 flex flex-col items-center justify-center transition-colors"
+                    <div class="absolute top-0 bottom-0 border-r border-white/2 flex flex-col items-center justify-center transition-colors"
                          style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${isToday ? 'rgba(var(--color-primary), 0.1)' : isWeekend ? 'rgba(0,0,0,0.02)' : 'transparent'}">
                          <span class="text-[11px] font-black ${isToday ? 'text-primary' : 'text-main'} tracking-tight">${d.getDate()}</span>
-                         <span class="text-[8px] font-black uppercase ${isToday ? 'text-primary' : 'text-dim'} opacity-40">${d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
+                         <span class="text-[8px] font-black uppercase ${isToday ? 'text-primary' : 'text-dim/60'}">${d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
                     </div>
                 `;
             }).join('');
         }
 
         header.innerHTML = `
-            <div class="w-56 flex-shrink-0 p-5 font-black text-dim text-[10px] uppercase tracking-[0.3em] border-r border-soft/30 bg-app/50 sticky left-0 z-50">
+            <div class="w-56 flex-shrink-0 p-5 font-black text-dim text-[10px] uppercase tracking-[0.3em] border-r border-white/2 bg-app/50 sticky left-0 z-50">
                 Resource
             </div>
-            <div class="relative flex-grow h-14 overflow-hidden" style="width: ${totalWidth}px">
+            <div class="relative h-14" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
                 ${headerCols}
             </div>
         `;
@@ -93,14 +96,41 @@ export const PlannerTimeline = {
         // Body
         const body = document.createElement('div');
         body.className = 'relative';
+        body.style.width = `${resourceWidth + totalWidth}px`;
+        body.style.minWidth = `${resourceWidth + totalWidth}px`;
+
+        // Render Grid Lines once for the whole body
+        const gridLines = document.createElement('div');
+        gridLines.className = 'absolute inset-0 pointer-events-none';
+        gridLines.style.left = `${resourceWidth}px`;
+        gridLines.style.width = `${totalWidth}px`;
+
+        if (config.isDayView) {
+            const hourWidth = pxPerDay / 24;
+            gridLines.innerHTML = Array.from({ length: 24 }).map((_, h) => `
+                <div class="absolute top-0 bottom-0 border-r border-white/1"
+                     style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}">
+                </div>
+            `).join('');
+        } else {
+            gridLines.innerHTML = config.dates.map((d, i) => {
+                const isToday = d.toDateString() === today.toDateString();
+                return `
+                    <div class="absolute top-0 bottom-0 border-r border-white/1"
+                         style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${isToday ? 'rgba(var(--color-primary), 0.01)' : 'transparent'}">
+                    </div>
+                `;
+            }).join('');
+        }
+        body.appendChild(gridLines);
 
         data.rows.forEach(row => {
             const rowEl = document.createElement('div');
-            rowEl.className = 'flex border-b border-soft/30 hover:bg-white/40 transition-all group/row relative';
+            rowEl.className = 'flex border-b border-white/1 hover:bg-white/5 transition-all group/row relative min-h-[48px]';
 
             // Resource Column
             rowEl.innerHTML = `
-                <div class="w-56 flex-shrink-0 p-4 border-r border-soft/30 bg-app/80 backdrop-blur-md sticky left-0 z-30 flex items-center gap-4">
+                <div class="w-56 flex-shrink-0 p-4 border-r border-white/2 bg-app/80 backdrop-blur-md sticky left-0 z-30 flex items-center gap-4">
                     <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center text-[10px] font-black text-primary">
                         ${row.resource.substring(0, 1).toUpperCase()}${row.resource.split(' ')[1]?.substring(0, 1).toUpperCase() || row.resource.substring(1, 2).toUpperCase()}
                     </div>
@@ -109,18 +139,7 @@ export const PlannerTimeline = {
                         <span class="text-[8px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>
                     </div>
                 </div>
-                <div class="relative flex-grow h-16" style="width: ${totalWidth}px">
-                     <!-- Grid Lines -->
-                     ${config.isDayView ? Array.from({ length: 24 }).map((_, h) => `
-                        <div class="absolute top-0 bottom-0 border-r border-dashed border-white/5 pointer-events-none"
-                             style="left: ${h * (pxPerDay / 24)}px; width: ${pxPerDay / 24}px; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}">
-                        </div>
-                     `).join('') : config.dates.map((d, i) => `
-                        <div class="absolute top-0 bottom-0 border-r border-dashed border-white/5 pointer-events-none"
-                             style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${d.toDateString() === today.toDateString() ? 'rgba(var(--color-primary), 0.03)' : 'transparent'}">
-                        </div>
-                    `).join('')}
-
+                <div class="relative flex-grow min-h-[48px]" style="width: ${totalWidth}px">
                      <!-- Today Indicator Line -->
                      ${(() => {
                     const dateToCheck = config.isDayView ? config.startDate : today;
@@ -217,7 +236,7 @@ export const PlannerTimeline = {
             // Check if we already scrolled? For now, force it on render if scrollLeft is roughly 0
             if (container.scrollLeft < 10) {
                 const hourWidth = pxPerDay / 24;
-                container.scrollLeft = 5 * hourWidth;
+                container.scrollLeft = 6 * hourWidth;
             }
         }
     }

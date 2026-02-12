@@ -12,13 +12,13 @@ import { PlannerTimeline } from './planner/planner-view-timeline.js';
 import { PlannerList } from './planner/planner-view-list.js';
 import { PlannerModal } from './planner/planner-modal.js';
 
-let currentScale = 'week';
-let timeOffset = 0;
-let projectFilter = 'all';
-let currentView = 'timeline';
+let currentView = 'timeline'; // 'timeline' or 'list'
+let currentScale = 'day';     // 'day', 'week', 'month'
+let timeOffset = 0;           // 0 = today/start, +/- to move
 let sidebarCollapsed = false;
+let projectFilter = 'all';
 let displayLimit = 25;
-let showCompleted = false;
+let sidebarCategory = 'planned'; // 'planned', 'today', 'completed'
 
 export async function renderPlanner() {
 
@@ -35,69 +35,53 @@ export async function renderPlanner() {
 
     container.innerHTML = `
         <!-- Header -->
-        <div class="flex items-center justify-between px-2 h-12 shrink-0">
+        <div class="flex items-center justify-between px-2 h-10 shrink-0 mb-2">
             <div class="flex items-center gap-6">
                 <div>
-                    <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-1">Workspace</h2>
+                    <h2 class="text-[8px] font-black text-dim uppercase tracking-[0.3em] mb-0.5">Workspace</h2>
                     <div class="flex items-center gap-2">
-                        <span class="text-2xl font-black text-main tracking-tighter italic">Unified <span class="text-primary not-italic">TODOs.</span></span>
+                        <span class="text-xl font-black text-main tracking-tighter italic">Unified <span class="text-primary not-italic">TODOs.</span></span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 bg-app p-1 rounded-xl ml-4">
-                    <button class="nav-btn p-2 text-dim hover:text-main" data-dir="-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
+                <div class="flex items-center gap-1.5 bg-app/30 p-1 rounded-lg ml-2 border border-white/5">
+                    <button class="nav-btn p-1.5 text-dim hover:text-main" data-dir="-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
-                    <button class="nav-btn px-4 py-1 text-[9px] font-black uppercase tracking-widest text-dim hover:text-main" data-dir="0">Today</button>
-                    <button class="nav-btn p-2 text-dim hover:text-main" data-dir="1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                    <button class="nav-btn px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-dim hover:text-main" data-dir="0">Today</button>
+                    <button class="nav-btn p-1.5 text-dim hover:text-main" data-dir="1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <!-- Intelligent Controls -->
-                <div class="flex items-center gap-2 bg-app p-1 rounded-xl">
-                    <select id="display-limit" class="bg-card border-none rounded-lg px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-main appearance-none cursor-pointer focus:ring-0 transition-all outline-none text-center min-w-[80px]">
-                        <option value="15" ${displayLimit == 15 ? 'selected' : ''}>Show 15</option>
-                        <option value="25" ${displayLimit == 25 ? 'selected' : ''}>Show 25</option>
-                        <option value="50" ${displayLimit == 50 ? 'selected' : ''}>Show 50</option>
-                        <option value="0" ${displayLimit == 0 ? 'selected' : ''}>Show All</option>
-                    </select>
-                    <button id="toggle-completed" class="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${showCompleted ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-app text-dim hover:text-muted'}" title="Show Done">
-                        Done
-                    </button>
-                    <div class="w-px h-3 bg-soft mx-1"></div>
-                </div>
-
+            <div class="flex items-center gap-3">
                 <!-- Project Filter -->
-                <div class="relative group mr-4">
-                    <select id="project-filter" class="bg-app border-none rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-main appearance-none cursor-pointer pr-10 focus:ring-2 focus:ring-primary/20 transition-all outline-none shadow-sm">
+                <div class="relative group mr-2">
+                    <select id="project-filter" class="h-8 bg-app/60 border border-white/5 rounded-lg px-3 py-0 text-[9px] font-black uppercase tracking-widest text-white appearance-none cursor-pointer pr-8 focus:ring-1 focus:ring-primary/20 transition-all outline-none shadow-sm">
                         <option value="all" ${projectFilter === 'all' ? 'selected' : ''}>Global View</option>
                         ${projects.map(p => `<option value="${p.id}" ${projectFilter == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
                     </select>
-                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-dim">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-50">
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
 
-                <!-- View Controls Group -->
-                <div class="flex items-center gap-3 bg-app/50 p-1.5 rounded-2xl border border-soft/30">
-                    <!-- Scale Toggle (Only if in timeline view) -->
-                    <div id="scale-toggle-container" class="flex items-center bg-app rounded-lg p-0.5 ${currentView === 'list' ? 'hidden' : ''}">
+                <!-- Control Segments -->
+                <div class="flex items-center gap-1.5">
+                    <!-- Scale Toggle -->
+                    <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView === 'list' ? 'hidden' : ''}">
                         ${['day', 'week', 'month'].map(s => `
-                            <button class="scale-toggle px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted opacity-60 hover:opacity-100'}" data-scale="${s}">
+                            <button class="scale-toggle px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted opacity-40 hover:opacity-100'}" data-scale="${s}">
                                 ${s}
                             </button>
                         `).join('')}
                     </div>
 
-                    ${currentView === 'timeline' ? '<div class="w-px h-4 bg-soft/50"></div>' : ''}
-
                     <!-- View Toggle -->
-                    <div class="flex items-center">
+                    <div class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
                         ${['timeline', 'list'].map(v => `
-                            <button class="view-toggle px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'text-main bg-card shadow-sm ring-1 ring-black/5' : 'text-dim hover:text-main'}" data-view="${v}">
+                            <button class="view-toggle px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'text-main bg-card shadow-sm ring-1 ring-black/5' : 'text-dim hover:text-main'}" data-view="${v}">
                                 ${v}
                             </button>
                         `).join('')}
@@ -106,33 +90,74 @@ export async function renderPlanner() {
             </div>
         </div>
 
-        <div class="flex gap-6 flex-grow min-h-0 items-stretch overflow-hidden">
-            <!-- Sidebar: TODO List (Collapsible) -->
-            <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-12' : 'w-1/4'} min-w-[50px] flex flex-col bg-sidebar/50 rounded-2xl border border-soft shadow-inner-white overflow-hidden backdrop-blur-sm transition-all duration-500 relative">
-                <div class="p-4 border-b border-soft bg-app/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between">
-                    <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'opacity-0 w-0' : 'opacity-100'}">TODO List</h3>
-                    <button id="toggle-sidebar-btn" class="p-1 rounded-lg hover:bg-soft/40 transition-colors text-dim hover:text-main shrink-0">
-                        <svg class="w-4 h-4 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+        <div class="flex gap-4 flex-grow min-h-0 items-stretch overflow-hidden">
+            <!-- Sidebar: Navigation & Tasks -->
+            <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-10' : 'w-72'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-hidden backdrop-blur-sm transition-all duration-500 relative shrink-0">
+                <!-- Sidebar Header -->
+                <div class="p-2 border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-20 flex items-center justify-between min-h-[44px] gap-2">
+                    <h3 id="sidebar-title" class="px-2 text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}">Planner</h3>
+                    
+                    <div id="sidebar-filters" class="flex items-center gap-1.5 transition-all duration-500 ${sidebarCollapsed ? 'hidden opacity-0 scale-95' : 'flex opacity-100 scale-100'}">
+                        <div class="relative flex items-center">
+                            <select id="display-limit" class="h-7 bg-app/80 border border-white/10 rounded-lg pl-2 pr-6 text-[9px] font-black text-white hover:border-white/20 transition-all outline-none appearance-none cursor-pointer shadow-sm">
+                                <option value="15" ${displayLimit == 15 ? 'selected' : ''}>15</option>
+                                <option value="25" ${displayLimit == 25 ? 'selected' : ''}>25</option>
+                                <option value="50" ${displayLimit == 50 ? 'selected' : ''}>50</option>
+                                <option value="0" ${displayLimit == 0 ? 'selected' : ''}>ALL</option>
+                            </select>
+                            <svg class="w-2.5 h-2.5 absolute right-2 pointer-events-none text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+
+                    <button id="toggle-sidebar-btn" class="p-2 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0">
+                        <svg class="w-3.5 h-3.5 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
                     </button>
                 </div>
-                <div id="planner-list-container" class="flex-grow overflow-y-auto p-4 custom-scrollbar transition-all duration-500 ${sidebarCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}">
-                    <!-- List Content -->
+
+                <!-- Navigation Sidebar (MS To Do style categories) -->
+                <div id="sidebar-nav" class="flex-grow overflow-y-auto custom-scrollbar transition-all duration-500 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}">
+                    <div class="px-3 py-4 space-y-1">
+                        <button class="nav-cat flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-primary/10 text-primary shadow-sm shadow-primary/5 transition-all group/cat" data-cat="planned">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span class="text-[13px] font-bold">Planned</span>
+                            </div>
+                        </button>
+                        <button class="nav-cat flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-dim hover:bg-white/5 hover:text-main transition-all group/cat" data-cat="today">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                <span class="text-[13px] font-bold">Today</span>
+                            </div>
+                        </button>
+                        <button class="nav-cat flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-dim hover:bg-white/5 hover:text-main transition-all group/cat" data-cat="completed">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="text-[13px] font-bold">Completed</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="mt-2 pt-2 border-t border-white/5 px-2">
+                        <div id="planner-list-container" class="p-2 pb-10">
+                            <!-- TODO Items Rendered Here -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Timeline: Gantt -->
-            <div id="timeline-wrapper" class="${currentView === 'list' ? 'hidden' : 'flex-grow'} flex flex-col bg-card rounded-2xl border border-soft shadow-soft overflow-hidden relative transition-all duration-500">
+            <!-- Timeline -->
+            <div id="timeline-wrapper" class="${currentView === 'list' ? 'hidden' : 'flex-grow'} flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500">
                  <div id="planner-timeline-container" class="flex-grow overflow-x-auto overflow-y-auto custom-scrollbar relative">
                     <!-- Timeline Content -->
                  </div>
             </div>
 
-            <!-- Full List View (Alternative to Timeline) -->
-            <div id="full-list-wrapper" class="${currentView === 'timeline' ? 'hidden' : 'flex-grow'} flex flex-col bg-card rounded-2xl border border-soft shadow-soft overflow-hidden relative transition-all duration-500">
-                <div class="p-4 border-b border-soft bg-app/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-8">
-                    <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">Planned TODOs</h3>
+            <!-- Full List View -->
+            <div id="full-list-wrapper" class="${currentView === 'timeline' ? 'hidden' : 'flex-grow'} flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500">
+                <div class="p-3 border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-6">
+                    <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">All Tasks</h3>
                 </div>
-                <div id="planner-full-list-container" class="flex-grow overflow-y-auto p-8 custom-scrollbar">
+                <div id="planner-full-list-container" class="flex-grow overflow-y-auto p-4 md:p-10 custom-scrollbar">
                     <!-- List Content -->
                 </div>
             </div>
@@ -156,7 +181,8 @@ export async function renderPlanner() {
         const scaleContainer = container.querySelector('#scale-toggle-container');
         const sidebar = container.querySelector('#planner-sidebar');
         const sidebarTitle = sidebar.querySelector('h3');
-        const sidebarContent = sidebar.querySelector('#planner-list-container');
+        const sidebarFilters = sidebar.querySelector('#sidebar-filters');
+        const sidebarNav = sidebar.querySelector('#sidebar-nav');
         const toggleSidebarBtn = sidebar.querySelector('#toggle-sidebar-btn');
 
 
@@ -171,23 +197,49 @@ export async function renderPlanner() {
             }
         });
 
+        // Update Scale Toggle States
+        container.querySelectorAll('.scale-toggle').forEach(btn => {
+            if (btn.dataset.scale === currentScale) {
+                btn.classList.add('bg-card', 'text-primary', 'shadow-sm', 'opacity-100');
+                btn.classList.remove('text-dim', 'opacity-40');
+            } else {
+                btn.classList.remove('bg-card', 'text-primary', 'shadow-sm', 'opacity-100');
+                btn.classList.add('text-dim', 'opacity-40');
+            }
+        });
+
+        // Update Sidebar Nav Categories
+        container.querySelectorAll('.nav-cat').forEach(btn => {
+            if (btn.dataset.cat === sidebarCategory) {
+                btn.classList.add('bg-primary/10', 'text-primary', 'shadow-sm', 'shadow-primary/5');
+                btn.classList.remove('text-dim');
+            } else {
+                btn.classList.remove('bg-primary/10', 'text-primary', 'shadow-sm', 'shadow-primary/5');
+                btn.classList.add('text-dim');
+            }
+        });
+
         // Update Sidebar classes based on collapsed state
         if (sidebarCollapsed) {
-            sidebar.classList.add('w-12');
-            sidebar.classList.remove('w-1/4');
+            sidebar.classList.add('w-10');
+            sidebar.classList.remove('w-72');
             sidebarTitle.classList.add('opacity-0', 'w-0');
-            sidebarTitle.classList.remove('opacity-100');
-            sidebarContent.classList.add('opacity-0', 'pointer-events-none');
-            sidebarContent.classList.remove('opacity-100');
+            sidebarTitle.classList.remove('opacity-100', 'w-auto');
+            sidebarFilters.classList.add('hidden', 'opacity-0', 'scale-95');
+            sidebarFilters.classList.remove('flex', 'opacity-100', 'scale-100');
+            sidebarNav.classList.add('opacity-0', 'pointer-events-none');
+            sidebarNav.classList.remove('opacity-100');
             toggleSidebarBtn.querySelector('svg').classList.add('rotate-180');
             toggleSidebarBtn.querySelector('svg').classList.remove('rotate-0');
         } else {
-            sidebar.classList.remove('w-12');
-            sidebar.classList.add('w-1/4');
+            sidebar.classList.remove('w-10');
+            sidebar.classList.add('w-72');
             sidebarTitle.classList.remove('opacity-0', 'w-0');
-            sidebarTitle.classList.add('opacity-100');
-            sidebarContent.classList.remove('opacity-0', 'pointer-events-none');
-            sidebarContent.classList.add('opacity-100');
+            sidebarTitle.classList.add('opacity-100', 'w-auto');
+            sidebarFilters.classList.remove('hidden', 'opacity-0', 'scale-95');
+            sidebarFilters.classList.add('flex', 'opacity-100', 'scale-100');
+            sidebarNav.classList.remove('opacity-0', 'pointer-events-none');
+            sidebarNav.classList.add('opacity-100');
             toggleSidebarBtn.querySelector('svg').classList.remove('rotate-180');
             toggleSidebarBtn.querySelector('svg').classList.add('rotate-0');
         }
@@ -220,15 +272,13 @@ export async function renderPlanner() {
             });
         }
 
-        // Sidebar List Logic (Always visible unless collapsed)
-        // User feedback implies they want to see "TODOs" here. 
-        // Showing *only* backlog might be confusing. Let's show everything but sort by backlog first?
-        // actually, let's keep it as backlog + scheduled to ensure they see everything.
+        // Sidebar List Logic
         const allThisProjectTasks = [...data.backlog, ...data.rows.flatMap(r => r.tasks)];
 
         PlannerList.render(listContainer, allThisProjectTasks, data.projects, {
             limit: displayLimit,
-            showDone: showCompleted
+            showDone: sidebarCategory === 'completed',
+            category: sidebarCategory
         });
     };
 
@@ -263,15 +313,108 @@ export async function renderPlanner() {
     }
 
     // Event Handlers
-    container.addEventListener('click', (e) => {
+    container.addEventListener('click', async (e) => {
         // Toggle Sidebar
-        if (e.target.closest('#toggle-sidebar-btn')) {
+        const toggleBtn = e.target.closest('#toggle-sidebar-btn');
+        if (toggleBtn) {
             sidebarCollapsed = !sidebarCollapsed;
             updateUI();
             return;
         }
 
-        // Time Travel (Using .nav-btn class)
+        // Toggle Task Status (Checkbox)
+        const statusBtn = e.target.closest('.toggle-status-btn');
+        if (statusBtn) {
+            e.stopPropagation(); // Don't open modal
+            const taskId = statusBtn.dataset.taskId;
+            const tasks = store.get().tasks || [];
+            const task = tasks.find(t => t.id == taskId);
+            if (task) {
+                const newStatus = task.status === 'done' ? 'todo' : 'done';
+                const newProgress = newStatus === 'done' ? 100 : 0;
+
+                // Optimistic Update
+                task.status = newStatus;
+                task.progress = newProgress;
+                updateUI();
+
+                try {
+                    await api.post('planner.php?action=update_task', {
+                        id: taskId,
+                        status: newStatus,
+                        progress: newProgress
+                    });
+                } catch (err) {
+                    console.error("Failed to update task status", err);
+                    refresh();
+                }
+            }
+            return;
+        }
+
+        // Toggle Completed Section
+        const compToggle = e.target.closest('#toggle-completed-list');
+        if (compToggle) {
+            const compContainer = document.getElementById('completed-tasks-container');
+            const svg = compToggle.querySelector('svg');
+            if (compContainer) {
+                const isHidden = compContainer.classList.contains('hidden');
+                if (isHidden) {
+                    compContainer.classList.remove('hidden');
+                    svg.classList.remove('-rotate-90');
+                } else {
+                    compContainer.classList.add('hidden');
+                    svg.classList.add('-rotate-90');
+                }
+            }
+            return;
+        }
+
+        // Track Button (Start Timer)
+        const trackBtn = e.target.closest('.track-btn');
+        if (trackBtn) {
+            e.stopPropagation();
+            const taskId = trackBtn.dataset.taskId;
+            const state = PlannerState.getCombinedData('all');
+            const tasks = [...state.backlog, ...state.rows.flatMap(r => r.tasks)];
+            const task = tasks.find(t => t.id == taskId);
+
+            if (task) {
+                const startData = {
+                    task_id: task.id,
+                    project_id: task.project_id,
+                    description: task.title,
+                    project_name: state.projects.find(p => p.id == task.project_id)?.name || 'Unassigned'
+                };
+
+                api.post('time-entries.php?action=start', startData).then(result => {
+                    store.update('activeTimer', result);
+                    window.location.hash = '#dashboard';
+                });
+            }
+            return;
+        }
+
+        // Task Click (Open Modal)
+        const taskEl = e.target.closest('.task-item');
+        if (taskEl) {
+            const taskId = taskEl.dataset.taskId;
+            const state = PlannerState.getCombinedData('all');
+            const tasks = [...state.backlog, ...state.rows.flatMap(r => r.tasks)];
+            const task = tasks.find(t => t.id == taskId);
+            if (task) PlannerModal.open(task);
+            return;
+        }
+
+        // Sidebar Navigation Category Click
+        const navCat = e.target.closest('.nav-cat');
+        if (navCat) {
+            sidebarCategory = navCat.dataset.cat;
+            updateUI();
+            return;
+        }
+
+        // Time Travel
         const navBtn = e.target.closest('.nav-btn');
         if (navBtn) {
             const dir = parseInt(navBtn.dataset.dir);
@@ -282,120 +425,59 @@ export async function renderPlanner() {
         }
 
         // Scale
-        if (e.target.closest('.scale-toggle')) {
-            currentScale = e.target.closest('.scale-toggle').dataset.scale;
+        const scaleBtn = e.target.closest('.scale-toggle');
+        if (scaleBtn) {
+            currentScale = scaleBtn.dataset.scale;
             timeOffset = 0;
             updateUI();
             return;
         }
 
         // View Mode
-        if (e.target.closest('.view-toggle')) {
-            currentView = e.target.closest('.view-toggle').dataset.view;
+        const viewBtn = e.target.closest('.view-toggle');
+        if (viewBtn) {
+            currentView = viewBtn.dataset.view;
             updateUI();
             return;
         }
-
-        // Quick Add Button (List)
-        if (e.target.closest('#quick-add-btn')) {
-            const input = container.querySelector('#quick-add-input');
-            const title = input.value.trim();
-            if (title) {
-                api.post('planner.php', {
-                    title: title,
-                    project_id: null,
-                    start_date: null,
-                    end_date: null
-                }).then(() => {
-                    input.value = ''; // Clear input
-                    refresh();
-                });
-            }
-            return;
-        }
-
-
-        // Task Click (List or Timeline)
-        const taskEl = e.target.closest('[data-task-id]');
-        if (taskEl) {
-            const taskId = taskEl.dataset.taskId;
-            // Find in state (either backlog or rows)
-            const state = PlannerState.getCombinedData('all');
-            let task = state.backlog.find(t => t.id == taskId);
-
-            if (!task) {
-                // Search rows
-                for (const row of state.rows) {
-                    task = row.tasks.find(t => t.id == taskId);
-                    if (task) break;
-                }
-            }
-
-            if (task) PlannerModal.open(task);
-            return;
-        }
-
-        // Track Button in List (Play icon)
-        const trackBtn = e.target.closest('.track-btn');
-        if (trackBtn) {
-            const taskId = trackBtn.dataset.taskId;
-            const state = PlannerState.getCombinedData('all');
-            const task = state.backlog.find(t => t.id == taskId);
-
-            if (task) {
-                const startData = {
-                    task_id: task.id,
-                    project_id: task.project_id,
-                    description: task.title,
-                    project_name: state.projects.find(p => p.id == task.project_id)?.name || 'Unassigned',
-                    resource_id: store.get().team?.[0]?.name || 'Main'
-                };
-
-                api.post('time-entries.php?action=start', startData).then(result => {
-                    store.update('activeTimer', result);
-                    // Optionally notify user or switch to dashboard
-                    // For now, let's just refresh to show the timer state if we add a global timer display
-                    // But usually, the user would want to see the dashboard timer running.
-                    window.location.hash = '#dashboard';
-                });
-            }
-            return;
-        }
-
-        // Schedule Button in List (Plan icon)
     });
 
-    // Enter on Quick Add
-    container.addEventListener('keypress', (e) => {
+    // Quick Add
+    container.addEventListener('keydown', async (e) => {
         if (e.target.id === 'quick-add-input' && e.key === 'Enter') {
-            const title = e.target.value.trim();
-            if (title) {
-                api.post('planner.php', {
-                    title: title,
-                    project_id: null,
-                    start_date: null,
-                    end_date: null
-                }).then(() => {
-                    e.target.value = '';
-                    refresh();
+            const val = e.target.value.trim();
+            if (!val) return;
+            e.target.value = '';
+
+            try {
+                await api.post('planner.php?action=add_task', {
+                    title: val,
+                    project_id: projectFilter === 'all' ? null : projectFilter
                 });
+                refresh();
+            } catch (err) {
+                console.error("Failed to add task", err);
             }
         }
     });
 
-    // Filter Change
+    // Project Filter
     const filterSelect = container.querySelector('#project-filter');
-    filterSelect.onchange = (e) => {
-        projectFilter = e.target.value;
-        updateUI();
-    };
+    if (filterSelect) {
+        filterSelect.addEventListener('change', (e) => {
+            projectFilter = e.target.value;
+            updateUI();
+        });
+    }
 
-    // Keyboard Listeners
-    container.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.target.id === 'quick-add-input') {
-            container.querySelector('#quick-add-btn')?.click();
-        }
-    });
+    // Display Limit Filter
+    const limitSelect = container.querySelector('#display-limit');
+    if (limitSelect) {
+        limitSelect.addEventListener('change', (e) => {
+            displayLimit = parseInt(e.target.value);
+            updateUI();
+        });
+    }
 
     return container;
 }

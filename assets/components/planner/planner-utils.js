@@ -39,6 +39,12 @@ export const PlannerUtils = {
         return date.toISOString().split('T')[0];
     },
 
+    // Format time HH:MM
+    formatTime(date) {
+        if (!date) return '';
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    },
+
     // Get week number
     getWeekNum(d) {
         const date = new Date(d.getTime());
