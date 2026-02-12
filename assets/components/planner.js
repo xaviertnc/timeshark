@@ -13,12 +13,12 @@ import { PlannerList } from './planner/planner-view-list.js';
 import { PlannerModal } from './planner/planner-modal.js';
 
 let currentView = 'timeline'; // 'timeline' or 'list'
-let currentScale = 'day';     // 'day', 'week', 'month'
+let currentScale = 'week';     // 'day', 'week', 'month'
 let currentZoom = 'regular';  // 'compact', 'regular', 'relaxed'
 let timeOffset = 0;           // 0 = today/start, +/- to move
 let sidebarCollapsed = false;
 let projectFilter = 'all';
-let displayLimit = 25;
+// displayLimit removed — all tasks shown, no artificial cap
 let sidebarCategory = 'planned'; // 'planned', 'today', 'completed'
 let listViewMode = localStorage.getItem('planner_list_view') || 'list'; // 'list' or 'grid'
 
@@ -42,36 +42,39 @@ export async function renderPlanner() {
             <h1 class="text-4xl font-light text-main tracking-tight">Unified <span class="font-bold italic text-primary">TODOs.</span></h1>
         </div>
 
-        <!--Filter Bar-- >
-        <div class="flex items-center justify-between px-2 shrink-0 mb-3">
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-1.5 bg-app/30 p-1 rounded-lg border border-white/5">
+        <!--Filter Bar-->
+        <div class="flex items-center justify-between px-2 shrink-0 mb-3 gap-2 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-1 bg-app/30 p-0.5 rounded-lg border border-white/5">
                     <button class="nav-btn p-1.5 text-dim hover:text-main" data-dir="-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
-                    <button class="nav-btn px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-dim hover:text-main" data-dir="0">Today</button>
+                    <button class="nav-btn px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-dim hover:text-main" data-dir="0">Today</button>
                     <button class="nav-btn p-1.5 text-dim hover:text-main" data-dir="1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                 </div>
 
+                <!-- Period Label -->
+                <span id="period-label" class="text-[10px] font-black uppercase tracking-widest text-muted whitespace-nowrap"></span>
+
                 <!-- Project Filter -->
-                <div class="relative group">
-                    <select id="project-filter" class="h-8 bg-app/60 border border-white/5 rounded-lg px-3 py-0 text-[9px] font-black uppercase tracking-widest text-white appearance-none cursor-pointer pr-8 focus:ring-1 focus:ring-primary/20 transition-all outline-none shadow-sm">
+                <div class="relative inline-block shrink-0">
+                    <select id="project-filter" class="h-7 min-w-[120px] max-w-[180px] bg-app/60 border border-white/5 rounded-lg px-2 py-0 text-[10px] font-black uppercase tracking-widest text-white appearance-none cursor-pointer pr-7 focus:ring-1 focus:ring-primary/20 transition-all outline-none shadow-sm">
                         <option value="all" ${projectFilter === 'all' ? 'selected' : ''}>Global View</option>
                         ${projects.map(p => `<option value="${p.id}" ${projectFilter == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
                     </select>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-50">
+                    <div class="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-50">
                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
                 <!-- Scale Toggle -->
                 <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView === 'list' ? 'hidden' : ''}">
                     ${['day', 'week', 'month'].map(s => `
-                        <button class="scale-toggle px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted opacity-40 hover:opacity-100'}" data-scale="${s}">
+                        <button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted opacity-40 hover:opacity-100'}" data-scale="${s}">
                             ${s}
                         </button>
                     `).join('')}
@@ -80,7 +83,7 @@ export async function renderPlanner() {
                 <!-- Zoom Toggle -->
                 <div id="zoom-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView === 'list' ? 'hidden' : ''}">
                     ${['compact', 'regular', 'relaxed'].map(z => `
-                        <button class="zoom-toggle px-2.5 py-1 rounded-md text-[7px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted opacity-40 hover:opacity-100'}" data-zoom="${z}">
+                        <button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted opacity-40 hover:opacity-100'}" data-zoom="${z}">
                             ${z}
                         </button>
                     `).join('')}
@@ -89,7 +92,7 @@ export async function renderPlanner() {
                 <!-- View Toggle -->
                 <div class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
                     ${['timeline', 'list'].map(v => `
-                        <button class="view-toggle px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'text-main bg-card shadow-sm ring-1 ring-black/5' : 'text-dim hover:text-main'}" data-view="${v}">
+                        <button class="view-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'text-main bg-card shadow-sm ring-1 ring-black/5' : 'text-dim hover:text-main'}" data-view="${v}">
                             ${v}
                         </button>
                     `).join('')}
@@ -99,22 +102,10 @@ export async function renderPlanner() {
 
         <div class="flex gap-4 flex-grow min-h-0 items-stretch overflow-hidden">
             <!-- Sidebar: Navigation & Tasks -->
-            <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-10' : 'w-72'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-y-auto backdrop-blur-sm transition-all duration-500 relative shrink-0 min-w-0">
+            <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-10' : 'w-72 lg:w-80 xl:w-96'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-y-auto overflow-x-hidden backdrop-blur-sm transition-all duration-500 relative shrink-0 min-w-0">
                 <!-- Sidebar Header -->
                 <div class="${sidebarCollapsed ? 'p-1 justify-center' : 'p-2 justify-between'} border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-20 flex items-center min-h-[36px] gap-1">
                     <h3 id="sidebar-title" class="px-2 text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'hidden' : 'block'}">Planner</h3>
-                    
-                    <div id="sidebar-filters" class="items-center gap-1.5 transition-all duration-500 ${sidebarCollapsed ? 'hidden' : 'flex'}">
-                        <div class="relative flex items-center">
-                            <select id="display-limit" class="h-7 bg-app/80 border border-white/10 rounded-lg pl-2 pr-6 text-[9px] font-black text-white hover:border-white/20 transition-all outline-none appearance-none cursor-pointer shadow-sm">
-                                <option value="15" ${displayLimit == 15 ? 'selected' : ''}>15</option>
-                                <option value="25" ${displayLimit == 25 ? 'selected' : ''}>25</option>
-                                <option value="50" ${displayLimit == 50 ? 'selected' : ''}>50</option>
-                                <option value="0" ${displayLimit == 0 ? 'selected' : ''}>ALL</option>
-                            </select>
-                            <svg class="w-2.5 h-2.5 absolute right-2 pointer-events-none text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
 
                     <button id="toggle-sidebar-btn" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0">
                         <svg class="w-3.5 h-3.5 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
@@ -153,14 +144,14 @@ export async function renderPlanner() {
             </div>
 
             <!-- Timeline -->
-            <div id="timeline-wrapper" class="${currentView === 'list' ? 'hidden' : 'flex-grow'} flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
+            <div id="timeline-wrapper" class="flex-grow flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
                  <div id="planner-timeline-container" class="flex-grow overflow-x-auto overflow-y-auto custom-scrollbar relative">
                     <!-- Timeline Content -->
                  </div>
             </div>
 
             <!-- Full List View -->
-            <div id="full-list-wrapper" class="${currentView === 'timeline' ? 'hidden' : 'flex-grow'} flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
+            <div id="full-list-wrapper" class="hidden flex-grow flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
                 <div class="p-3 border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-6">
                     <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">All Tasks</h3>
                     <div class="flex bg-app p-0.5 rounded-lg border border-white/5">
@@ -196,12 +187,25 @@ export async function renderPlanner() {
         const scaleContainer = container.querySelector('#scale-toggle-container');
         const sidebar = container.querySelector('#planner-sidebar');
         const sidebarTitle = sidebar.querySelector('h3');
-        const sidebarFilters = sidebar.querySelector('#sidebar-filters');
         const sidebarNav = sidebar.querySelector('#sidebar-nav');
         const toggleSidebarBtn = sidebar.querySelector('#toggle-sidebar-btn');
+        const periodLabel = container.querySelector('#period-label');
+        const zoomContainer = container.querySelector('#zoom-toggle-container');
 
-
-        // Update Toggle Button States
+        // Update period label
+        if (periodLabel) {
+            let label = '';
+            if (currentScale === 'day') {
+                label = config.startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+            } else if (currentScale === 'week') {
+                const s = config.startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                const e = config.endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                label = `${s} – ${e}`;
+            } else if (currentScale === 'month') {
+                label = config.startDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+            }
+            periodLabel.textContent = label;
+        }        // Update Toggle Button States
         container.querySelectorAll('.view-toggle').forEach(btn => {
             if (btn.dataset.view === currentView) {
                 btn.classList.add('bg-card', 'text-primary', 'shadow-sm');
@@ -224,7 +228,6 @@ export async function renderPlanner() {
         });
 
         // Update Zoom Toggle States
-        const zoomContainer = container.querySelector('#zoom-toggle-container');
         container.querySelectorAll('.zoom-toggle').forEach(btn => {
             if (btn.dataset.zoom === currentZoom) {
                 btn.classList.add('bg-card', 'text-primary', 'shadow-sm', 'opacity-100');
@@ -252,11 +255,9 @@ export async function renderPlanner() {
 
         if (sidebarCollapsed) {
             sidebar.classList.add('w-10');
-            sidebar.classList.remove('w-72');
+            sidebar.classList.remove('w-72', 'lg:w-80', 'xl:w-96');
             sidebarTitle.classList.add('hidden');
             sidebarTitle.classList.remove('block');
-            sidebarFilters.classList.add('hidden');
-            sidebarFilters.classList.remove('flex');
             sidebarNav.classList.add('opacity-0', 'pointer-events-none');
             sidebarNav.classList.remove('opacity-100');
             sidebarHeader?.classList.add('p-1', 'justify-center');
@@ -265,11 +266,9 @@ export async function renderPlanner() {
             toggleSidebarBtn.querySelector('svg').classList.remove('rotate-0');
         } else {
             sidebar.classList.remove('w-10');
-            sidebar.classList.add('w-72');
+            sidebar.classList.add('w-72', 'lg:w-80', 'xl:w-96');
             sidebarTitle.classList.remove('hidden');
             sidebarTitle.classList.add('block');
-            sidebarFilters.classList.remove('hidden');
-            sidebarFilters.classList.add('flex');
             sidebarNav.classList.remove('opacity-0', 'pointer-events-none');
             sidebarNav.classList.add('opacity-100');
             sidebarHeader?.classList.remove('p-1', 'justify-center');
@@ -303,8 +302,7 @@ export async function renderPlanner() {
             const allTasks = [...data.backlog, ...data.rows.flatMap(r => r.tasks)];
             PlannerList.render('planner-full-list-container', allTasks, data.projects, {
                 fullWidth: true,
-                limit: displayLimit,
-                showDone: showCompleted,
+                showDone: true,
                 viewMode: listViewMode
             });
         }
@@ -313,7 +311,6 @@ export async function renderPlanner() {
         const allThisProjectTasks = [...data.backlog, ...data.rows.flatMap(r => r.tasks)];
 
         PlannerList.render(listContainer, allThisProjectTasks, data.projects, {
-            limit: displayLimit,
             showDone: sidebarCategory === 'completed',
             category: sidebarCategory
         });
@@ -432,6 +429,39 @@ export async function renderPlanner() {
             return;
         }
 
+        // Inline Progress Bar Click (cycle through 0/25/50/75/100)
+        const progressBar = e.target.closest('.inline-progress-bar');
+        if (progressBar) {
+            e.stopPropagation();
+            const taskId = progressBar.dataset.taskId;
+            const currentProgress = parseInt(progressBar.dataset.progress) || 0;
+            const steps = [0, 25, 50, 75, 100];
+            const nextIdx = (steps.indexOf(currentProgress) + 1) % steps.length;
+            const newProgress = steps[nextIdx];
+
+            // Optimistic update
+            const tasks = store.get().tasks || [];
+            const task = tasks.find(t => t.id == taskId);
+            if (task) {
+                task.progress = newProgress;
+                if (newProgress >= 100) task.status = 'done';
+                else if (task.status === 'done') task.status = 'in-progress';
+                updateUI();
+
+                try {
+                    await api.post('planner.php', {
+                        id: taskId,
+                        progress: newProgress,
+                        status: task.status
+                    });
+                } catch (err) {
+                    console.error("Failed to update progress", err);
+                    refresh();
+                }
+            }
+            return;
+        }
+
         // Task Click (Open Modal)
         const taskEl = e.target.closest('.task-item');
         if (taskEl) {
@@ -506,9 +536,15 @@ export async function renderPlanner() {
             e.target.value = '';
 
             try {
-                await api.post('planner.php?action=add_task', {
+                const state = store.get();
+                const defaultResource = state.team?.[0]?.name || 'General';
+                await api.post('planner.php', {
                     title: val,
-                    project_id: projectFilter === 'all' ? null : projectFilter
+                    project_id: projectFilter === 'all' ? (state.projects?.[0]?.id || null) : projectFilter,
+                    resource_id: defaultResource,
+                    status: 'todo',
+                    progress: 0,
+                    priority: 'low'
                 });
                 refresh();
             } catch (err) {
@@ -522,15 +558,6 @@ export async function renderPlanner() {
     if (filterSelect) {
         filterSelect.addEventListener('change', (e) => {
             projectFilter = e.target.value;
-            updateUI();
-        });
-    }
-
-    // Display Limit Filter
-    const limitSelect = container.querySelector('#display-limit');
-    if (limitSelect) {
-        limitSelect.addEventListener('change', (e) => {
-            displayLimit = parseInt(e.target.value);
             updateUI();
         });
     }

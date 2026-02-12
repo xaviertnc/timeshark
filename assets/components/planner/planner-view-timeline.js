@@ -1,25 +1,24 @@
 /**
  * assets/components/planner/planner-view-timeline.js
  * 
- * Renders the Gantt-style timeline view with 3 zoom levels:
- *   compact  – dense, bars only, no text
- *   regular  – balanced, truncated text on bars, tooltips
- *   relaxed  – spacious, full text always visible
+ * Renders the Gantt-style timeline view with 3 zoom levels.
+ * Tasks are grouped into per-project lanes within each resource row.
+ * A lane legend (project color + name) shows on wider screens.
+ * Time entries use project colors.
  */
 
 import { PlannerUtils } from './planner-utils.js';
 
-// Zoom presets per scale
 const ZOOM = {
     day: {
-        compact: { hoursToShow: 24, rowH: 36, barH: 16, barTop: 8 },
-        regular: { hoursToShow: 10, rowH: 48, barH: 22, barTop: 10 },
-        relaxed: { hoursToShow: 6, rowH: 64, barH: 28, barTop: 14 },
+        compact: { colWidth: 30, rowH: 36, barH: 14, barTop: 9, hoursToShow: 24 },
+        regular: { colWidth: 60, rowH: 48, barH: 22, barTop: 10, hoursToShow: 12 },
+        relaxed: { colWidth: 120, rowH: 64, barH: 28, barTop: 14, hoursToShow: 10 },
     },
     week: {
-        compact: { colWidth: 50, rowH: 36, barH: 16, barTop: 8 },
-        regular: { colWidth: 100, rowH: 48, barH: 22, barTop: 10 },
-        relaxed: { colWidth: 180, rowH: 64, barH: 28, barTop: 14 },
+        compact: { colWidth: 40, rowH: 36, barH: 14, barTop: 9 },
+        regular: { colWidth: 80, rowH: 48, barH: 22, barTop: 10 },
+        relaxed: { colWidth: 160, rowH: 64, barH: 28, barTop: 14 },
     },
     month: {
         compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9 },
@@ -39,10 +38,15 @@ export const PlannerTimeline = {
         const zp = ZOOM[scaleKey]?.[zoom] || ZOOM[scaleKey]?.regular || ZOOM.week.regular;
         const showText = zoom !== 'compact';
 
+        // Responsive resource column
+        const isWide = container.offsetWidth > 900;
+        const resourceWidth = isWide ? 180 : 120;
+        const legendWidth = isWide ? 100 : 0; // legend only on wide screens
+        const leftWidth = resourceWidth + legendWidth;
+
         // Calculate dimensions
         const startTime = config.startDate.getTime();
-        const resourceWidth = 224; // w-56  
-        const availableWidth = container.offsetWidth - resourceWidth;
+        const availableWidth = container.offsetWidth - leftWidth;
 
         let pxPerDay, totalWidth, totalDays;
 
@@ -73,11 +77,27 @@ export const PlannerTimeline = {
             return (diff / (24 * 60 * 60 * 1000)) * pxPerDay;
         };
 
+        // ───── Group tasks by project for lane allocation ─────
+        const getProjectLanes = (tasks) => {
+            const lanesByProject = new Map(); // project_id -> { project, tasks[] }
+
+            tasks.filter(t => t.start_date && t.status !== 'done').forEach(task => {
+                const projId = task.project_id || 'personal';
+                if (!lanesByProject.has(projId)) {
+                    const proj = data.projects.find(p => p.id == projId) || { id: projId, name: 'Personal', color: '#64748b' };
+                    lanesByProject.set(projId, { project: proj, tasks: [] });
+                }
+                lanesByProject.get(projId).tasks.push(task);
+            });
+
+            return Array.from(lanesByProject.values());
+        };
+
         // ───── Header ─────
         const header = document.createElement('div');
         header.className = 'flex sticky top-0 z-40 bg-app border-b border-white/2';
-        header.style.width = `${resourceWidth + totalWidth}px`;
-        header.style.minWidth = `${resourceWidth + totalWidth}px`;
+        header.style.width = `${leftWidth + totalWidth}px`;
+        header.style.minWidth = `${leftWidth + totalWidth}px`;
 
         let headerCols = '';
         if (config.isDayView) {
@@ -111,9 +131,12 @@ export const PlannerTimeline = {
 
         const headerHeight = zoom === 'compact' ? 'h-10' : 'h-14';
         header.innerHTML = `
-            <div class="w-56 flex-shrink-0 p-4 font-black text-dim text-[10px] uppercase tracking-[0.3em] border-r border-white/2 bg-app sticky left-0 z-50 flex items-center">
+            <div class="flex-shrink-0 p-3 font-black text-dim text-[9px] uppercase tracking-[0.2em] border-r border-white/2 bg-app sticky left-0 z-50 flex items-center" style="width: ${resourceWidth}px">
                 Resource
             </div>
+            ${legendWidth > 0 ? `<div class="flex-shrink-0 border-r border-white/2 bg-app sticky z-50 flex items-center px-2" style="width: ${legendWidth}px; left: ${resourceWidth}px">
+                <span class="text-[8px] font-black text-dim uppercase tracking-widest opacity-40">Project</span>
+            </div>` : ''}
             <div class="relative ${headerHeight}" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
                 ${headerCols}
             </div>
@@ -123,13 +146,13 @@ export const PlannerTimeline = {
         // ───── Body ─────
         const body = document.createElement('div');
         body.className = 'relative';
-        body.style.width = `${resourceWidth + totalWidth}px`;
-        body.style.minWidth = `${resourceWidth + totalWidth}px`;
+        body.style.width = `${leftWidth + totalWidth}px`;
+        body.style.minWidth = `${leftWidth + totalWidth}px`;
 
         // Grid Lines
         const gridLines = document.createElement('div');
         gridLines.className = 'absolute inset-0 pointer-events-none';
-        gridLines.style.left = `${resourceWidth}px`;
+        gridLines.style.left = `${leftWidth}px`;
         gridLines.style.width = `${totalWidth}px`;
 
         if (config.isDayView) {
@@ -153,23 +176,54 @@ export const PlannerTimeline = {
 
         // ───── Rows ─────
         data.rows.forEach(row => {
+            // Get project lanes for this resource
+            const projectLanes = getProjectLanes(row.tasks);
+            const laneCount = Math.max(1, projectLanes.length);
+            const laneGap = 3;
+            const totalBarArea = laneCount * zp.barH + (laneCount - 1) * laneGap;
+            const timeEntryRowH = 14;
+            const rowPaddingTop = 6;
+            const rowPaddingBottom = 4;
+            const dynamicRowH = Math.max(zp.rowH, rowPaddingTop + totalBarArea + timeEntryRowH + rowPaddingBottom);
+
             const rowEl = document.createElement('div');
-            rowEl.className = `flex border-b border-white/1 hover:bg-white/5 transition-all group/row relative`;
-            rowEl.style.minHeight = `${zp.rowH}px`;
+            rowEl.className = `flex border-b border-white/1 hover:bg-white/[0.02] transition-all group/row relative`;
+            rowEl.style.minHeight = `${dynamicRowH}px`;
 
             // Resource Column
             const resCompact = zoom === 'compact';
+
+            // Lane Legend HTML (only on wide screens)
+            let legendHtml = '';
+            if (legendWidth > 0) {
+                const legendItems = projectLanes.map((lane, i) => {
+                    const topPos = rowPaddingTop + i * (zp.barH + laneGap) + (zp.barH / 2) - 5;
+                    return `
+                        <div class="absolute flex items-center gap-1 overflow-hidden" style="top: ${topPos}px; height: ${zp.barH}px; left: 4px; right: 4px;">
+                            <span class="w-1.5 h-1.5 rounded-sm shrink-0" style="background-color: ${lane.project.color}"></span>
+                            <span class="text-[7px] font-bold text-dim/50 truncate leading-none whitespace-nowrap">${lane.project.name}</span>
+                        </div>
+                    `;
+                }).join('');
+                legendHtml = `
+                    <div class="flex-shrink-0 border-r border-white/2 bg-app/50 sticky z-20 relative" style="width: ${legendWidth}px; left: ${resourceWidth}px; min-height: ${dynamicRowH}px">
+                        ${legendItems}
+                    </div>
+                `;
+            }
+
             rowEl.innerHTML = `
-                <div class="w-56 flex-shrink-0 ${resCompact ? 'px-3 py-2' : 'p-4'} border-r border-white/2 bg-app sticky left-0 z-30 flex items-center gap-3">
-                    <div class="${resCompact ? 'w-7 h-7 text-[8px]' : 'w-9 h-9 text-[10px]'} rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center font-black text-primary">
+                <div class="flex-shrink-0 ${resCompact ? 'px-2 py-1.5' : 'px-3 py-3'} border-r border-white/2 bg-app sticky left-0 z-30 flex items-center gap-2" style="width: ${resourceWidth}px">
+                    <div class="${resCompact ? 'w-6 h-6 text-[7px]' : 'w-8 h-8 text-[9px]'} rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center font-black text-primary shrink-0">
                         ${row.resource.substring(0, 1).toUpperCase()}${row.resource.split(' ')[1]?.substring(0, 1).toUpperCase() || row.resource.substring(1, 2).toUpperCase()}
                     </div>
                     <div class="min-w-0">
-                        <span class="block text-xs font-black text-main truncate">${row.resource}</span>
-                        ${resCompact ? '' : '<span class="text-[8px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>'}
+                        <span class="block ${resCompact ? 'text-[10px]' : 'text-[11px]'} font-black text-main truncate">${row.resource}</span>
+                        ${resCompact ? '' : '<span class="text-[7px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>'}
                     </div>
                 </div>
-                <div class="relative flex-grow" style="width: ${totalWidth}px; min-height: ${zp.rowH}px">
+                ${legendHtml}
+                <div class="relative flex-grow" style="width: ${totalWidth}px; min-height: ${dynamicRowH}px">
                      <!-- Today Indicator Line -->
                      ${(() => {
                     const dateToCheck = config.isDayView ? config.startDate : today;
@@ -194,45 +248,47 @@ export const PlannerTimeline = {
                         `;
                 })()}
 
-                     <!-- Tasks (TODOs) -->
+                     <!-- Tasks grouped by project lanes -->
                      ${(() => {
                     let html = '';
-                    row.tasks.forEach(task => {
-                        if (!task.start_date) return;
-                        const x = getX(task.start_date);
-                        const w = Math.max(10, getWidth(task.start_date, task.end_date));
+                    projectLanes.forEach((lane, laneIdx) => {
+                        const barTop = rowPaddingTop + laneIdx * (zp.barH + laneGap);
 
-                        if (x + w < 0 || x > totalWidth) return;
+                        lane.tasks.forEach(task => {
+                            if (!task.start_date) return;
+                            const x = getX(task.start_date);
+                            const w = Math.max(10, getWidth(task.start_date, task.end_date));
 
-                        const proj = data.projects.find(p => p.id == task.project_id) || { color: '#94a3b8', name: '?' };
-                        const status = task.status || 'todo';
+                            if (x + w < 0 || x > totalWidth) return;
 
-                        // Tooltip Text
-                        const tooltipText = `${task.title} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
+                            const proj = lane.project;
+                            const status = task.status || 'todo';
 
-                        // Task title inside bar (only for regular / relaxed)
-                        const titleHtml = showText && w > 30
-                            ? `<span class="block text-[8px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden">${task.title}</span>`
-                            : '';
+                            const tooltipText = `${task.title} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
 
-                        html += `
+                            const titleHtml = showText && w > 30
+                                ? `<span class="block text-[8px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden">${task.title}</span>`
+                                : '';
+
+                            html += `
                                 <div class="task-bar absolute rounded shadow-sm border border-white/5 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all group/task cursor-pointer overflow-hidden"
-                                     style="left: ${x}px; width: ${w}px; height: ${zp.barH}px; top: ${zp.barTop}px; background: ${proj.color};"
+                                     style="left: ${x}px; width: ${w}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color};"
                                      data-task-id="${task.id}"
                                      title="${tooltipText}">
                                      
                                      ${task.progress ? `
-                                        <div class="absolute inset-0 bg-black/10 pointer-events-none" style="width: ${task.progress}%"></div>
+                                        <div class="absolute inset-0 bg-black/15 pointer-events-none" style="width: ${task.progress}%"></div>
                                      ` : ''}
 
                                      ${titleHtml}
                                 </div>
                             `;
+                        });
                     });
                     return html;
                 })()}
 
-                     <!-- Time Entries (Actuals) -->
+                     <!-- Time Entries (Actuals) — project-colored -->
                      ${(() => {
                     let html = '';
                     row.entries.forEach(entry => {
@@ -248,11 +304,22 @@ export const PlannerTimeline = {
                         const renderX = Math.max(0, dayX);
                         const renderW = Math.max(4, dayW - (renderX - dayX));
 
-                        html += `
-                                <div class="absolute bottom-1.5 h-2 rounded-full ${isActive ? 'bg-primary/80 animate-pulse' : 'bg-white/20'} border border-white/5 backdrop-blur-sm pointer-events-none"
-                                     style="left: ${renderX}px; width: ${renderW}px;">
+                        const proj = data.projects.find(p => p.id == entry.project_id);
+                        const entryColor = proj ? proj.color : null;
+
+                        if (isActive) {
+                            html += `
+                                <div class="absolute h-2.5 rounded-full animate-pulse border border-white/10 backdrop-blur-sm pointer-events-none"
+                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; background-color: ${entryColor || 'rgba(var(--color-primary), 0.8)'}; opacity: 0.8;">
                                 </div>
                             `;
+                        } else {
+                            html += `
+                                <div class="absolute h-2 rounded-full border border-white/5 backdrop-blur-sm pointer-events-none"
+                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; ${entryColor ? `background-color: ${entryColor}; opacity: 0.45;` : 'background-color: rgba(255,255,255,0.12);'}">
+                                </div>
+                            `;
+                        }
                     });
                     return html;
                 })()}
