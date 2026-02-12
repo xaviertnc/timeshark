@@ -14,10 +14,10 @@ export const PlannerModal = {
         if (!portal) return;
 
         portal.innerHTML = `
-            <div id="planner-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
-                <div class="min-h-screen w-full flex items-center justify-center p-4">
-                    <div class="bg-card rounded-2xl shadow-soft w-full max-w-2xl p-8 md:p-10 transform transition-all scale-95 opacity-0 relative" id="planner-modal-content">
-                        <button id="close-planner-modal" class="absolute top-6 right-8 text-dim hover:text-main text-2xl transition-colors">&times;</button>
+            <div id="planner-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto overflow-y-auto">
+                <div class="w-full flex items-start justify-center py-6 px-4">
+                    <div class="bg-card rounded-2xl shadow-soft w-full max-w-2xl p-8 md:p-10 transform transition-all scale-95 opacity-0 relative mx-3 sm:mx-auto" id="planner-modal-content">
+                        <button id="close-planner-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10 text-muted hover:text-white hover:bg-white/10 text-lg font-bold transition-all z-10" title="Close">&times;</button>
 
                         <div class="mb-8">
                             <h3 id="planner-modal-title" class="text-2xl font-bold text-main tracking-tight">New Task</h3>
@@ -105,18 +105,16 @@ export const PlannerModal = {
                                     <span id="progress-val" class="text-xs font-black text-primary tabular-nums">0%</span>
                                 </div>
 
-                                <!-- Progress Bar Visual -->
-                                <div class="relative h-2 bg-white/5 rounded-full overflow-hidden">
-                                    <div id="progress-bar-fill" class="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-300" style="width: 0%"></div>
+                                <!-- Combined Progress Bar + Slider -->
+                                <div class="relative h-3 bg-white/5 rounded-full group/progress cursor-pointer">
+                                    <div id="progress-bar-fill" class="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-300 pointer-events-none" style="width: 0%"></div>
+                                    <input type="range" name="progress" min="0" max="100" value="0" step="5" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                                 </div>
-
-                                <!-- Slider -->
-                                <input type="range" name="progress" min="0" max="100" value="0" step="5" class="w-full h-1.5 bg-transparent rounded-lg appearance-none cursor-pointer accent-primary opacity-40 hover:opacity-100 transition-opacity">
 
                                 <!-- Quick Buttons -->
                                 <div class="flex gap-2">
                                     ${[0, 25, 50, 75, 100].map(v => `
-                                        <button type="button" class="progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${v === 0 ? 'bg-white/5 border-white/10 text-dim' : v === 100 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20' : 'bg-white/5 border-white/10 text-dim hover:bg-primary/10 hover:text-primary hover:border-primary/20'}" data-progress="${v}">
+                                        <button type="button" class="progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${v === 0 ? 'bg-primary/15 border-primary/30 text-primary ring-1 ring-primary/20' : 'bg-white/5 border-white/10 text-dim hover:bg-primary/10 hover:text-primary hover:border-primary/20'}" data-progress="${v}">
                                             ${v}%
                                         </button>
                                     `).join('')}
@@ -197,10 +195,18 @@ export const PlannerModal = {
         };
 
         // Progress Slider
+        const statusSelect = form.querySelector('select[name="status"]');
         const updateProgress = (val) => {
             progressVal.innerText = `${val}%`;
             progressInput.value = val;
             progressBar.style.width = `${val}%`;
+
+            // Auto-sync status with progress
+            if (val >= 100 && statusSelect.value !== 'done') {
+                statusSelect.value = 'done';
+            } else if (val < 100 && statusSelect.value === 'done') {
+                statusSelect.value = val > 0 ? 'in-progress' : 'todo';
+            }
 
             // Color transitions
             if (val >= 100) {
@@ -224,11 +230,7 @@ export const PlannerModal = {
                         btn.className = 'progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all bg-primary/15 border-primary/30 text-primary ring-1 ring-primary/20';
                     }
                 } else {
-                    if (bv === 100) {
-                        btn.className = 'progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20';
-                    } else {
-                        btn.className = 'progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all bg-white/5 border-white/10 text-dim hover:bg-primary/10 hover:text-primary hover:border-primary/20';
-                    }
+                    btn.className = 'progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all bg-white/5 border-white/10 text-dim hover:bg-primary/10 hover:text-primary hover:border-primary/20';
                 }
             });
         };
@@ -266,6 +268,15 @@ export const PlannerModal = {
             // Ensure numeric progress
             data.progress = parseInt(data.progress) || 0;
 
+            // Track completion timestamp
+            if (data.status === 'done') {
+                // Preserve existing completed_at if task was already done, otherwise stamp now
+                const existingTask = this._currentTask;
+                data.completed_at = (existingTask && existingTask.completed_at) || new Date().toISOString();
+            } else {
+                data.completed_at = null;
+            }
+
             try {
                 await api.post('planner.php', data);
                 this.onSave();
@@ -277,6 +288,7 @@ export const PlannerModal = {
     },
 
     open(task = null, defaults = {}) {
+        this._currentTask = task; // Store reference for save logic
         const portal = document.getElementById('modal-portal');
         const modal = portal.querySelector('#planner-modal');
         const content = portal.querySelector('#planner-modal-content');
@@ -409,6 +421,7 @@ export const PlannerModal = {
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        modal.scrollTop = 0; // Ensure top is visible
         setTimeout(() => {
             content.classList.remove('scale-95', 'opacity-0');
             content.classList.add('scale-100', 'opacity-100');

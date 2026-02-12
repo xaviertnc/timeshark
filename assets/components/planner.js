@@ -462,8 +462,8 @@ export async function renderPlanner() {
             return;
         }
 
-        // Task Click (Open Modal)
-        const taskEl = e.target.closest('.task-item');
+        // Task Click (Open Modal) — .task-item (list) or .task-bar (timeline)
+        const taskEl = e.target.closest('.task-item') || e.target.closest('.task-bar');
         if (taskEl) {
             const taskId = taskEl.dataset.taskId;
             const state = PlannerState.getCombinedData('all');

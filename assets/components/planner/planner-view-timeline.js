@@ -78,10 +78,26 @@ export const PlannerTimeline = {
         };
 
         // ───── Group tasks by project for lane allocation ─────
+        const nowDate = new Date();
+        const todayMidnight = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+        const tomorrowMidnight = new Date(todayMidnight); tomorrowMidnight.setDate(todayMidnight.getDate() + 1);
+
+        const isCompletedToday = (t) => {
+            if (t.status !== 'done') return false;
+            const completedDate = t.completed_at || t.start_date;
+            if (!completedDate) return false;
+            const cd = new Date(completedDate);
+            return cd >= todayMidnight && cd < tomorrowMidnight;
+        };
+
         const getProjectLanes = (tasks) => {
             const lanesByProject = new Map(); // project_id -> { project, tasks[] }
 
-            tasks.filter(t => t.start_date && t.status !== 'done').forEach(task => {
+            tasks.filter(t => {
+                if (!t.start_date) return false;
+                if (t.status !== 'done') return true;
+                return isCompletedToday(t);
+            }).forEach(task => {
                 const projId = task.project_id || 'personal';
                 if (!lanesByProject.has(projId)) {
                     const proj = data.projects.find(p => p.id == projId) || { id: projId, name: 'Personal', color: '#64748b' };

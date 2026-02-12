@@ -25,27 +25,45 @@ export const PlannerList = {
         const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
 
         // Separate Active and Completed
-        let activeTasks = tasks.filter(t => t.status !== 'done');
-        let completedTasks = tasks.filter(t => t.status === 'done');
+        // Tasks completed today stay in active list (shown with 100% progress)
+        const isCompletedToday = (t) => {
+            if (t.status !== 'done') return false;
+            // Use completed_at if available, fall back to start_date for legacy data
+            const completedDate = t.completed_at || t.start_date;
+            if (!completedDate) return false;
+            const d = new Date(completedDate); d.setHours(0, 0, 0, 0);
+            return d.getTime() >= today.getTime() && d.getTime() < tomorrow.getTime();
+        };
+        let activeTasks = tasks.filter(t => t.status !== 'done' || isCompletedToday(t));
+        let completedTasks = tasks.filter(t => t.status === 'done' && !isCompletedToday(t));
+
+        // Helper: does a task's date range intersect with today?
+        const intersectsToday = (t) => {
+            if (!t.start_date) return false;
+            const startDay = new Date(t.start_date); startDay.setHours(0, 0, 0, 0);
+            const endDay = t.end_date ? new Date(t.end_date) : new Date(startDay);
+            endDay.setHours(23, 59, 59, 999);
+            return startDay <= tomorrow && endDay >= today;
+        };
 
         // Category filtering for sidebar
         if (category === 'today') {
-            activeTasks = activeTasks.filter(t => {
-                if (!t.start_date) return false;
-                const d = new Date(t.start_date); d.setHours(0, 0, 0, 0);
-                return d.getTime() === today.getTime();
-            });
+            activeTasks = activeTasks.filter(t => intersectsToday(t));
         } else if (category === 'completed') {
             activeTasks = [];
         }
 
         if (limit > 0) activeTasks = activeTasks.slice(0, limit);
 
-        // Sort by date
+        // Sort by start_time, then by created time (id as proxy) if no start_time
         activeTasks.sort((a, b) => {
-            const da = a.start_date ? new Date(a.start_date) : new Date(8640000000000000);
-            const db = b.start_date ? new Date(b.start_date) : new Date(8640000000000000);
-            return da - db;
+            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
+            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
+            if (da !== db) return da - db;
+            // Fall back to id (creation order) when start times match or both missing
+            const ia = a.id || '';
+            const ib = b.id || '';
+            return ia < ib ? -1 : ia > ib ? 1 : 0;
         });
 
         // Group
@@ -58,9 +76,11 @@ export const PlannerList = {
 
         activeTasks.forEach(t => {
             if (!t.start_date) { groups['nodate'].tasks.push(t); return; }
-            const d = new Date(t.start_date);
-            if (d < today) groups['overdue'].tasks.push(t);
-            else if (d < tomorrow) groups['today'].tasks.push(t);
+            const startD = new Date(t.start_date);
+            // Use end_date for overdue check — task is only overdue if its end time has passed
+            const endD = t.end_date ? new Date(t.end_date) : startD;
+            if (endD < new Date()) groups['overdue'].tasks.push(t);
+            else if (intersectsToday(t)) groups['today'].tasks.push(t);
             else groups['later'].tasks.push(t);
         });
 
@@ -85,6 +105,11 @@ export const PlannerList = {
             if (t.end_date && t.end_date.includes('T')) {
                 const e = new Date(t.end_date);
                 const eTime = e.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+                const eDateStr = e.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                // Show end date if it differs from start date
+                if (eDateStr !== dateStr) {
+                    return `${dateStr} ${sTime} – ${eDateStr} ${eTime}`;
+                }
                 return `${dateStr}, ${sTime} – ${eTime}`;
             }
             return `${dateStr}, ${sTime}`;
@@ -113,9 +138,12 @@ export const PlannerList = {
                                 ${timeStr ? `<span class="text-[8px] font-bold text-dim/40 truncate">${timeStr}</span>` : ''}
                             </div>
                             <!-- Progress bar — fill uses project color -->
-                            <div class="inline-progress-bar mt-1.5 w-full h-2.5 bg-white/5 rounded-full overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
-                                <div class="absolute inset-y-0 left-0 rounded-full transition-all duration-300" style="width: ${Math.max(progress, 4)}%; background-color: ${proj.color}"></div>
-                                <span class="absolute inset-0 flex items-center justify-center text-[7px] font-black text-white/90 leading-none drop-shadow-sm">${progress}%</span>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <div class="inline-progress-bar flex-grow h-2.5 bg-white/5 rounded-full overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
+                                    <div class="absolute inset-y-0 left-0 rounded-full transition-all duration-300" style="width: ${Math.max(progress, 4)}%; background-color: ${proj.color}"></div>
+                                    <span class="absolute inset-0 flex items-center justify-center text-[7px] font-black text-white/90 leading-none drop-shadow-sm">${progress}%</span>
+                                </div>
+                                ${isDone && t.completed_at ? `<span class="text-[7px] font-bold text-emerald-500/60 whitespace-nowrap shrink-0">✓ ${new Date(t.completed_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>` : ''}
                             </div>
                         </div>
                     </div>
@@ -159,8 +187,8 @@ export const PlannerList = {
 
                         <div class="pl-8">
                             <div class="inline-progress-bar relative h-5 bg-white/5 rounded-md overflow-hidden cursor-pointer w-full" data-task-id="${t.id}" data-progress="${progress}">
-                                <div class="absolute inset-y-0 left-0 ${progressBarColor(progress)} rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%"></div>
-                                <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none">${progress}%</span>
+                                <div class="absolute inset-y-0 left-0 rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%; background-color: ${proj.color}; opacity: ${isDone ? 0.35 : 1}"></div>
+                                <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
                             </div>
                         </div>
                     </div>
@@ -192,8 +220,8 @@ export const PlannerList = {
 
                     <!-- Progress bar with centered % -->
                     <div class="inline-progress-bar shrink-0 w-24 h-5 bg-white/10 rounded-md overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
-                        <div class="absolute inset-y-0 left-0 ${progressBarColor(progress)} rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%"></div>
-                        <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none">${progress}%</span>
+                        <div class="absolute inset-y-0 left-0 rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%; background-color: ${proj.color}; opacity: ${isDone ? 0.35 : 1}"></div>
+                        <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
                     </div>
 
                     <div class="flex items-center opacity-0 group-hover/task:opacity-100 transition-opacity gap-1 shrink-0">
