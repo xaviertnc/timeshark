@@ -12,97 +12,168 @@ export const PlannerList = {
         if (!container) return;
 
         const isFull = options.fullWidth || false;
+        const limit = options.limit || 0;
+        const showDone = options.showDone || false;
+        const showPast = options.showPast || false; // Default: hide past
+
         container.innerHTML = '';
 
-        // Group by Project
-        const grouped = {};
-        tasks.forEach(t => {
-            const pid = t.project_id || 'uncategorized';
-            if (!grouped[pid]) grouped[pid] = [];
-            grouped[pid].push(t);
+        // 1. Filter Tasks
+        const now = new Date();
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+
+        let filtered = tasks.filter(t => {
+            if (!showDone && t.status === 'done') return false;
+            // "end dates in the past" implies they are over. If they are not done, they are overdue. 
+            // I'll stick to: Hide if end_date < today (regardless of status? No, user probably means "old stuff").
+            // Let's hide if end_date is in the past.
+            if (!showPast && t.end_date && new Date(t.end_date) < today) return false;
+
+            return true;
+        });
+
+        // 2. Sort by Date
+        filtered.sort((a, b) => {
+            const da = a.start_date ? new Date(a.start_date) : new Date(8640000000000000);
+            const db = b.start_date ? new Date(b.start_date) : new Date(8640000000000000);
+            return da - db;
+        });
+
+        // 3. Grouping (Date-based default)
+        const groups = {
+            'overdue': { label: 'Overdue', tasks: [], color: 'text-red-500' },
+            'today': { label: 'Today', tasks: [], color: 'text-primary' },
+            'tomorrow': { label: 'Tomorrow', tasks: [], color: 'text-main' },
+            'week': { label: 'This Week', tasks: [], color: 'text-dim' },
+            'later': { label: 'Later', tasks: [], color: 'text-dim' },
+            'nodate': { label: 'No Date', tasks: [], color: 'text-dim' }
+        };
+
+        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+        const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
+
+        filtered.forEach(t => {
+            if (!t.start_date) {
+                groups['nodate'].tasks.push(t);
+                return;
+            }
+            const d = new Date(t.start_date);
+            const end = t.end_date ? new Date(t.end_date) : d;
+
+            if (end < today) groups['overdue'].tasks.push(t);
+            else if (d < tomorrow) groups['today'].tasks.push(t);
+            else if (d < new Date(tomorrow.getTime() + 86400000)) groups['tomorrow'].tasks.push(t); // d < day after tomorrow
+            else if (d < nextWeek) groups['week'].tasks.push(t);
+            else groups['later'].tasks.push(t);
         });
 
         const listContent = document.createElement('div');
-        listContent.className = isFull ? 'max-w-4xl mx-auto space-y-10 py-4' : 'space-y-6';
+        listContent.className = isFull ? 'max-w-[1600px] mx-auto space-y-8 py-6 px-4' : 'space-y-4';
 
         // Quick Add Form
         if (!isFull) {
             const quickAdd = document.createElement('div');
-            quickAdd.className = 'mb-6 sticky top-0 bg-app z-10 pb-4 border-b border-soft';
+            quickAdd.className = 'mb-4 sticky top-0 bg-app/80 backdrop-blur-md z-10 pb-2 border-b border-soft';
             quickAdd.innerHTML = `
                 <div class="relative">
-                    <input type="text" id="quick-add-input" placeholder="Add new task..." 
-                           class="w-full bg-card border border-soft rounded-xl px-4 py-3 text-sm font-bold text-main focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-dim/50 shadow-inner-white">
-                    <button id="quick-add-btn" class="absolute right-2 top-2 bottom-2 aspect-square bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary-dark transition-colors shadow-lg shadow-primary/20">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                    <input type="text" id="quick-add-input" placeholder="Add TODO..." 
+                           class="w-full bg-card border border-soft rounded-xl px-4 py-2 text-xs font-bold text-main focus:ring-4 focus:ring-primary/10 outline-none transition-all placeholder:text-dim/40 shadow-inner-white">
+                    <button id="quick-add-btn" class="absolute right-1.5 top-1.5 bottom-1.5 aspect-square bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                     </button>
                 </div>
             `;
             listContent.appendChild(quickAdd);
         }
 
-        // Projects List
-        Object.keys(grouped).forEach(pid => {
-            const project = projects.find(p => String(p.id) === String(pid)) || { name: 'Unassigned', color: '#94a3b8' };
-            const projectTasks = grouped[pid];
+        // Render Groups
+        let totalRenderedTasks = 0;
+        ['overdue', 'today', 'tomorrow', 'week', 'later', 'nodate'].forEach(key => {
+            let gTasks = groups[key].tasks;
+            if (gTasks.length === 0) return;
+
+            if (limit > 0) gTasks = gTasks.slice(0, limit);
+            totalRenderedTasks += gTasks.length;
 
             const groupEl = document.createElement('div');
-            groupEl.className = 'animate-in fade-in slide-in-from-bottom-2 duration-300';
+            groupEl.className = 'animate-in fade-in slide-in-from-bottom-1 duration-400';
 
             groupEl.innerHTML = `
-                <div class="flex items-center gap-3 mb-4 px-1">
-                    <div class="w-2.5 h-2.5 rounded-full shadow-sm" style="background-color: ${project.color}"></div>
-                    <span class="${isFull ? 'text-sm' : 'text-[10px]'} font-black text-dim uppercase tracking-widest">${project.name}</span>
-                    <div class="h-px flex-grow bg-soft/30 mx-2"></div>
-                    <span class="text-[9px] font-black text-dim bg-app px-2.5 py-1 rounded-full border border-soft shadow-inner-white">${projectTasks.length} TODOs</span>
+                <div class="flex items-center gap-2 mb-2 px-1">
+                    <span class="text-[9px] font-black uppercase tracking-[0.2em] opacity-80 ${groups[key].color}">${groups[key].label}</span>
+                    <div class="h-px flex-grow bg-gradient-to-r from-soft/30 to-transparent mx-2"></div>
+                    <span class="text-[8px] font-bold text-dim opacity-50">${gTasks.length}</span>
                 </div>
-                <div class="${isFull ? 'grid grid-cols-1 gap-3' : 'space-y-2'}">
-                    ${projectTasks.map(t => {
+                <div class="${isFull ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2' : 'space-y-0.5'}">
+                    ${gTasks.map(t => {
                 const hasProgress = t.progress && t.progress > 0;
-                const dateStr = t.start_date ? new Date(t.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
+                const proj = projects.find(p => p.id == t.project_id) || { color: '#334155' };
+                const status = t.status || 'todo';
+                let statusColor = 'text-dim';
+                if (status === 'in-progress') statusColor = 'text-primary';
+                if (status === 'done') statusColor = 'text-teal-500';
 
-                return `
-                            <div class="task-item bg-card hover:bg-white border border-soft hover:border-primary/40 p-4 rounded-xl cursor-pointer shadow-sm hover:shadow-md transition-all group/item relative overflow-hidden"
-                                 data-task-id="${t.id}">
-                                
-                                ${hasProgress ? `<div class="absolute bottom-0 left-0 h-[2px] bg-primary/20" style="width: ${t.progress}%"></div>` : ''}
+                // Single Line Compact View (Sidebar) vs Grid Card (Full)
+                if (!isFull) {
+                    return `
+                                <div class="task-item group/item relative pl-2 pr-2 h-7 rounded hover:bg-white/5 border border-transparent transition-all cursor-pointer flex items-center gap-2 overflow-hidden"
+                                     data-task-id="${t.id}">
+                                    
+                                    <div class="w-0.5 h-3 rounded-full" style="background-color: ${proj.color}"></div>
 
-                                <div class="flex items-start justify-between gap-4">
-                                    <div class="flex-grow min-w-0">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="${isFull ? 'text-base' : 'text-xs'} font-bold text-main leading-tight truncate">${t.title}</span>
-                                            ${dateStr && isFull ? `<span class="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10 tracking-tighter">${dateStr}</span>` : ''}
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-1">
-                                             <span class="text-[9px] font-black text-dim bg-app px-2 py-0.5 rounded uppercase tracking-wider border border-soft/50 shadow-inner-white">${t.resource_id || 'Anyone'}</span>
-                                             ${hasProgress ? `<span class="text-[9px] font-black text-primary uppercase tracking-wider">${t.progress}% Done</span>` : ''}
-                                        </div>
-                                    </div>
+                                    <span class="text-xs font-bold text-main truncate flex-grow group-hover/item:text-primary transition-colors">${t.title}</span>
 
-                                    <div class="flex items-center gap-1 shrink-0">
-                                        <button class="track-btn opacity-0 group-hover/item:opacity-100 text-teal-600 hover:bg-teal-600/10 p-2 rounded-lg transition-all" title="Start Tracking" data-task-id="${t.id}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <div class="flex items-center gap-2 shrink-0 opacity-60 group-hover/item:opacity-100 transition-opacity">
+                                         ${hasProgress ? `<span class="text-[9px] font-black text-primary">${t.progress}%</span>` : ''}
+                                         ${status !== 'todo' ? `<span class="text-[9px] font-black uppercase ${statusColor}">${status === 'in-progress' ? 'IP' : 'Done'}</span>` : ''}
+                                         
+                                        <button class="track-btn text-dim hover:text-primary opacity-0 group-hover/item:opacity-100 transition-opacity" title="Track" data-task-id="${t.id}">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
                                         </button>
-                                        ${!t.start_date ? `
-                                            <button class="plan-btn opacity-0 group-hover/item:opacity-100 text-primary hover:bg-primary/10 p-2 rounded-lg transition-all" title="Schedule">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                            </button>
-                                        ` : ''}
                                     </div>
+                                    
+                                    <!-- Progress Underline Removed as requested -->
                                 </div>
-                            </div>
-                        `;
+                            `;
+                } else {
+                    // Full View Card (Slightly more detail but still compact)
+                    return `
+                                <div class="task-item bg-app/20 hover:bg-card border border-white/5 hover:border-primary/20 px-3 py-2 rounded-lg cursor-pointer transition-all group/item relative overflow-hidden flex flex-col gap-1"
+                                     data-task-id="${t.id}">
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${proj.color}"></div>
+                                        <span class="text-[11px] font-bold text-main truncate flex-grow group-hover/item:text-primary transition-colors">${t.title}</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between mt-1">
+                                         <div class="flex items-center gap-2">
+                                             <span class="text-[8px] font-black uppercase ${statusColor} opacity-70 tracking-wider">${status}</span>
+                                             ${t.resource_id ? `<span class="text-[8px] font-black text-dim uppercase tracking-wider opacity-50 truncate max-w-[60px]">${t.resource_id}</span>` : ''}
+                                         </div>
+                                         <div class="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                             <button class="track-btn text-primary hover:bg-primary/10 p-1 rounded-md" data-task-id="${t.id}">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
+                                             </button>
+                                         </div>
+                                    </div>
+                                    ${hasProgress ? `<div class="absolute bottom-0 left-0 h-[1.5px] bg-primary/20" style="width: ${t.progress}%"></div>` : ''}
+                                </div>
+                            `;
+                }
             }).join('')}
                 </div>
             `;
             listContent.appendChild(groupEl);
         });
 
-        if (tasks.length === 0) {
+        if (totalRenderedTasks === 0) {
             listContent.innerHTML += `
-                <div class="text-center py-20 opacity-30">
-                    <div class="text-6xl mb-4">✨</div>
-                    <p class="text-xs font-black text-dim uppercase tracking-[0.3em]">No tasks in this view</p>
+                <div class="flex flex-col items-center justify-center py-20 opacity-40">
+                    <div class="w-24 h-24 mb-4 text-dim bg-app rounded-full flex items-center justify-center border-2 border-dashed border-soft">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </div>
+                    <p class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">All Caught Up</p>
                 </div>
             `;
         }

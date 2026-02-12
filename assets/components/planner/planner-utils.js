@@ -23,6 +23,17 @@ export const PlannerUtils = {
         return h > 0 ? `${h}h ${m}m` : `${m}m`;
     },
 
+    // Darken or lighten a hex color
+    shiftColor(color, percent) {
+        if (!color || typeof color !== 'string' || !color.startsWith('#')) return color;
+        const num = parseInt(color.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) + amt;
+        const G = (num >> 8 & 0x00FF) + amt;
+        const B = (num & 0x0000FF) + amt;
+        return '#' + (0x1000000 + (R < 255 ? R < 0 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 0 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 0 ? 0 : B : 255)).toString(16).slice(1);
+    },
+
     // Get ISO date string (YYYY-MM-DD)
     toISODate(date) {
         return date.toISOString().split('T')[0];
@@ -53,6 +64,25 @@ export const PlannerUtils = {
         if (scale === 'week') baseDate.setDate(today.getDate() + (offset * 14)); // Show 2 weeks
         if (scale === 'month') baseDate.setDate(today.getDate() + (offset * 28));
         if (scale === 'year') baseDate.setFullYear(today.getFullYear() + offset);
+
+        if (scale === 'day') {
+            const start = new Date(baseDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(start);
+            end.setHours(23, 59, 59, 999);
+
+            // We generate "virtual" dates for each hour to reuse the grid logic
+            // Actually, let's keep it as 1 day and handle hours in the View
+            return {
+                type: 'day',
+                startDate: start,
+                endDate: end,
+                dates: [start], // Just one day
+                colWidth: 120, // per hour? 
+                totalWidth: 24 * 120, // 24 hours * 120px
+                isDayView: true
+            };
+        }
 
         if (scale === 'month') {
             const start = new Date(baseDate);

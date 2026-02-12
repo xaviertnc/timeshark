@@ -27,21 +27,29 @@ export const PlannerModal = {
                         <form id="planner-form" class="space-y-6">
                             <input type="hidden" name="id">
                             
-                            <!-- Resource & Project Row -->
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Team Member</label>
-                                    <select name="resource_id" id="modal-resource" class="w-full bg-app border-none rounded-2xl py-3 px-4 text-center text-main font-bold cursor-pointer appearance-none text-xs">
-                                        <!-- Populated dynamically -->
-                                    </select>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Project</label>
-                                    <select name="project_id" id="modal-project" required class="w-full bg-app border-none rounded-2xl py-3 px-4 text-center text-main font-bold cursor-pointer appearance-none text-xs">
-                                        <!-- Populated dynamically -->
-                                    </select>
-                                </div>
-                            </div>
+                             <!-- Resource, Project & Status Row -->
+                             <div class="grid grid-cols-3 gap-4">
+                                 <div class="space-y-2">
+                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Member</label>
+                                     <select name="resource_id" id="modal-resource" class="w-full bg-app border-none rounded-2xl py-3 px-3 text-center text-main font-bold cursor-pointer appearance-none text-[11px]">
+                                         <!-- Populated dynamically -->
+                                     </select>
+                                 </div>
+                                 <div class="space-y-2">
+                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Project</label>
+                                     <select name="project_id" id="modal-project" required class="w-full bg-app border-none rounded-2xl py-3 px-3 text-center text-main font-bold cursor-pointer appearance-none text-[11px]">
+                                         <!-- Populated dynamically -->
+                                     </select>
+                                 </div>
+                                 <div class="space-y-2">
+                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Status</label>
+                                     <select name="status" class="w-full bg-app border-none rounded-2xl py-3 px-3 text-center text-main font-bold cursor-pointer appearance-none text-[11px]">
+                                         <option value="todo">Todo</option>
+                                         <option value="in-progress">In-Progress</option>
+                                         <option value="done">Done</option>
+                                     </select>
+                                 </div>
+                             </div>
 
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block text-left ml-2">Description</label>
@@ -213,6 +221,7 @@ export const PlannerModal = {
             form.title.value = task.title;
             form.resource_id.value = task.resource_id || 'General';
             form.project_id.value = task.project_id;
+            form.status.value = task.status || 'todo';
 
             // Progress
             const prog = task.progress || 0;
