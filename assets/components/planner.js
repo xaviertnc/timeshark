@@ -19,7 +19,7 @@ let timeOffset = 0;           // 0 = today/start, +/- to move
 let sidebarCollapsed = false;
 let projectFilter = 'all';
 // displayLimit removed — all tasks shown, no artificial cap
-let sidebarCategory = 'planned'; // 'planned', 'today', 'completed'
+let sidebarCategory = 'today'; // 'today', 'planned', 'completed'
 let listViewMode = localStorage.getItem('planner_list_view') || 'list'; // 'list' or 'grid'
 
 export async function renderPlanner() {
@@ -45,6 +45,14 @@ export async function renderPlanner() {
         <!--Filter Bar-->
         <div class="flex items-center justify-between px-2 shrink-0 mb-3 gap-2 flex-wrap">
             <div class="flex items-center gap-2 flex-wrap">
+                <!-- View Toggle -->
+                <div class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
+                    ${[{ key: 'timeline', label: 'Timeline' }, { key: 'list', label: 'Todo List' }].map(v => `
+                        <button class="view-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${currentView === v.key ? 'text-main bg-card shadow-sm ring-1 ring-black/5' : 'text-dim hover:text-main'}" data-view="${v.key}">
+                            ${v.label}
+                        </button>
+                    `).join('')}
+                </div>
                 <div class="flex items-center gap-1 bg-app/30 p-0.5 rounded-lg border border-white/5">
                     <button class="nav-btn p-1.5 text-dim hover:text-main" data-dir="-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
@@ -56,7 +64,7 @@ export async function renderPlanner() {
                 </div>
 
                 <!-- Period Label -->
-                <span id="period-label" class="text-[10px] font-black uppercase tracking-widest text-muted whitespace-nowrap"></span>
+                <span id="period-label" class="text-[10px] font-black uppercase tracking-widest text-muted whitespace-nowrap shrink-0"></span>
 
                 <!-- Project Filter -->
                 <div class="relative inline-block shrink-0">
@@ -89,14 +97,7 @@ export async function renderPlanner() {
                     `).join('')}
                 </div>
 
-                <!-- View Toggle -->
-                <div class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
-                    ${['timeline', 'list'].map(v => `
-                        <button class="view-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'text-main bg-card shadow-sm ring-1 ring-black/5' : 'text-dim hover:text-main'}" data-view="${v}">
-                            ${v}
-                        </button>
-                    `).join('')}
-                </div>
+
             </div>
         </div>
 
@@ -107,24 +108,31 @@ export async function renderPlanner() {
                 <div class="${sidebarCollapsed ? 'p-1 justify-center' : 'p-2 justify-between'} border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-20 flex items-center min-h-[36px] gap-1">
                     <h3 id="sidebar-title" class="px-2 text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'hidden' : 'block'}">Planner</h3>
 
-                    <button id="toggle-sidebar-btn" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0">
-                        <svg class="w-3.5 h-3.5 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
-                    </button>
+                    <div class="flex items-center gap-0.5 shrink-0">
+                        <button id="toggle-sidebar-btn" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0">
+                            <svg class="w-3.5 h-3.5 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Navigation Sidebar (MS To Do style categories) -->
                 <div id="sidebar-nav" class="flex-grow overflow-y-auto custom-scrollbar transition-all duration-500 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}">
                     <div class="px-3 py-4 space-y-1">
-                        <button class="nav-cat flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-primary/10 text-primary shadow-sm shadow-primary/5 transition-all group/cat" data-cat="planned">
+                        <div class="flex items-center gap-1">
+                            <button class="nav-cat flex-1 flex items-center justify-between px-4 py-2.5 rounded-xl text-dim hover:bg-white/5 hover:text-main transition-all group/cat" data-cat="today">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                    <span class="text-[13px] font-bold">Today</span>
+                                </div>
+                            </button>
+                            <button id="sidebar-add-task" class="p-1.5 rounded-lg hover:bg-primary/10 transition-colors text-dim hover:text-primary shrink-0" title="Add Task">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                            </button>
+                        </div>
+                        <button class="nav-cat flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-dim hover:bg-white/5 hover:text-main transition-all group/cat" data-cat="planned">
                             <div class="flex items-center gap-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 <span class="text-[13px] font-bold">Planned</span>
-                            </div>
-                        </button>
-                        <button class="nav-cat flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-dim hover:bg-white/5 hover:text-main transition-all group/cat" data-cat="today">
-                            <div class="flex items-center gap-3">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                                <span class="text-[13px] font-bold">Today</span>
                             </div>
                         </button>
                         <button class="nav-cat flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-dim hover:bg-white/5 hover:text-main transition-all group/cat" data-cat="completed">
@@ -303,7 +311,8 @@ export async function renderPlanner() {
             PlannerList.render('planner-full-list-container', allTasks, data.projects, {
                 fullWidth: true,
                 showDone: true,
-                viewMode: listViewMode
+                viewMode: listViewMode,
+                projectFilter: projectFilter
             });
         }
 
@@ -353,6 +362,13 @@ export async function renderPlanner() {
         if (toggleBtn) {
             sidebarCollapsed = !sidebarCollapsed;
             updateUI();
+            return;
+        }
+
+        // Add Task from sidebar
+        const addTaskBtn = e.target.closest('#sidebar-add-task');
+        if (addTaskBtn) {
+            PlannerModal.open(null, { start_date: new Date().toISOString().split('T')[0] });
             return;
         }
 
@@ -529,27 +545,42 @@ export async function renderPlanner() {
     });
 
     // Quick Add
+    const doQuickAdd = async () => {
+        const input = container.querySelector('#quick-add-input');
+        const projectSelect = container.querySelector('#quick-add-project');
+        if (!input) return;
+        const val = input.value.trim();
+        if (!val) return;
+        input.value = '';
+
+        const selectedProject = projectSelect ? projectSelect.value : null;
+
+        try {
+            const state = store.get();
+            const defaultResource = state.team?.[0]?.name || 'General';
+            await api.post('planner.php', {
+                title: val,
+                project_id: selectedProject || (projectFilter === 'all' ? (state.projects?.[0]?.id || null) : projectFilter),
+                resource_id: defaultResource,
+                status: 'todo',
+                progress: 0,
+                priority: 'low'
+            });
+            refresh();
+        } catch (err) {
+            console.error("Failed to add task", err);
+        }
+    };
+
     container.addEventListener('keydown', async (e) => {
         if (e.target.id === 'quick-add-input' && e.key === 'Enter') {
-            const val = e.target.value.trim();
-            if (!val) return;
-            e.target.value = '';
+            doQuickAdd();
+        }
+    });
 
-            try {
-                const state = store.get();
-                const defaultResource = state.team?.[0]?.name || 'General';
-                await api.post('planner.php', {
-                    title: val,
-                    project_id: projectFilter === 'all' ? (state.projects?.[0]?.id || null) : projectFilter,
-                    resource_id: defaultResource,
-                    status: 'todo',
-                    progress: 0,
-                    priority: 'low'
-                });
-                refresh();
-            } catch (err) {
-                console.error("Failed to add task", err);
-            }
+    container.addEventListener('click', async (e) => {
+        if (e.target.closest('#quick-add-btn')) {
+            doQuickAdd();
         }
     });
 

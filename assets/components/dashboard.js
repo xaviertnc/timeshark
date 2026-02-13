@@ -91,16 +91,15 @@ export async function renderDashboard() {
             <form id="start-timer-form" class="flex flex-col md:flex-row items-end gap-4">
               <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                 <div class="space-y-1.5">
-                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-                  <select name="project_id" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
-                    <option value="">Select Project...</option>
-                    ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                  </select>
-                </div>
-                <div class="space-y-1.5">
                   <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">What are you doing?</label>
                   <input type="text" name="description" list="todo-datalist" placeholder="Task description..." class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm focus:ring-2 focus:ring-primary/20">
                   <datalist id="todo-datalist"></datalist>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
+                  <select name="project_id" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
+                    ${projects.map(p => `<option value="${p.id}" ${p.name.toLowerCase() === 'personal' ? 'selected' : ''}>${p.name}</option>`).join('')}
+                  </select>
                 </div>
                 <div class="space-y-1.5">
                   <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes (Optional)</label>
@@ -338,17 +337,24 @@ export async function renderDashboard() {
 
       modalPortal.innerHTML = `
         <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
-          <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
-            <button id="close-modal-x" class="absolute top-6 right-6 text-2xl text-dim hover:text-red-500 transition-all">&times;</button>
-            <div class="text-center mb-8">
-              <h3 class="text-xl font-bold">Edit Current Task</h3>
-              <p class="text-[9px] font-black text-dim uppercase tracking-widest mt-2">Live Update</p>
+          <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main">
+            <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10 text-muted hover:text-white hover:bg-white/10 text-lg font-bold transition-all z-10" title="Close">&times;</button>
+            <div class="mb-8">
+              <h3 class="text-2xl font-bold text-main tracking-tight">Edit Current Task</h3>
+              <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Live Update</p>
             </div>
-            <form id="edit-active-form" class="space-y-4">
+            <form id="edit-active-form" class="space-y-6">
+              <!-- Description -->
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Description</label>
+                <input type="text" name="description" value="${activeTimer.description || ''}" placeholder="What are you working on?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all">
+              </div>
+
+              <!-- Project + Linked Todo -->
               <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-                  <select name="project_id" id="active-project-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer text-xs">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Project</label>
+                  <select name="project_id" id="active-project-select" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
                     <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
                     ${projects.map(p => {
         const pid = String(p.id);
@@ -357,24 +363,30 @@ export async function renderDashboard() {
       }).join('')}
                   </select>
                 </div>
-                <div class="space-y-1.5">
-                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Linked Todo</label>
-                  <select name="task_id" id="active-task-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer text-xs">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Linked Todo</label>
+                  <select name="task_id" id="active-task-select" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
                     <option value="">No Linked Todo</option>
                   </select>
                 </div>
               </div>
-              <div class="space-y-1.5">
-                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
-                <input type="text" name="description" value="${activeTimer.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
+
+              <!-- Started At + Notes -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Started At</label>
+                  <input type="datetime-local" name="start_time" value="${formatDateForInput(activeTimer.start_time)}" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
+                  <input type="text" name="notes" value="${activeTimer.notes || ''}" placeholder="Optional details..." class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                </div>
               </div>
-              <div class="space-y-1.5">
-                <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes</label>
-                <input type="text" name="notes" value="${activeTimer.notes || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
-              </div>
-              <div class="flex gap-4 pt-4">
-                <button type="button" id="cancel-modal" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest hover:text-main">Cancel</button>
-                <button type="submit" class="flex-[2] py-4 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark">Save Changes</button>
+
+              <!-- Actions -->
+              <div class="flex gap-4 pt-4 border-t border-white/5">
+                <button type="button" id="cancel-modal" class="flex-1 py-3.5 text-[10px] font-black uppercase text-dim tracking-widest hover:text-main rounded-xl hover:bg-white/5 transition-all">Cancel</button>
+                <button type="submit" class="flex-[2] py-3.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all">Save Changes</button>
               </div>
             </form>
           </div>
@@ -406,6 +418,9 @@ export async function renderDashboard() {
         data.id = activeTimer.id;
         data.task_id = data.task_id || null;
         data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
+        data.resource_id = activeTimer.resource_id || state.team?.[0]?.name || 'Main';
+        data.start_time = new Date(data.start_time).toISOString();
+        data.end_time = null;
         try {
           const result = await api.post('time-entries.php', data);
           store.update('activeTimer', result);

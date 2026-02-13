@@ -132,10 +132,10 @@ export const PlannerList = {
                         </button>
 
                         <div class="flex-grow min-w-0">
-                            <div class="text-[12px] font-bold leading-tight truncate pr-4 ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</div>
+                            <div class="text-sm font-bold leading-tight truncate pr-4 ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</div>
                             <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                <span class="text-[9px] font-bold text-dim/50 truncate">${proj.name}</span>
-                                ${timeStr ? `<span class="text-[8px] font-bold text-dim/40 truncate">${timeStr}</span>` : ''}
+                                <span class="text-[9px] font-bold text-dim/35 truncate">${proj.name}</span>
+                                ${timeStr ? `<span class="text-[8px] font-bold text-dim/25 truncate">${timeStr}</span>` : ''}
                             </div>
                             <!-- Progress bar — fill uses project color -->
                             <div class="flex items-center gap-1.5 mt-1.5">
@@ -259,36 +259,235 @@ export const PlannerList = {
 
         // Quick-add (only for full view)
         if (isFull) {
+            const currentProjectFilter = options.projectFilter || 'all';
+
             const quickAdd = document.createElement('div');
             quickAdd.className = 'mt-4 px-1';
             quickAdd.innerHTML = `
-                <div class="relative group/add">
-                    <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-primary/40 group-focus-within/add:text-primary transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                <div class="bg-white/2 hover:bg-white/3 border border-white/5 rounded-xl p-2 transition-all focus-within:bg-white/5 focus-within:ring-1 focus-within:ring-primary/20 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <!-- Plus icon -->
+                        <div class="shrink-0 w-8 h-8 flex items-center justify-center text-primary/40">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                        </div>
+                        <!-- Task name -->
+                        <input type="text" id="quick-add-input" placeholder="Add a task..."
+                               class="flex-1 bg-transparent border-none text-sm font-bold text-main outline-none placeholder:text-dim/30 min-w-0 px-3 py-2">
+                        <!-- Project selector -->
+                        <div class="relative shrink-0">
+                            <select id="quick-add-project" class="h-8 bg-white/5 border border-white/5 rounded-lg px-3 pr-7 text-[10px] font-black uppercase tracking-widest text-dim appearance-none cursor-pointer focus:ring-1 focus:ring-primary/20 outline-none transition-all hover:bg-white/8">
+                                ${projects.map(p => `<option value="${p.id}" ${String(p.id) === String(currentProjectFilter !== 'all' ? currentProjectFilter : '') ? 'selected' : ''}>${p.name}</option>`).join('')}
+                            </select>
+                            <div class="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-40">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                        <!-- Add button -->
+                        <button id="quick-add-btn" class="shrink-0 h-8 px-4 bg-primary/15 hover:bg-primary/25 text-primary text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">
+                            Add
+                        </button>
                     </div>
-                    <input type="text" id="quick-add-input" placeholder="Add a task" 
-                           class="w-full bg-white/2 hover:bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-main focus:bg-white/5 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-dim/30 shadow-sm">
                 </div>
             `;
             listContent.appendChild(quickAdd);
         }
 
-        // Completed Section — no opacity reduction, better contrast
+        // Completed Section — with search, grouping, and pagination
         if (completedTasks.length > 0 && showDone) {
             const completedEl = document.createElement('div');
             completedEl.className = isFull ? 'mt-8 pt-4 border-t border-white/5' : 'mt-4 pt-3 border-t border-white/5';
 
+            let perPage = 10;
+            let currentPage = 1;
+            let searchQuery = '';
+            let groupBy = 'day'; // day | week | month | year
+
+            // Group tasks by time period
+            const getGroupLabel = (dateStr, mode) => {
+                if (!dateStr) return 'Unknown';
+                const d = new Date(dateStr);
+                if (mode === 'day') return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                if (mode === 'week') {
+                    const start = new Date(d); start.setDate(d.getDate() - d.getDay());
+                    const end = new Date(start); end.setDate(start.getDate() + 6);
+                    return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                }
+                if (mode === 'month') return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+                if (mode === 'year') return d.getFullYear().toString();
+                return '';
+            };
+
+            const renderCompleted = () => {
+                // Filter
+                let filtered = completedTasks;
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    filtered = filtered.filter(t => {
+                        const proj = projects.find(p => p.id == t.project_id);
+                        const projName = proj ? proj.name.toLowerCase() : '';
+                        const resourceName = (t.resource_id || '').toLowerCase();
+                        return t.title.toLowerCase().includes(q) || projName.includes(q) || resourceName.includes(q);
+                    });
+                }
+
+                // Sort by completed_at descending (most recent first)
+                filtered.sort((a, b) => {
+                    const da = a.completed_at ? new Date(a.completed_at) : new Date(0);
+                    const db = b.completed_at ? new Date(b.completed_at) : new Date(0);
+                    return db - da;
+                });
+
+                // Group
+                const groups = new Map();
+                filtered.forEach(t => {
+                    const label = getGroupLabel(t.completed_at || t.start_date, groupBy);
+                    if (!groups.has(label)) groups.set(label, []);
+                    groups.get(label).push(t);
+                });
+
+                // Flatten for pagination
+                const totalItems = filtered.length;
+                const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+                if (currentPage > totalPages) currentPage = totalPages;
+                const startIdx = (currentPage - 1) * perPage;
+                const pageItems = filtered.slice(startIdx, startIdx + perPage);
+
+                // Re-group the page items
+                const pageGroups = new Map();
+                pageItems.forEach(t => {
+                    const label = getGroupLabel(t.completed_at || t.start_date, groupBy);
+                    if (!pageGroups.has(label)) pageGroups.set(label, []);
+                    pageGroups.get(label).push(t);
+                });
+
+                const innerEl = completedEl.querySelector('#completed-inner');
+                innerEl.innerHTML = '';
+
+                // Render grouped items
+                pageGroups.forEach((tasks, label) => {
+                    const groupHtml = `
+                        <div class="mb-3">
+                            <div class="flex items-center gap-2 mb-1.5 px-1">
+                                <span class="text-[9px] font-black uppercase tracking-[0.15em] text-dim/50">${label}</span>
+                                <div class="h-px flex-grow bg-white/5"></div>
+                                <span class="text-[8px] font-black text-dim/30">${tasks.length}</span>
+                            </div>
+                            <div class="${useGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3' : 'flex flex-col'}">
+                                ${tasks.map(t => renderCard(t)).join('')}
+                            </div>
+                        </div>
+                    `;
+                    innerEl.insertAdjacentHTML('beforeend', groupHtml);
+                });
+
+                if (pageItems.length === 0) {
+                    innerEl.innerHTML = `<div class="text-center py-6 text-dim/30 text-[10px] font-bold uppercase tracking-widest">No completed tasks found</div>`;
+                }
+
+                // Pagination
+                const pagEl = completedEl.querySelector('#completed-header-pagination');
+                if (totalPages > 1) {
+                    pagEl.innerHTML = `
+                        <div class="flex items-center gap-1">
+                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage <= 1 ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                            </button>
+                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage <= 1 ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${currentPage - 1}">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                            </button>
+                            <span class="px-2.5 py-0.5 text-[11px] font-bold text-dim/50 tabular-nums">${currentPage} / ${totalPages}</span>
+                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage >= totalPages ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${currentPage + 1}">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                            </button>
+                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage >= totalPages ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${totalPages}">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    pagEl.querySelectorAll('.comp-page-btn').forEach(btn => {
+                        btn.onclick = () => { currentPage = parseInt(btn.dataset.page); renderCompleted(); };
+                    });
+                } else {
+                    pagEl.innerHTML = '';
+                }
+            };
+
             completedEl.innerHTML = `
-                <button id="toggle-completed-list" class="flex items-center gap-2 mb-3 px-1 w-full text-left group/comp">
-                    <svg class="w-3 h-3 text-dim/40 group-hover/comp:text-dim transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-dim/60 group-hover/comp:text-dim transition-colors">Completed</span>
-                    <span class="text-[9px] font-black text-dim opacity-30">${completedTasks.length}</span>
-                </button>
-                <div id="completed-tasks-container" class="${useGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3' : 'flex flex-col'}">
-                    ${completedTasks.map(t => renderCard(t)).join('')}
+                <!-- Header row: title + count + pagination -->
+                <div class="flex items-center justify-between mb-3 px-1 gap-2">
+                    <div class="flex items-center gap-2">
+                        <button id="toggle-completed-list" class="flex items-center gap-2 group/comp">
+                            <svg class="w-3.5 h-3.5 text-dim/40 group-hover/comp:text-dim transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            <span class="text-xs font-bold uppercase tracking-widest text-dim/60 group-hover/comp:text-dim transition-colors">Completed</span>
+                        </button>
+                        <span class="text-xs font-bold text-dim/30 tabular-nums">${completedTasks.length}</span>
+                    </div>
+                    <div id="completed-header-pagination" class="shrink-0"></div>
                 </div>
+
+                <div id="completed-controls" class="flex items-center gap-3 mb-4 flex-wrap">
+                    <!-- Search -->
+                    <div class="relative w-full max-w-[180px]">
+                        <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-dim/30">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" id="completed-search" placeholder="Search..." class="w-full bg-white/3 border border-white/5 rounded-lg pl-8 pr-3 py-1.5 text-[11px] font-bold text-main focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-dim/25">
+                    </div>
+                    <!-- Group By -->
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest">Group:</span>
+                        <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
+                            ${['day', 'week', 'month', 'year'].map(g => `
+                                <button class="comp-group-btn px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${g === groupBy ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-group="${g}">${g}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <!-- Per Page -->
+                    <div class="flex items-center gap-1.5 ml-auto">
+                        <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest">Show:</span>
+                        <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
+                            ${[10, 25, 50, 100].map(n => `
+                                <button class="comp-perpage-btn px-2 py-1 rounded-md text-[10px] font-bold tabular-nums transition-all ${n === perPage ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-perpage="${n}">${n}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div id="completed-inner"></div>
             `;
             listContent.appendChild(completedEl);
+
+            // Wire up controls
+            const searchInput = completedEl.querySelector('#completed-search');
+            searchInput.oninput = (e) => { searchQuery = e.target.value; currentPage = 1; renderCompleted(); };
+
+            completedEl.querySelectorAll('.comp-group-btn').forEach(btn => {
+                btn.onclick = () => {
+                    groupBy = btn.dataset.group;
+                    currentPage = 1;
+                    completedEl.querySelectorAll('.comp-group-btn').forEach(b => {
+                        b.className = b.dataset.group === groupBy
+                            ? 'comp-group-btn px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all bg-primary/20 text-primary shadow-sm'
+                            : 'comp-group-btn px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all text-dim/40 hover:text-dim hover:bg-white/5';
+                    });
+                    renderCompleted();
+                };
+            });
+
+            completedEl.querySelectorAll('.comp-perpage-btn').forEach(btn => {
+                btn.onclick = () => {
+                    perPage = parseInt(btn.dataset.perpage);
+                    currentPage = 1;
+                    completedEl.querySelectorAll('.comp-perpage-btn').forEach(b => {
+                        b.className = parseInt(b.dataset.perpage) === perPage
+                            ? 'comp-perpage-btn px-2 py-1 rounded-md text-[10px] font-bold tabular-nums transition-all bg-primary/20 text-primary shadow-sm'
+                            : 'comp-perpage-btn px-2 py-1 rounded-md text-[10px] font-bold tabular-nums transition-all text-dim/40 hover:text-dim hover:bg-white/5';
+                    });
+                    renderCompleted();
+                };
+            });
+
+            renderCompleted();
         }
 
         // Empty state
