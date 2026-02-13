@@ -81,7 +81,7 @@ export async function renderPlanner() {
             <div class="flex items-center gap-1.5 flex-wrap">
                 <!-- Scale Toggle -->
                 <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView === 'list' ? 'hidden' : ''}">
-                    ${['day', 'week', 'month'].map(s => `
+                    ${['day', 'week', 'month', 'year'].map(s => `
                         <button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-muted opacity-40 hover:opacity-100'}" data-scale="${s}">
                             ${s}
                         </button>
@@ -211,6 +211,8 @@ export async function renderPlanner() {
                 label = `${s} – ${e}`;
             } else if (currentScale === 'month') {
                 label = config.startDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+            } else if (currentScale === 'year') {
+                label = config.startDate.getFullYear().toString();
             }
             periodLabel.textContent = label;
         }        // Update Toggle Button States

@@ -35,22 +35,33 @@ export const PlannerModal = {
                                 <input type="text" name="title" required placeholder="What needs to be done?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all">
                             </div>
 
-                            <!-- Row: Member, Project, Status, Priority -->
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <div class="space-y-2">
+                            <!-- Row: Member, Project, Status -->
+                            <div class="flex gap-3">
+                                <div class="space-y-2 w-[130px] shrink-0">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Member</label>
                                     <select name="resource_id" id="modal-resource" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none"></select>
                                 </div>
-                                <div class="space-y-2">
+                                <div class="space-y-2 flex-1 min-w-0">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Project</label>
                                     <select name="project_id" id="modal-project" required class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none"></select>
                                 </div>
-                                <div class="space-y-2">
+                                <div class="space-y-2 w-[130px] shrink-0">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Status</label>
                                     <select name="status" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
                                         <option value="todo">Todo</option>
                                         <option value="in-progress">In-Progress</option>
                                         <option value="done">Done</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Row: Type, Priority -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Type</label>
+                                    <select name="task_type" id="modal-task-type" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
+                                        <option value="task">📋 Task</option>
+                                        <option value="project_span">🎯 Project Span</option>
                                     </select>
                                 </div>
                                 <div class="space-y-2">
@@ -59,17 +70,6 @@ export const PlannerModal = {
                                         <option value="low">🟢 Low</option>
                                         <option value="medium">🟡 Medium</option>
                                         <option value="high">🔴 High</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Row: Type -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Type</label>
-                                    <select name="task_type" id="modal-task-type" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
-                                        <option value="task">📋 Task</option>
-                                        <option value="project_span">🎯 Project Span</option>
                                     </select>
                                 </div>
                             </div>

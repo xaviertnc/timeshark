@@ -55,8 +55,13 @@ export const PlannerList = {
 
         if (limit > 0) activeTasks = activeTasks.slice(0, limit);
 
-        // Sort by start_time, then by created time (id as proxy) if no start_time
+        // Sort: completed tasks go to the bottom, then by start_time, then by id
         activeTasks.sort((a, b) => {
+            // Completed tasks sink to bottom
+            const aDone = a.status === 'done' ? 1 : 0;
+            const bDone = b.status === 'done' ? 1 : 0;
+            if (aDone !== bDone) return aDone - bDone;
+
             const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
             const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
             if (da !== db) return da - db;
@@ -189,9 +194,8 @@ export const PlannerList = {
 
             if (useGrid) {
                 return `
-                    <div class="task-item group/task bg-card/40 rounded-xl border border-white/5 hover:border-white/10 p-4 transition-all cursor-pointer hover:shadow-lg hover:shadow-black/10 relative overflow-hidden" data-task-id="${t.id}">
-                        <div class="absolute top-0 left-0 right-0 h-0.5 ${prio.dot} opacity-60"></div>
-
+                    <div class="task-item group/task bg-card/40 rounded-xl border border-white/5 hover:border-white/10 p-4 transition-all cursor-pointer hover:shadow-lg hover:shadow-black/10 relative overflow-hidden min-w-[280px] max-w-[340px] flex-shrink" style="flex-basis: 320px;" data-task-id="${t.id}">
+        
                         <div class="flex items-start gap-3 mb-3">
                             <button class="toggle-status-btn mt-0.5 shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
@@ -280,7 +284,7 @@ export const PlannerList = {
                     <div class="h-px flex-grow bg-white/5"></div>
                     <span class="text-[9px] font-black text-dim opacity-30">${gTasks.length}</span>
                 </div>
-                <div class="${useGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3' : 'flex flex-col'}">
+                <div class="${useGrid ? 'flex flex-wrap gap-3' : 'flex flex-col'}">
                     ${gTasks.map(t => renderCard(t)).join('')}
                 </div>
             `;
@@ -402,7 +406,7 @@ export const PlannerList = {
                                 <div class="h-px flex-grow bg-white/5"></div>
                                 <span class="text-[8px] font-black text-dim/30">${tasks.length}</span>
                             </div>
-                            <div class="${useGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3' : 'flex flex-col'}">
+                            <div class="${useGrid ? 'flex flex-wrap gap-3' : 'flex flex-col'}">
                                 ${tasks.map(t => renderCard(t)).join('')}
                             </div>
                         </div>

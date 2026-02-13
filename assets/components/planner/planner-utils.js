@@ -150,6 +150,37 @@ export const PlannerUtils = {
             };
         }
 
+        if (scale === 'year') {
+            const yearStart = new Date(baseDate.getFullYear(), 0, 1);
+            const yearEnd = new Date(baseDate.getFullYear(), 11, 31);
+            const daysInYear = Math.round((yearEnd - yearStart) / (1000 * 60 * 60 * 24)) + 1;
+
+            for (let i = 0; i < daysInYear; i++) {
+                const d = new Date(yearStart);
+                d.setDate(yearStart.getDate() + i);
+                dates.push(d);
+            }
+
+            // Build monthly groups
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            for (let m = 0; m < 12; m++) {
+                const mStart = new Date(baseDate.getFullYear(), m, 1);
+                const mEnd = new Date(baseDate.getFullYear(), m + 1, 0);
+                const daysInMonth = mEnd.getDate();
+                groups.push({ label: monthNames[m], count: daysInMonth, month: m });
+            }
+
+            return {
+                type: 'year',
+                startDate: dates[0],
+                endDate: dates[dates.length - 1],
+                dates,
+                groups,
+                colWidth: 8, // px per day (narrow to fit full year)
+                totalWidth: daysInYear * 8
+            };
+        }
+
         // Default to week if others not implemented yet or fallthrough
         return this.getTimelineConfig('week', offset, today);
     }

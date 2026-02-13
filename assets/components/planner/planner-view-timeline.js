@@ -24,6 +24,11 @@ const ZOOM = {
         compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 6 },
         regular: { colWidth: 40, rowH: 48, barH: 22, barTop: 10, fontSize: 8, spanFontSize: 7 },
         relaxed: { colWidth: 80, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 8 },
+    },
+    year: {
+        compact: { colWidth: 6, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 6 },
+        regular: { colWidth: 8, rowH: 48, barH: 22, barTop: 10, fontSize: 8, spanFontSize: 7 },
+        relaxed: { colWidth: 5, rowH: 96, barH: 42, barTop: 20, fontSize: 15, spanFontSize: 12 },
     }
 };
 
@@ -34,14 +39,15 @@ export const PlannerTimeline = {
 
         container.innerHTML = '';
 
-        const scaleKey = config.isDayView ? 'day' : (config.type || 'week');
+        const scaleKey = config.isDayView ? 'day' : (config.type === 'year' ? 'year' : config.type || 'week');
         const zp = ZOOM[scaleKey]?.[zoom] || ZOOM[scaleKey]?.regular || ZOOM.week.regular;
         const showText = zoom !== 'compact';
 
         // Responsive resource column
         const isWide = container.offsetWidth > 900;
         const resourceWidth = isWide ? 180 : 120;
-        const legendWidth = isWide ? 100 : 0; // legend only on wide screens
+        const isYearRelaxed = config.type === 'year' && zoom === 'relaxed';
+        const legendWidth = isWide ? (isYearRelaxed ? 210 : 100) : 0; // legend only on wide screens
         const leftWidth = resourceWidth + legendWidth;
 
         // Calculate dimensions
@@ -58,8 +64,17 @@ export const PlannerTimeline = {
             totalDays = 1;
         } else {
             totalDays = config.dates.length;
-            const minPxPerDay = zp.colWidth || 100;
-            pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / totalDays));
+            if (config.type === 'year') {
+                // Year view: compact/regular fit to viewport, relaxed stretches wider
+                if (zoom === 'relaxed') {
+                    pxPerDay = Math.max(availableWidth / totalDays, 5);
+                } else {
+                    pxPerDay = availableWidth / totalDays;
+                }
+            } else {
+                const minPxPerDay = zp.colWidth || 100;
+                pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / totalDays));
+            }
             totalWidth = totalDays * pxPerDay;
         }
 
@@ -154,6 +169,24 @@ export const PlannerTimeline = {
                     </div>
                 `;
             }
+        } else if (config.type === 'year') {
+            // Year view: one column per month
+            let monthOffset = 0;
+            const thisMonth = today.getMonth();
+            const thisYear = config.startDate.getFullYear();
+            const isCurrentYear = thisYear === today.getFullYear();
+            headerCols = config.groups.map(g => {
+                const monthWidth = g.count * pxPerDay;
+                const isCurrent = isCurrentYear && g.month === thisMonth;
+                const col = `
+                    <div class="absolute top-0 bottom-0 border-r border-white/3 flex flex-col items-center justify-center transition-colors"
+                         style="left: ${monthOffset}px; width: ${monthWidth}px; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.1)' : 'transparent'}">
+                         <span class="text-[10px] font-black ${isCurrent ? 'text-primary' : 'text-main'} tracking-wider">${g.label}</span>
+                    </div>
+                `;
+                monthOffset += monthWidth;
+                return col;
+            }).join('');
         } else {
             headerCols = config.dates.map((d, i) => {
                 const isToday = d.toDateString() === today.toDateString();
@@ -201,6 +234,22 @@ export const PlannerTimeline = {
                      style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}">
                 </div>
             `).join('');
+        } else if (config.type === 'year') {
+            // Year view: grid lines per month boundary only
+            let monthOffset = 0;
+            const thisMonth = today.getMonth();
+            const isCurrentYear = config.startDate.getFullYear() === today.getFullYear();
+            gridLines.innerHTML = config.groups.map(g => {
+                const monthWidth = g.count * pxPerDay;
+                const isCurrent = isCurrentYear && g.month === thisMonth;
+                const col = `
+                    <div class="absolute top-0 bottom-0 border-r border-white/2"
+                         style="left: ${monthOffset}px; width: ${monthWidth}px; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.02)' : 'transparent'}">
+                    </div>
+                `;
+                monthOffset += monthWidth;
+                return col;
+            }).join('');
         } else {
             gridLines.innerHTML = config.dates.map((d, i) => {
                 const isToday = d.toDateString() === today.toDateString();
@@ -212,6 +261,18 @@ export const PlannerTimeline = {
             }).join('');
         }
         body.appendChild(gridLines);
+
+        // ───── Today Indicator Line (vertical line marking today) ─────
+        if (today >= config.startDate && today <= config.endDate) {
+            const todayX = getX(today);
+            const todayLine = document.createElement('div');
+            todayLine.className = 'absolute top-0 bottom-0 z-30 pointer-events-none';
+            todayLine.style.left = `${leftWidth + todayX}px`;
+            todayLine.style.width = '2px';
+            todayLine.style.background = 'rgba(var(--color-primary), 0.6)';
+            todayLine.style.boxShadow = '0 0 8px rgba(var(--color-primary), 0.3)';
+            body.appendChild(todayLine);
+        }
 
         // ───── Rows ─────
         data.rows.forEach(row => {
@@ -236,12 +297,12 @@ export const PlannerTimeline = {
             let legendHtml = '';
             if (legendWidth > 0) {
                 const legendItems = projectLanes.map((lane, i) => {
-                    const topPos = rowPaddingTop + i * (zp.barH + laneGap) + (zp.barH / 2) - 5;
+                    const topPos = rowPaddingTop + i * (zp.barH + laneGap);
                     return `
                         <div class="lane-legend-item absolute flex items-center gap-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors group/lane" data-project-id="${lane.project.id}" data-lane-index="${i}" style="top: ${topPos}px; height: ${zp.barH}px; left: 2px; right: 2px; padding: 0 2px;">
                             <span class="text-[8px] text-dim opacity-20 group-hover/lane:opacity-60 transition-opacity shrink-0 leading-none select-none pointer-events-none" style="letter-spacing: -1px;">⠿</span>
-                            <span class="w-1.5 h-1.5 rounded-sm shrink-0 pointer-events-none" style="background-color: ${lane.project.color}"></span>
-                            <span class="text-[7px] font-bold text-dim opacity-50 truncate leading-none whitespace-nowrap pointer-events-none">${lane.project.name}</span>
+                            <span class="${isYearRelaxed ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'} rounded-sm shrink-0 pointer-events-none" style="background-color: ${lane.project.color}"></span>
+                            <span class="${isYearRelaxed ? 'text-[11px]' : 'text-[7px]'} font-bold text-dim opacity-50 truncate leading-none whitespace-nowrap pointer-events-none">${lane.project.name}</span>
                         </div>
                     `;
                 }).join('');
@@ -282,7 +343,7 @@ export const PlannerTimeline = {
                     }
 
                     return `
-                            <div class="absolute top-0 bottom-0 w-px bg-red-500 z-30 pointer-events-none drop-shadow-[0_0_3px_rgba(239,68,68,0.4)]" style="left: ${left}px">
+                            <div class="absolute top-0 bottom-0 w-px bg-red-500 z-10 pointer-events-none drop-shadow-[0_0_3px_rgba(239,68,68,0.4)]" style="left: ${left}px">
                                 <div class="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
                             </div>
                         `;
@@ -296,6 +357,16 @@ export const PlannerTimeline = {
 
                         lane.tasks.forEach(task => {
                             if (!task.start_date) return;
+
+                            // Year view: skip short tasks (< 3 days), only show spans and long tasks
+                            const isSpanEarly = task.task_type === 'project_span';
+                            if (config.type === 'year' && !isSpanEarly) {
+                                const taskDays = task.end_date
+                                    ? (new Date(task.end_date) - new Date(task.start_date)) / (24 * 60 * 60 * 1000)
+                                    : 0;
+                                if (taskDays < 3) return; // too small to render at year scale
+                            }
+
                             const x = getX(task.start_date);
                             const w = Math.max(10, getWidth(task.start_date, task.end_date));
 
@@ -354,8 +425,9 @@ export const PlannerTimeline = {
                     return html;
                 })()}
 
-                     <!-- Time Entries (Actuals) — project-colored -->
+                     <!-- Time Entries (Actuals) — skip in year view -->
                      ${(() => {
+                    if (config.type === 'year') return ''; // Too many tiny rects at year scale
                     let html = '';
                     row.entries.forEach(entry => {
                         if (!entry.start_time) return;
