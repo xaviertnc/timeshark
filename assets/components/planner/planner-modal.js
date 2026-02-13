@@ -298,9 +298,23 @@ export const PlannerModal = {
 
             // Track completion timestamp
             if (data.status === 'done') {
-                // Preserve existing completed_at if task was already done, otherwise stamp now
+                // Preserve existing completed_at if task was already done
                 const existingTask = this._currentTask;
-                data.completed_at = (existingTask && existingTask.completed_at) || new Date().toISOString();
+                if (existingTask && existingTask.completed_at) {
+                    data.completed_at = existingTask.completed_at;
+                } else {
+                    // New completion: use end date if available, otherwise now
+                    const now = new Date();
+                    if (data.end_date) {
+                        const endStr = data.end_time
+                            ? `${data.end_date}T${data.end_time}`
+                            : `${data.end_date}T23:59:59`;
+                        const endDate = new Date(endStr);
+                        data.completed_at = (endDate < now ? endDate : now).toISOString();
+                    } else {
+                        data.completed_at = now.toISOString();
+                    }
+                }
             } else {
                 data.completed_at = null;
             }

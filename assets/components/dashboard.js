@@ -98,7 +98,7 @@ export async function renderDashboard() {
                 <div class="space-y-1.5">
                   <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
                   <select name="project_id" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
-                    ${projects.map(p => `<option value="${p.id}" ${p.name.toLowerCase() === 'personal' ? 'selected' : ''}>${p.name}</option>`).join('')}
+                    ${projects.map(p => `<option value="${p.id}" ${(p.name || '').toLowerCase() === 'personal' ? 'selected' : ''}>${p.name || 'Unnamed'}</option>`).join('')}
                   </select>
                 </div>
                 <div class="space-y-1.5">

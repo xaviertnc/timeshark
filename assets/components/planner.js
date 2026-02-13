@@ -409,16 +409,35 @@ export async function renderPlanner() {
                 const newStatus = task.status === 'done' ? 'todo' : 'done';
                 const newProgress = newStatus === 'done' ? 100 : 0;
 
+                // Determine completed_at: use task end_date/end_time if available,
+                // otherwise use current time. Never set a future completed_at.
+                let completedAt = null;
+                if (newStatus === 'done') {
+                    const now = new Date();
+                    if (task.end_date) {
+                        const endStr = task.end_time
+                            ? `${task.end_date}T${task.end_time}`
+                            : `${task.end_date}T23:59:59`;
+                        const endDate = new Date(endStr);
+                        // Use end date if it's in the past, otherwise use now
+                        completedAt = (endDate < now ? endDate : now).toISOString();
+                    } else {
+                        completedAt = now.toISOString();
+                    }
+                }
+
                 // Optimistic Update
                 task.status = newStatus;
                 task.progress = newProgress;
+                task.completed_at = completedAt;
                 updateUI();
 
                 try {
                     await api.post('planner.php?action=update_task', {
                         id: taskId,
                         status: newStatus,
-                        progress: newProgress
+                        progress: newProgress,
+                        completed_at: completedAt
                     });
                 } catch (err) {
                     console.error("Failed to update task status", err);

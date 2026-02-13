@@ -153,9 +153,14 @@ export const PlannerList = {
                 <div class="task-item group/task px-2.5 py-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative" data-task-id="${t.id}">
                     ${t.priority && t.priority !== 'low' ? `<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${prio.dot}"></span>` : ''}
                     <div class="flex items-start gap-2">
-                        <button class="toggle-status-btn shrink-0 w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
-                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
-                        </button>
+                        ${isSpan
+                    ? `<div class="shrink-0 w-4 h-4 mt-0.5 rounded-sm bg-primary flex items-center justify-center">
+                                <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                               </div>`
+                    : `<button class="toggle-status-btn shrink-0 w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                               </button>`
+                }
 
                         <div class="flex-grow min-w-0">
                             <div class="text-sm font-bold leading-tight truncate pr-4 ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</div>
@@ -197,9 +202,14 @@ export const PlannerList = {
                     <div class="task-item group/task bg-card/40 rounded-xl border border-white/5 hover:border-white/10 p-4 transition-all cursor-pointer hover:shadow-lg hover:shadow-black/10 relative overflow-hidden min-w-[280px] max-w-[340px] flex-shrink" style="flex-basis: 320px;" data-task-id="${t.id}">
         
                         <div class="flex items-start gap-3 mb-3">
-                            <button class="toggle-status-btn mt-0.5 shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
-                            </button>
+                            ${isSpan
+                        ? `<div class="mt-0.5 shrink-0 w-5 h-5 rounded-sm bg-primary flex items-center justify-center">
+                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                                   </div>`
+                        : `<button class="toggle-status-btn mt-0.5 shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                                   </button>`
+                    }
                             <span class="text-[13px] font-bold leading-snug truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
                         </div>
 
@@ -230,9 +240,14 @@ export const PlannerList = {
             // List row — fills full width
             return `
                 <div class="task-item group/task relative flex items-center gap-4 p-3 px-4 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all cursor-pointer" data-task-id="${t.id}">
-                    <button class="toggle-status-btn shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
-                    </button>
+                    ${isSpan
+                    ? `<div class="shrink-0 w-5 h-5 rounded-sm bg-primary flex items-center justify-center">
+                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                           </div>`
+                    : `<button class="toggle-status-btn shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                           </button>`
+                }
 
                     <div class="flex-grow min-w-0">
                         <span class="text-[13px] font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
@@ -371,7 +386,7 @@ export const PlannerList = {
                     return db - da;
                 });
 
-                // Group
+                // Group all filtered tasks
                 const groups = new Map();
                 filtered.forEach(t => {
                     const label = getGroupLabel(t.completed_at || t.start_date, groupBy);
@@ -379,20 +394,33 @@ export const PlannerList = {
                     groups.get(label).push(t);
                 });
 
-                // Flatten for pagination
-                const totalItems = filtered.length;
-                const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-                if (currentPage > totalPages) currentPage = totalPages;
-                const startIdx = (currentPage - 1) * perPage;
-                const pageItems = filtered.slice(startIdx, startIdx + perPage);
+                // Pagination strategy:
+                // - Day mode: paginate by individual tasks, then re-group (tasks within a day stay close)
+                // - Week/Month/Year: paginate by groups so complete groups are never split across pages
+                let totalPages;
+                let pageGroups;
 
-                // Re-group the page items
-                const pageGroups = new Map();
-                pageItems.forEach(t => {
-                    const label = getGroupLabel(t.completed_at || t.start_date, groupBy);
-                    if (!pageGroups.has(label)) pageGroups.set(label, []);
-                    pageGroups.get(label).push(t);
-                });
+                if (groupBy === 'day') {
+                    const totalItems = filtered.length;
+                    totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+                    if (currentPage > totalPages) currentPage = totalPages;
+                    const startIdx = (currentPage - 1) * perPage;
+                    const pageItems = filtered.slice(startIdx, startIdx + perPage);
+
+                    pageGroups = new Map();
+                    pageItems.forEach(t => {
+                        const label = getGroupLabel(t.completed_at || t.start_date, groupBy);
+                        if (!pageGroups.has(label)) pageGroups.set(label, []);
+                        pageGroups.get(label).push(t);
+                    });
+                } else {
+                    // Paginate by groups — perPage controls how many groups are shown per page
+                    const groupsArr = [...groups.entries()];
+                    totalPages = Math.max(1, Math.ceil(groupsArr.length / perPage));
+                    if (currentPage > totalPages) currentPage = totalPages;
+                    const startIdx = (currentPage - 1) * perPage;
+                    pageGroups = new Map(groupsArr.slice(startIdx, startIdx + perPage));
+                }
 
                 const innerEl = completedEl.querySelector('#completed-inner');
                 innerEl.innerHTML = '';
@@ -414,7 +442,7 @@ export const PlannerList = {
                     innerEl.insertAdjacentHTML('beforeend', groupHtml);
                 });
 
-                if (pageItems.length === 0) {
+                if (pageGroups.size === 0) {
                     innerEl.innerHTML = `<div class="text-center py-6 text-dim/30 text-[10px] font-bold uppercase tracking-widest">No completed tasks found</div>`;
                 }
 
@@ -422,19 +450,19 @@ export const PlannerList = {
                 const pagEl = completedEl.querySelector('#completed-header-pagination');
                 if (totalPages > 1) {
                     pagEl.innerHTML = `
-                        <div class="flex items-center gap-1">
-                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage <= 1 ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="1">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <button class="comp-page-btn w-6 h-6 rounded-md transition-all flex items-center justify-center ${currentPage <= 1 ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
                             </button>
-                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage <= 1 ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${currentPage - 1}">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                            <button class="comp-page-btn w-6 h-6 rounded-md transition-all flex items-center justify-center ${currentPage <= 1 ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${currentPage - 1}">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                             </button>
-                            <span class="px-2.5 py-0.5 text-[11px] font-bold text-dim/50 tabular-nums">${currentPage} / ${totalPages}</span>
-                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage >= totalPages ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${currentPage + 1}">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                            <span class="px-1.5 py-0.5 text-[10px] font-bold text-dim/50 tabular-nums whitespace-nowrap">${currentPage}/${totalPages}</span>
+                            <button class="comp-page-btn w-6 h-6 rounded-md transition-all flex items-center justify-center ${currentPage >= totalPages ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${currentPage + 1}">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                             </button>
-                            <button class="comp-page-btn w-7 h-7 rounded-md transition-all flex items-center justify-center ${currentPage >= totalPages ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${totalPages}">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                            <button class="comp-page-btn w-6 h-6 rounded-md transition-all flex items-center justify-center ${currentPage >= totalPages ? 'opacity-15 pointer-events-none bg-white/3' : 'bg-white/5 border border-white/8 text-dim/60 hover:text-main hover:bg-white/10'}" data-page="${totalPages}">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
                             </button>
                         </div>
                     `;
@@ -448,41 +476,44 @@ export const PlannerList = {
 
             completedEl.innerHTML = `
                 <!-- Header row: title + count + pagination -->
-                <div class="flex items-center justify-between mb-3 px-1 gap-2">
-                    <div class="flex items-center gap-2">
+                <div class="flex items-center flex-wrap mb-3 px-1 gap-x-2 gap-y-1">
+                    <div class="flex items-center gap-2 min-w-0">
                         <button id="toggle-completed-list" class="flex items-center gap-2 group/comp">
-                            <svg class="w-3.5 h-3.5 text-dim/40 group-hover/comp:text-dim transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                            <span class="text-xs font-bold uppercase tracking-widest text-dim/60 group-hover/comp:text-dim transition-colors">Completed</span>
+                            <svg class="w-3.5 h-3.5 text-dim/40 group-hover/comp:text-dim transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-dim/60 group-hover/comp:text-dim transition-colors whitespace-nowrap">Completed</span>
                         </button>
-                        <span class="text-xs font-bold text-dim/30 tabular-nums">${completedTasks.length}</span>
+                        <span class="text-[10px] font-bold text-dim/30 tabular-nums">${completedTasks.length}</span>
                     </div>
-                    <div id="completed-header-pagination" class="shrink-0"></div>
+                    <div id="completed-header-pagination" class="shrink-0 ml-auto"></div>
                 </div>
 
-                <div id="completed-controls" class="flex items-center gap-3 mb-4 flex-wrap">
+                <div id="completed-controls" class="flex flex-col gap-2.5 mb-4">
                     <!-- Search -->
-                    <div class="relative w-full max-w-[180px]">
+                    <div class="relative w-full">
                         <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-dim/30">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         <input type="text" id="completed-search" placeholder="Search..." class="w-full bg-white/3 border border-white/5 rounded-lg pl-8 pr-3 py-1.5 text-[11px] font-bold text-main focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-dim/25">
                     </div>
-                    <!-- Group By -->
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest">Group:</span>
-                        <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
-                            ${['day', 'week', 'month', 'year'].map(g => `
-                                <button class="comp-group-btn px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${g === groupBy ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-group="${g}">${g}</button>
-                            `).join('')}
+                    <!-- Group By + Per Page row -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <!-- Group By -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest">Group:</span>
+                            <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
+                                ${['day', 'week', 'month', 'year'].map(g => `
+                                    <button class="comp-group-btn px-1.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all ${g === groupBy ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-group="${g}">${g}</button>
+                                `).join('')}
+                            </div>
                         </div>
-                    </div>
-                    <!-- Per Page -->
-                    <div class="flex items-center gap-1.5 ml-auto">
-                        <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest">Show:</span>
-                        <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
-                            ${[10, 25, 50, 100].map(n => `
-                                <button class="comp-perpage-btn px-2 py-1 rounded-md text-[10px] font-bold tabular-nums transition-all ${n === perPage ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-perpage="${n}">${n}</button>
-                            `).join('')}
+                        <!-- Per Page -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest whitespace-nowrap">Show:</span>
+                            <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
+                                ${[10, 25, 50, 100].map(n => `
+                                    <button class="comp-perpage-btn px-1.5 py-1 rounded-md text-[9px] font-bold tabular-nums transition-all ${n === perPage ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-perpage="${n}">${n}</button>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -501,8 +532,8 @@ export const PlannerList = {
                     currentPage = 1;
                     completedEl.querySelectorAll('.comp-group-btn').forEach(b => {
                         b.className = b.dataset.group === groupBy
-                            ? 'comp-group-btn px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all bg-primary/20 text-primary shadow-sm'
-                            : 'comp-group-btn px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all text-dim/40 hover:text-dim hover:bg-white/5';
+                            ? 'comp-group-btn px-1.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all bg-primary/20 text-primary shadow-sm'
+                            : 'comp-group-btn px-1.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all text-dim/40 hover:text-dim hover:bg-white/5';
                     });
                     renderCompleted();
                 };
@@ -514,8 +545,8 @@ export const PlannerList = {
                     currentPage = 1;
                     completedEl.querySelectorAll('.comp-perpage-btn').forEach(b => {
                         b.className = parseInt(b.dataset.perpage) === perPage
-                            ? 'comp-perpage-btn px-2 py-1 rounded-md text-[10px] font-bold tabular-nums transition-all bg-primary/20 text-primary shadow-sm'
-                            : 'comp-perpage-btn px-2 py-1 rounded-md text-[10px] font-bold tabular-nums transition-all text-dim/40 hover:text-dim hover:bg-white/5';
+                            ? 'comp-perpage-btn px-1.5 py-1 rounded-md text-[9px] font-bold tabular-nums transition-all bg-primary/20 text-primary shadow-sm'
+                            : 'comp-perpage-btn px-1.5 py-1 rounded-md text-[9px] font-bold tabular-nums transition-all text-dim/40 hover:text-dim hover:bg-white/5';
                     });
                     renderCompleted();
                 };
