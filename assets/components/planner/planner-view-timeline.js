@@ -588,13 +588,9 @@ export const PlannerTimeline = {
                 if (dragIdx < dropIdx) dropIdx--;
                 if (dragIdx === dropIdx) return;
 
-                projectIds.splice(dragIdx, 1);
-                projectIds.splice(dropIdx, 0, projectId);
-
-                const newOrder = {};
-                projectIds.forEach((pid, idx) => { newOrder[pid] = idx + 1; });
-                console.log('[LaneDrag] reordering:', newOrder);
-                onLaneReorder(newOrder);
+                // Just tell the backend which project moved and where
+                console.log('[LaneDrag] moving', projectId, 'to position', dropIdx + 1);
+                onLaneReorder({ id: projectId, lane_order: dropIdx + 1 });
             }, { signal: ac.signal });
         }
 

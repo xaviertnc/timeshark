@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 require_once 'store.php';
+require_once 'debug.php';
 
 $store = new JsonStore();
 $file = 'projects';
@@ -10,8 +11,7 @@ try {
     switch ($method) {
         case 'GET':
             $projects = $store->get($file);
-            // Optional: enrich with customer name if needed, but doing it on frontend is efficient too.
-            // Let's return as is.
+            debug_log('projects', 'GET', ['count' => count($projects)]);
             echo json_encode($projects);
             break;
 
@@ -21,11 +21,14 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
+            debug_log('projects', 'POST received', $data);
+
             // Validate: name is required for create, cannot be blank on update
-            if (empty($data['reorder'])) {
+            if (empty($data['reorder']) && empty($data['lane_reorder'])) {
                 if (!empty($data['id'])) {
                     // Update intent — reject explicitly blank name
                     if (isset($data['name']) && trim($data['name']) === '') {
+                        debug_log('projects', 'REJECTED update: blank name', $data['id']);
                         http_response_code(400);
                         echo json_encode(['error' => 'Project name cannot be empty']);
                         exit;
@@ -33,6 +36,7 @@ try {
                 } else {
                     // Create intent — name is required
                     if (!isset($data['name']) || trim($data['name']) === '') {
+                        debug_log('projects', 'REJECTED create: no name', $data);
                         http_response_code(400);
                         echo json_encode(['error' => 'Project name is required']);
                         exit;
@@ -41,7 +45,8 @@ try {
             }
 
             if (!empty($data['reorder']) && is_array($data['reorder'])) {
-                // Batch Reorder
+                // Batch Reorder (sort_order)
+                debug_log('projects', 'Batch sort_order reorder', ['count' => count($data['reorder'])]);
                 $projects = $store->get($file);
                 foreach ($data['reorder'] as $item) {
                     foreach ($projects as &$p) {
@@ -53,20 +58,82 @@ try {
                 }
                 $store->save($file, $projects);
                 $result = ['success' => true];
+            } elseif (!empty($data['lane_reorder']) && is_array($data['lane_reorder'])) {
+                // Single lane move: { id, lane_order } — backend shifts the rest
+                $moveId = $data['lane_reorder']['id'] ?? null;
+                $newPos = (int)($data['lane_reorder']['lane_order'] ?? 0);
+                debug_log('projects', 'Lane move', ['id' => $moveId, 'to' => $newPos]);
+
+                if (!$moveId || $newPos < 1) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'lane_reorder requires id and lane_order']);
+                    exit;
+                }
+
+                $projects = $store->get($file);
+
+                // 1. Collect indices of projects with lane_order, sorted by current lane_order
+                $laneIndices = [];
+                $moveIdx = null;
+                foreach ($projects as $i => $p) {
+                    if (isset($p['lane_order']) && $p['lane_order'] !== null) {
+                        $laneIndices[] = $i;
+                    }
+                    if ($p['id'] == $moveId) {
+                        $moveIdx = $i;
+                    }
+                }
+
+                if ($moveIdx === null) {
+                    debug_log('projects', 'Lane move: project not found', $moveId);
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Project not found: ' . $moveId]);
+                    exit;
+                }
+
+                // Sort indices by current lane_order
+                usort($laneIndices, function($a, $b) use ($projects) {
+                    return ($projects[$a]['lane_order'] ?? 0) - ($projects[$b]['lane_order'] ?? 0);
+                });
+
+                // 2. Remove the moved project from the sorted list (if it's in it)
+                $laneIndices = array_values(array_filter($laneIndices, function($i) use ($moveIdx) {
+                    return $i !== $moveIdx;
+                }));
+
+                // 3. Insert it at the new position (1-based → 0-based)
+                $insertAt = min($newPos - 1, count($laneIndices));
+                array_splice($laneIndices, $insertAt, 0, [$moveIdx]);
+
+                // 4. Re-assign sequential lane_order 1, 2, 3, ...
+                foreach ($laneIndices as $pos => $idx) {
+                    $projects[$idx]['lane_order'] = $pos + 1;
+                }
+
+                $store->save($file, $projects);
+                debug_log('projects', 'Lane move complete', [
+                    'id' => $moveId,
+                    'finalPos' => $projects[$moveIdx]['lane_order'],
+                    'totalLanes' => count($laneIndices)
+                ]);
+                $result = ['success' => true];
             } elseif (!empty($data['id'])) {
                 // Update — id provided, must find existing record
                 $original = $store->find($file, $data['id']);
                 if (!$original) {
+                    debug_log('projects', 'NOT FOUND for update', $data['id']);
                     http_response_code(404);
                     echo json_encode(['error' => 'Project not found: ' . $data['id']]);
                     exit;
                 }
+                debug_log('projects', 'Updating', ['id' => $data['id'], 'fields' => array_keys($data)]);
                 $result = $store->update($file, $data['id'], $data);
                 
                 // If name changed, sync with other stores
                 if (isset($data['name']) && $data['name'] !== $original['name']) {
                     $pid = $data['id'];
                     $newName = $data['name'];
+                    debug_log('projects', 'Name changed, syncing stores', ['id' => $pid, 'old' => $original['name'], 'new' => $newName]);
 
                     // Update time entries
                     $timeEntries = $store->get('time-entries');
@@ -117,6 +184,7 @@ try {
                     $data['sort_order'] = $maxOrder + 1;
                 }
                 $result = $store->insert($file, $data);
+                debug_log('projects', 'Created', ['id' => $result['id'], 'name' => $result['name']]);
             }
             echo json_encode($result);
             break;
@@ -126,6 +194,7 @@ try {
             if (!$id) {
                 throw new Exception('ID required for deletion');
             }
+            debug_log('projects', 'DELETE', $id);
 
             // Sever links from time entries
             $timeEntries = $store->get('time-entries');
@@ -133,7 +202,7 @@ try {
             foreach ($timeEntries as &$entry) {
                 if (($entry['project_id'] ?? '') == $id) {
                     $entry['project_id'] = '';
-                    $entry['project_name'] = '[Deleted Project]'; // Keep the name for historical reference
+                    $entry['project_name'] = '[Deleted Project]';
                     $updatedEntries = true;
                 }
             }
@@ -159,6 +228,7 @@ try {
             echo json_encode(['error' => 'Method not allowed']);
     }
 } catch (Exception $e) {
+    debug_log('projects', 'EXCEPTION', $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

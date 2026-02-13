@@ -6,7 +6,7 @@
     <title>Time Shark</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/vendor/chart.min.js"></script>
     <link rel="stylesheet" href="assets/style.css?v=<?=time()?>">
     <script>
         tailwind.config = {

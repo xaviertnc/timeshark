@@ -328,23 +328,19 @@ export async function renderPlanner() {
     };
 
     // Shared lane-reorder handler so both updateUI and ResizeObserver pass it
-    const handleLaneReorder = async (newOrder) => {
+    const handleLaneReorder = async (move) => {
+        // move = { id, lane_order }
         // Update local data immediately
         const data = PlannerState.getCombinedData(projectFilter);
-        Object.entries(newOrder).forEach(([projectId, laneOrder]) => {
-            const proj = data.projects.find(p => String(p.id) === String(projectId));
-            if (proj) proj.lane_order = laneOrder;
-        });
+        const proj = data.projects.find(p => String(p.id) === String(move.id));
+        if (proj) proj.lane_order = move.lane_order;
 
         // Re-render immediately so the user sees the change
         updateUI();
 
-        // Save to API in background
+        // Save to API — single call, backend shifts other projects
         try {
-            const savePromises = Object.entries(newOrder).map(([projectId, laneOrder]) =>
-                api.post('projects.php', { id: projectId, lane_order: laneOrder })
-            );
-            await Promise.all(savePromises);
+            await api.post('projects.php', { lane_reorder: move });
             store.update('projects', await api.get('projects.php'));
         } catch (err) {
             console.error('Lane reorder save failed:', err);
