@@ -603,13 +603,19 @@ export async function renderPlanner() {
         try {
             const state = store.get();
             const defaultResource = state.team?.[0]?.name || 'General';
+            const now = new Date();
+            const todayStart = now.toISOString();
+            const endOfDay = new Date(now);
+            endOfDay.setHours(23, 59, 59);
             await api.post('planner.php', {
                 title: val,
                 project_id: selectedProject || (projectFilter === 'all' ? (state.projects?.[0]?.id || null) : projectFilter),
                 resource_id: defaultResource,
                 status: 'todo',
                 progress: 0,
-                priority: 'low'
+                priority: 'low',
+                start_date: todayStart,
+                end_date: endOfDay.toISOString()
             });
             refresh();
         } catch (err) {

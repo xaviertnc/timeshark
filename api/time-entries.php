@@ -73,6 +73,12 @@ try {
             } else {
                 // Generic update or create
                 if (isset($data['id'])) {
+                    // Update — must find existing record
+                    if (!$store->find($file, $data['id'])) {
+                        http_response_code(404);
+                        echo json_encode(['error' => 'Time entry not found: ' . $data['id']]);
+                        exit;
+                    }
                     $result = $store->update($file, $data['id'], $data);
                 } else {
                     $result = $store->insert($file, $data);

@@ -21,8 +21,46 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
-            if (!empty($data['id']) && $original = $store->find($file, $data['id'])) {
-                // Update
+            // Validate: name is required for create, cannot be blank on update
+            if (empty($data['reorder'])) {
+                if (!empty($data['id'])) {
+                    // Update intent — reject explicitly blank name
+                    if (isset($data['name']) && trim($data['name']) === '') {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Project name cannot be empty']);
+                        exit;
+                    }
+                } else {
+                    // Create intent — name is required
+                    if (!isset($data['name']) || trim($data['name']) === '') {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Project name is required']);
+                        exit;
+                    }
+                }
+            }
+
+            if (!empty($data['reorder']) && is_array($data['reorder'])) {
+                // Batch Reorder
+                $projects = $store->get($file);
+                foreach ($data['reorder'] as $item) {
+                    foreach ($projects as &$p) {
+                        if ($p['id'] == $item['id']) {
+                            $p['sort_order'] = $item['sort_order'];
+                            break;
+                        }
+                    }
+                }
+                $store->save($file, $projects);
+                $result = ['success' => true];
+            } elseif (!empty($data['id'])) {
+                // Update — id provided, must find existing record
+                $original = $store->find($file, $data['id']);
+                if (!$original) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Project not found: ' . $data['id']]);
+                    exit;
+                }
                 $result = $store->update($file, $data['id'], $data);
                 
                 // If name changed, sync with other stores
@@ -48,7 +86,7 @@ try {
                     $updatedTasks = false;
                     foreach ($tasks as &$task) {
                         if (($task['project_id'] ?? '') == $pid) {
-                            $task['project_name'] = $newName; // Planner might use this too
+                            $task['project_name'] = $newName;
                             $updatedTasks = true;
                         }
                     }
@@ -56,25 +94,11 @@ try {
                         $store->save('tasks', $tasks);
                     }
                 }
-            } elseif (!empty($data['reorder']) && is_array($data['reorder'])) {
-                // Batch Reorder
-                $projects = $store->get($file);
-                foreach ($data['reorder'] as $item) {
-                    foreach ($projects as &$p) {
-                        if ($p['id'] == $item['id']) {
-                            $p['sort_order'] = $item['sort_order'];
-                            break;
-                        }
-                    }
-                }
-                $store->save($file, $projects);
-                $result = ['success' => true];
             } else {
-                // Create
+                // Create — no id provided
                 if (!isset($data['status'])) {
                     $data['status'] = 'Active';
                 }
-                // Ensure todos array exists if not provided
                 if (!isset($data['todos'])) {
                     $data['todos'] = [];
                 }

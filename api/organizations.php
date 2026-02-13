@@ -18,11 +18,26 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
-            if (!empty($data['id']) && $store->find($file, $data['id'])) {
-                // Update
+            if (!empty($data['id'])) {
+                // Update — must find existing record
+                if (!$store->find($file, $data['id'])) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Organization not found: ' . $data['id']]);
+                    exit;
+                }
+                if (isset($data['name']) && trim($data['name']) === '') {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Organization name cannot be empty']);
+                    exit;
+                }
                 $result = $store->update($file, $data['id'], $data);
             } else {
-                // Create
+                // Create — name required
+                if (!isset($data['name']) || trim($data['name']) === '') {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Organization name is required']);
+                    exit;
+                }
                 if (!isset($data['color'])) {
                     $colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'];
                     $data['color'] = $colors[array_rand($colors)];

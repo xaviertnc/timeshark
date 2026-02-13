@@ -55,20 +55,20 @@ export const PlannerList = {
 
         if (limit > 0) activeTasks = activeTasks.slice(0, limit);
 
-        // Sort: completed tasks go to the bottom, then by start_time, then by id
+        // Sort: completed tasks go to the bottom, then by start_time descending (newest first), then by id descending
         activeTasks.sort((a, b) => {
             // Completed tasks sink to bottom
             const aDone = a.status === 'done' ? 1 : 0;
             const bDone = b.status === 'done' ? 1 : 0;
             if (aDone !== bDone) return aDone - bDone;
 
-            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
-            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
-            if (da !== db) return da - db;
-            // Fall back to id (creation order) when start times match or both missing
+            const da = a.start_date ? new Date(a.start_date).getTime() : -Infinity;
+            const db = b.start_date ? new Date(b.start_date).getTime() : -Infinity;
+            if (da !== db) return db - da; // Newest first
+            // Fall back to id descending (newest created first)
             const ia = a.id || '';
             const ib = b.id || '';
-            return ia < ib ? -1 : ia > ib ? 1 : 0;
+            return ia > ib ? -1 : ia < ib ? 1 : 0;
         });
 
         // Group

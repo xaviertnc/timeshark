@@ -19,13 +19,28 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
-            if (isset($data['id']) && $store->find($file, $data['id'])) {
-                // Update
+            if (isset($data['id'])) {
+                // Update — must find existing record
+                if (!$store->find($file, $data['id'])) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Task not found: ' . $data['id']]);
+                    exit;
+                }
+                // Reject explicitly blank title on update
+                if (isset($data['title']) && trim($data['title']) === '') {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Task title cannot be empty']);
+                    exit;
+                }
                 $result = $store->update($file, $data['id'], $data);
             } else {
-                // Create
-                // Ensure required fields for planner
-                if (!isset($data['resource_id'])) $data['resource_id'] = 'me'; // Default to 'me'
+                // Create — title required
+                if (!isset($data['title']) || trim($data['title']) === '') {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Task title is required']);
+                    exit;
+                }
+                if (!isset($data['resource_id'])) $data['resource_id'] = 'me';
                 if (!isset($data['start_date'])) $data['start_date'] = date('Y-m-d');
                 if (!isset($data['end_date'])) $data['end_date'] = date('Y-m-d');
 
