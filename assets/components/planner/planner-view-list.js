@@ -79,13 +79,32 @@ export const PlannerList = {
             const startD = new Date(t.start_date);
             // Use end_date for overdue check — task is only overdue if its end time has passed
             const endD = t.end_date ? new Date(t.end_date) : startD;
-            if (endD < new Date()) groups['overdue'].tasks.push(t);
+            // Completed tasks should never show as overdue
+            if (t.status === 'done') { groups['today'].tasks.push(t); }
+            else if (endD < new Date()) groups['overdue'].tasks.push(t);
             else if (intersectsToday(t)) groups['today'].tasks.push(t);
             else groups['later'].tasks.push(t);
         });
 
         const listContent = document.createElement('div');
         listContent.className = isFull ? 'py-6 px-6 space-y-8' : 'space-y-4';
+
+        // Compute project-level progress for span tasks
+        const getProjectProgress = (projectId) => {
+            // First: use the project's own progress field (authoritative source)
+            const proj = projects.find(p => p.id == projectId);
+            if (proj && proj.progress !== undefined && proj.progress !== null) {
+                return parseInt(proj.progress) || 0;
+            }
+            // Fallback: compute average from non-span tasks
+            const projectTasks = tasks.filter(t =>
+                (t.project_id || 'personal') == projectId &&
+                t.task_type !== 'project_span'
+            );
+            if (projectTasks.length === 0) return 0;
+            const total = projectTasks.reduce((sum, t) => sum + (t.progress || 0), 0);
+            return Math.round(total / projectTasks.length);
+        };
 
         // Priority config
         const prioConf = {
@@ -119,9 +138,11 @@ export const PlannerList = {
         const renderCompactCard = (t) => {
             const proj = projects.find(p => p.id == t.project_id) || { name: 'Unassigned', color: '#64748b' };
             const isDone = t.status === 'done';
-            const progress = t.progress || 0;
+            const isSpan = t.task_type === 'project_span';
+            const progress = isSpan ? getProjectProgress(t.project_id || 'personal') : (t.progress || 0);
             const prio = prioConf[t.priority] || prioConf.medium;
             const timeStr = formatTime(t);
+            const isContinuous = !!proj.continuous;
 
             return `
                 <div class="task-item group/task px-2.5 py-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative" data-task-id="${t.id}">
@@ -133,10 +154,12 @@ export const PlannerList = {
 
                         <div class="flex-grow min-w-0">
                             <div class="text-sm font-bold leading-tight truncate pr-4 ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</div>
-                            <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                <span class="text-[9px] font-bold text-dim/35 truncate">${proj.name}</span>
-                                ${timeStr ? `<span class="text-[8px] font-bold text-dim/25 truncate">${timeStr}</span>` : ''}
+                            <div class="flex items-center gap-1.5 mt-0.5 flex-wrap opacity-40">
+                                ${isSpan ? '<span class="text-[7px] font-black uppercase tracking-wider px-1 py-px rounded bg-white/8 text-dim">SPAN</span>' : ''}
+                                <span class="text-[9px] font-bold text-dim truncate">${proj.name}</span>
+                                ${timeStr ? `<span class="text-[8px] font-bold text-dim truncate">${timeStr}</span>` : ''}
                             </div>
+                            ${!isContinuous ? `
                             <!-- Progress bar — fill uses project color -->
                             <div class="flex items-center gap-1.5 mt-1.5">
                                 <div class="inline-progress-bar flex-grow h-2.5 bg-white/5 rounded-full overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
@@ -144,7 +167,10 @@ export const PlannerList = {
                                     <span class="absolute inset-0 flex items-center justify-center text-[7px] font-black text-white/90 leading-none drop-shadow-sm">${progress}%</span>
                                 </div>
                                 ${isDone && t.completed_at ? `<span class="text-[7px] font-bold text-emerald-500/60 whitespace-nowrap shrink-0">✓ ${new Date(t.completed_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>` : ''}
-                            </div>
+                            </div>` : `
+                            <div class="mt-1.5">
+                                <span class="text-[7px] font-black uppercase tracking-wider text-dim/30">∞ Continuous</span>
+                            </div>`}
                         </div>
                     </div>
                 </div>
@@ -155,9 +181,11 @@ export const PlannerList = {
         const renderFullCard = (t) => {
             const proj = projects.find(p => p.id == t.project_id) || { name: 'Unassigned', color: '#64748b' };
             const isDone = t.status === 'done';
-            const progress = t.progress || 0;
+            const isSpan = t.task_type === 'project_span';
+            const progress = isSpan ? getProjectProgress(t.project_id || 'personal') : (t.progress || 0);
             const prio = prioConf[t.priority] || prioConf.medium;
             const timeStr = formatTime(t);
+            const isContinuous = !!proj.continuous;
 
             if (useGrid) {
                 return `
@@ -175,22 +203,22 @@ export const PlannerList = {
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${prio.bg} ${prio.color}">
                                 <span class="w-1 h-1 rounded-full ${prio.dot}"></span>${prio.label}
                             </span>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-white/5 text-dim">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-white/5 text-dim opacity-40">
                                 <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${proj.color}"></span>${proj.name}
                             </span>
                         </div>
 
-                        ${timeStr ? `<div class="flex items-center gap-1.5 text-dim/50 mb-3 pl-8">
+                        ${timeStr ? `<div class="flex items-center gap-1.5 text-dim opacity-40 mb-3 pl-8">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             <span class="text-[9px] font-bold tracking-tight">${timeStr}</span>
                         </div>` : ''}
 
-                        <div class="pl-8">
+                        ${!isContinuous ? `<div class="pl-8">
                             <div class="inline-progress-bar relative h-5 bg-white/5 rounded-md overflow-hidden cursor-pointer w-full" data-task-id="${t.id}" data-progress="${progress}">
                                 <div class="absolute inset-y-0 left-0 rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%; background-color: ${proj.color}; opacity: ${isDone ? 0.35 : 1}"></div>
                                 <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
                             </div>
-                        </div>
+                        </div>` : `<div class="pl-8"><span class="text-[8px] font-black uppercase tracking-wider text-dim/30">∞ Continuous</span></div>`}
                     </div>
                 `;
             }
@@ -204,13 +232,13 @@ export const PlannerList = {
 
                     <div class="flex-grow min-w-0">
                         <span class="text-[13px] font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
-                        <div class="flex items-center gap-2.5 mt-1">
+                        <div class="flex items-center gap-2.5 mt-1 opacity-40">
                             <span class="w-1.5 h-1.5 rounded-full ${prio.dot}" title="${prio.label} priority"></span>
                             <div class="flex items-center gap-1">
                                 <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${proj.color}"></span>
-                                <span class="text-[9px] font-black text-dim/60 uppercase tracking-wider">${proj.name}</span>
+                                <span class="text-[9px] font-black text-dim uppercase tracking-wider">${proj.name}</span>
                             </div>
-                            ${timeStr ? `<div class="flex items-center gap-1 text-dim/50">
+                            ${timeStr ? `<div class="flex items-center gap-1 text-dim">
                                 <span class="w-px h-2 bg-white/5"></span>
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 <span class="text-[9px] font-bold tracking-tight">${timeStr}</span>
@@ -219,10 +247,12 @@ export const PlannerList = {
                     </div>
 
                     <!-- Progress bar with centered % -->
+                    ${!isContinuous ? `
                     <div class="inline-progress-bar shrink-0 w-24 h-5 bg-white/10 rounded-md overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
                         <div class="absolute inset-y-0 left-0 rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%; background-color: ${proj.color}; opacity: ${isDone ? 0.35 : 1}"></div>
                         <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
-                    </div>
+                    </div>` : `
+                    <span class="shrink-0 text-[8px] font-black uppercase tracking-wider text-dim/30">∞ Continuous</span>`}
 
                     <div class="flex items-center opacity-0 group-hover/task:opacity-100 transition-opacity gap-1 shrink-0">
                          <button class="track-btn p-1.5 rounded-lg hover:bg-primary/10 text-dim/50 hover:text-primary transition-colors" title="Track Time" data-task-id="${t.id}">

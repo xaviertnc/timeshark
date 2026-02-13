@@ -11,24 +11,24 @@ import { PlannerUtils } from './planner-utils.js';
 
 const ZOOM = {
     day: {
-        compact: { colWidth: 30, rowH: 36, barH: 14, barTop: 9, hoursToShow: 24 },
-        regular: { colWidth: 60, rowH: 48, barH: 22, barTop: 10, hoursToShow: 12 },
-        relaxed: { colWidth: 120, rowH: 64, barH: 28, barTop: 14, hoursToShow: 10 },
+        compact: { colWidth: 30, rowH: 36, barH: 14, barTop: 9, hoursToShow: 24, fontSize: 7, spanFontSize: 6 },
+        regular: { colWidth: 60, rowH: 48, barH: 22, barTop: 10, hoursToShow: 12, fontSize: 8, spanFontSize: 7 },
+        relaxed: { colWidth: 120, rowH: 64, barH: 28, barTop: 14, hoursToShow: 10, fontSize: 10, spanFontSize: 8 },
     },
     week: {
-        compact: { colWidth: 40, rowH: 36, barH: 14, barTop: 9 },
-        regular: { colWidth: 80, rowH: 48, barH: 22, barTop: 10 },
-        relaxed: { colWidth: 160, rowH: 64, barH: 28, barTop: 14 },
+        compact: { colWidth: 40, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 6 },
+        regular: { colWidth: 80, rowH: 48, barH: 22, barTop: 10, fontSize: 8, spanFontSize: 7 },
+        relaxed: { colWidth: 160, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 8 },
     },
     month: {
-        compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9 },
-        regular: { colWidth: 40, rowH: 48, barH: 22, barTop: 10 },
-        relaxed: { colWidth: 80, rowH: 64, barH: 28, barTop: 14 },
+        compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 6 },
+        regular: { colWidth: 40, rowH: 48, barH: 22, barTop: 10, fontSize: 8, spanFontSize: 7 },
+        relaxed: { colWidth: 80, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 8 },
     }
 };
 
 export const PlannerTimeline = {
-    render(container, data, config, today, zoom = 'regular') {
+    render(container, data, config, today, zoom = 'regular', onLaneReorder = null) {
         if (typeof container === 'string') container = document.getElementById(container);
         if (!container) return;
 
@@ -106,7 +106,30 @@ export const PlannerTimeline = {
                 lanesByProject.get(projId).tasks.push(task);
             });
 
-            return Array.from(lanesByProject.values());
+            // Sort lanes by project lane_order (lower = higher in timeline)
+            return Array.from(lanesByProject.values()).sort((a, b) => {
+                const orderA = a.project.lane_order ?? 999;
+                const orderB = b.project.lane_order ?? 999;
+                return orderA - orderB;
+            });
+        };
+
+        // ───── Compute project-level progress for span tasks ─────
+        const getProjectProgress = (projectId) => {
+            // First: use the project's own progress field (authoritative source)
+            const proj = data.projects.find(p => p.id == projectId);
+            if (proj && proj.progress !== undefined && proj.progress !== null) {
+                return parseInt(proj.progress) || 0;
+            }
+            // Fallback: compute average from non-span tasks
+            const allTasks = data.rows.flatMap(r => r.tasks);
+            const projectTasks = allTasks.filter(t =>
+                (t.project_id || 'personal') == projectId &&
+                t.task_type !== 'project_span'
+            );
+            if (projectTasks.length === 0) return 0;
+            const total = projectTasks.reduce((sum, t) => sum + (t.progress || 0), 0);
+            return Math.round(total / projectTasks.length);
         };
 
         // ───── Header ─────
@@ -215,14 +238,15 @@ export const PlannerTimeline = {
                 const legendItems = projectLanes.map((lane, i) => {
                     const topPos = rowPaddingTop + i * (zp.barH + laneGap) + (zp.barH / 2) - 5;
                     return `
-                        <div class="absolute flex items-center gap-1 overflow-hidden" style="top: ${topPos}px; height: ${zp.barH}px; left: 4px; right: 4px;">
-                            <span class="w-1.5 h-1.5 rounded-sm shrink-0" style="background-color: ${lane.project.color}"></span>
-                            <span class="text-[7px] font-bold text-dim/50 truncate leading-none whitespace-nowrap">${lane.project.name}</span>
+                        <div class="lane-legend-item absolute flex items-center gap-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors group/lane" data-project-id="${lane.project.id}" data-lane-index="${i}" style="top: ${topPos}px; height: ${zp.barH}px; left: 2px; right: 2px; padding: 0 2px;">
+                            <span class="text-[8px] text-dim opacity-20 group-hover/lane:opacity-60 transition-opacity shrink-0 leading-none select-none pointer-events-none" style="letter-spacing: -1px;">⠿</span>
+                            <span class="w-1.5 h-1.5 rounded-sm shrink-0 pointer-events-none" style="background-color: ${lane.project.color}"></span>
+                            <span class="text-[7px] font-bold text-dim opacity-50 truncate leading-none whitespace-nowrap pointer-events-none">${lane.project.name}</span>
                         </div>
                     `;
                 }).join('');
                 legendHtml = `
-                    <div class="flex-shrink-0 border-r border-white/2 bg-app/50 sticky z-20 relative" style="width: ${legendWidth}px; left: ${resourceWidth}px; min-height: ${dynamicRowH}px">
+                    <div class="lane-legend-col flex-shrink-0 border-r border-white/2 bg-app sticky z-20 relative" style="width: ${legendWidth}px; left: ${resourceWidth}px; min-height: ${dynamicRowH}px">
                         ${legendItems}
                     </div>
                 `;
@@ -277,28 +301,54 @@ export const PlannerTimeline = {
 
                             if (x + w < 0 || x > totalWidth) return;
 
+                            // Clamp bar to visible timeline area
+                            const renderX = Math.max(0, x);
+                            const renderW = Math.max(10, Math.min(totalWidth - renderX, w - (renderX - x)));
+
                             const proj = lane.project;
                             const status = task.status || 'todo';
+                            const isSpan = task.task_type === 'project_span';
 
                             const tooltipText = `${task.title} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
 
-                            const titleHtml = showText && w > 30
-                                ? `<span class="block text-[8px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden">${task.title}</span>`
-                                : '';
+                            if (isSpan) {
+                                // Project Span: flat bar sized to fit text, centered in lane
+                                const spanH = Math.max(zp.barH * 0.6, zp.spanFontSize + 6);
+                                const spanTop = barTop + (zp.barH - spanH) / 2;
+                                // Compute progress from project's tasks
+                                const projProgress = getProjectProgress(task.project_id || 'personal');
+                                const spanTitle = showText && renderW > 50
+                                    ? `<span class="flex items-center justify-center gap-2 h-full px-2 pointer-events-none whitespace-nowrap overflow-hidden"><span class="text-[${zp.spanFontSize}px] font-black text-white/90 truncate leading-none">${task.title}</span><span class="text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0">${projProgress}%</span></span>`
+                                    : '';
+                                html += `
+                                    <div class="task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden"
+                                         style="left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${projProgress}%, ${proj.color}44 ${projProgress}%); border-top: 2px solid ${proj.color}; border-bottom: 2px solid ${proj.color};"
+                                         data-task-id="${task.id}"
+                                         title="${tooltipText} • ${projProgress}% complete">
+                                         ${spanTitle}
+                                    </div>
+                                `;
+                            } else {
+                                // Normal task bar
+                                const titleHtml = showText && renderW > 30
+                                    ? `<span class="block text-[${zp.fontSize}px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden">${task.title}</span>`
+                                    : '';
 
-                            html += `
-                                <div class="task-bar absolute rounded shadow-sm border border-white/5 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all group/task cursor-pointer overflow-hidden"
-                                     style="left: ${x}px; width: ${w}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color};"
-                                     data-task-id="${task.id}"
-                                     title="${tooltipText}">
-                                     
-                                     ${task.progress ? `
-                                        <div class="absolute inset-0 bg-black/15 pointer-events-none" style="width: ${task.progress}%"></div>
-                                     ` : ''}
+                                // Progress overlay (skip for continuous projects)
+                                const progressHtml = (!proj.continuous && task.progress) ? `
+                                    <div class="absolute inset-0 bg-black/15 pointer-events-none" style="width: ${task.progress}%"></div>
+                                ` : '';
 
-                                     ${titleHtml}
-                                </div>
-                            `;
+                                html += `
+                                    <div class="task-bar absolute rounded shadow-sm border border-white/5 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all group/task cursor-pointer overflow-hidden"
+                                         style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color};"
+                                         data-task-id="${task.id}"
+                                         title="${tooltipText}">
+                                         ${progressHtml}
+                                         ${titleHtml}
+                                    </div>
+                                `;
+                            }
                         });
                     });
                     return html;
@@ -345,6 +395,136 @@ export const PlannerTimeline = {
         });
 
         container.appendChild(body);
+
+        // ───── Custom mouse-based lane reordering (HTML5 DnD broken with sticky positioning) ─────
+        if (onLaneReorder && legendWidth > 0) {
+            // Clean up previous document-level listeners if any
+            if (window._laneDragAbort) window._laneDragAbort.abort();
+            const ac = new AbortController();
+            window._laneDragAbort = ac;
+
+            // Inject styles
+            if (!document.getElementById('lane-drag-styles')) {
+                const style = document.createElement('style');
+                style.id = 'lane-drag-styles';
+                style.textContent = `
+                    .lane-legend-item.drag-over-top { box-shadow: 0 -2px 0 0 var(--primary), 0 -4px 8px -2px var(--primary); }
+                    .lane-legend-item.drag-over-bottom { box-shadow: 0 2px 0 0 var(--primary), 0 4px 8px -2px var(--primary); }
+                    .lane-legend-item.lane-dragging { opacity: 0.3; }
+                `;
+                document.head.appendChild(style);
+            }
+
+            let dragState = null;
+
+            // Attach mousedown directly to each legend item (avoids any delegation issues)
+            container.querySelectorAll('.lane-legend-item').forEach(item => {
+                item.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    e.stopPropagation(); // Don't let the container scroll
+                    console.log('[LaneDrag] mousedown on', item.dataset.projectId);
+                    dragState = {
+                        projectId: item.dataset.projectId,
+                        el: item,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        started: false
+                    };
+                });
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!dragState) return;
+
+                // Start drag after 3px movement threshold
+                if (!dragState.started) {
+                    const dx = e.clientX - dragState.startX;
+                    const dy = e.clientY - dragState.startY;
+                    if (Math.abs(dx) + Math.abs(dy) < 3) return;
+                    dragState.started = true;
+                    dragState.el.classList.add('lane-dragging');
+                    document.body.style.cursor = 'grabbing';
+                    console.log('[LaneDrag] drag started for', dragState.projectId);
+                }
+
+                // Find which legend item is under the cursor using visual hit-testing
+                const els = document.elementsFromPoint(e.clientX, e.clientY);
+                const target = els.find(el => el.classList?.contains('lane-legend-item') && el !== dragState.el) || null;
+
+                // Clear old highlights
+                container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+                    if (el !== target) el.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+
+                if (!target) return;
+
+                console.log('[LaneDrag] hovering over', target.dataset.projectId);
+                const rect = target.getBoundingClientRect();
+                const isTop = e.clientY < rect.top + rect.height / 2;
+                if (isTop) {
+                    target.classList.remove('drag-over-bottom');
+                    target.classList.add('drag-over-top');
+                } else {
+                    target.classList.remove('drag-over-top');
+                    target.classList.add('drag-over-bottom');
+                }
+            }, { signal: ac.signal });
+
+            document.addEventListener('mouseup', (e) => {
+                if (!dragState) return;
+                const { projectId, started } = dragState;
+                dragState = null;
+                document.body.style.cursor = '';
+
+                if (!started) {
+                    console.log('[LaneDrag] mouseup without drag start (click)');
+                    return;
+                }
+
+                console.log('[LaneDrag] mouseup - looking for drop target');
+                // Find drop target
+                const els = document.elementsFromPoint(e.clientX, e.clientY);
+                console.log('[LaneDrag] elements at point:', els.map(el => el.className?.substring(0, 40)));
+                const target = els.find(el => el.classList?.contains('lane-legend-item')) || null;
+
+                // Cleanup
+                container.querySelectorAll('.lane-dragging, .drag-over-top, .drag-over-bottom').forEach(el => {
+                    el.classList.remove('lane-dragging', 'drag-over-top', 'drag-over-bottom');
+                });
+
+                if (!target || target.dataset.projectId === projectId) {
+                    console.log('[LaneDrag] no valid target, cancelled');
+                    return;
+                }
+
+                console.log('[LaneDrag] dropping on', target.dataset.projectId);
+                // Get canonical order from first legend column
+                const firstCol = container.querySelector('.lane-legend-col');
+                if (!firstCol) return;
+                const items = [...firstCol.querySelectorAll('.lane-legend-item')];
+                const projectIds = items.map(el => el.dataset.projectId);
+
+                const rect = target.getBoundingClientRect();
+                const isBottom = e.clientY > rect.top + rect.height / 2;
+
+                const dragIdx = projectIds.indexOf(projectId);
+                let dropIdx = projectIds.indexOf(target.dataset.projectId);
+                if (dragIdx === -1 || dropIdx === -1) return;
+
+                if (isBottom) dropIdx++;
+                if (dragIdx < dropIdx) dropIdx--;
+                if (dragIdx === dropIdx) return;
+
+                projectIds.splice(dragIdx, 1);
+                projectIds.splice(dropIdx, 0, projectId);
+
+                const newOrder = {};
+                projectIds.forEach((pid, idx) => { newOrder[pid] = idx + 1; });
+                console.log('[LaneDrag] reordering:', newOrder);
+                onLaneReorder(newOrder);
+            }, { signal: ac.signal });
+        }
 
         // Initial Scroll for Day View
         if (config.isDayView) {

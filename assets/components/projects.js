@@ -85,7 +85,7 @@ export async function renderProjects() {
     const status = p.status || 'Active';
 
     return `
-            <div class="bg-card rounded-[2.5rem] p-8 border border-soft shadow-sm group hover:-translate-y-2 transition-all duration-500 relative project-card overflow-hidden h-full flex flex-col cursor-grab active:cursor-grabbing" data-id="${p.id}" draggable="true">
+            <div class="bg-card rounded-[2.5rem] p-8 border border-soft shadow-sm group hover:-translate-y-2 transition-all duration-500 relative project-card overflow-hidden h-full flex flex-col cursor-pointer" data-id="${p.id}">
               
               <div class="flex justify-between items-start mb-10">
                 <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-sm transition-all group-hover:shadow-lg" style="background-color: ${applyAlpha(p.color, 0.1)}; border-color: ${applyAlpha(p.color, 0.2)}">
@@ -111,7 +111,7 @@ export async function renderProjects() {
                 
                 <div class="w-full space-y-4">
                   <div class="flex justify-between w-full text-[10px] font-black uppercase tracking-[0.2em] text-dim/70">
-                    <span>Performance</span>
+                    <span>Progress</span>
                     <span class="text-main font-black">${progress}%</span>
                   </div>
                   <div class="w-full bg-app rounded-full h-3 overflow-hidden border-2 border-soft p-[2px] shadow-inner">
@@ -196,90 +196,108 @@ export async function renderProjects() {
 
   const modalPortal = document.getElementById('modal-portal');
   modalPortal.innerHTML = `
-    <div id="project-modal" class="fixed inset-0 bg-secondary/60 hidden z-50 backdrop-blur-xl pointer-events-auto items-center justify-center overflow-y-auto">
-      <div class="min-h-screen w-full flex items-center justify-center p-4">
-        <div class="bg-card rounded-[3rem] shadow-2xl w-full max-w-2xl p-12 lg:p-16 transform transition-all scale-95 opacity-0 text-center relative border border-soft" id="project-modal-content">
-          <button id="close-project-modal" class="absolute top-8 right-10 text-dim hover:text-red-500 text-3xl transition-all hover:rotate-90 hover:scale-125">&times;</button>
+    <div id="project-modal" class="fixed inset-0 bg-secondary/60 hidden z-50 backdrop-blur-xl pointer-events-auto overflow-y-auto">
+      <div class="w-full flex items-start justify-center py-6 px-4">
+        <div class="bg-card rounded-2xl shadow-2xl w-full max-w-4xl p-8 md:p-10 transform transition-all scale-95 opacity-0 text-center relative border border-soft mx-3 sm:mx-auto" id="project-modal-content">
+          <button id="close-project-modal" class="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
 
           <div class="mb-12">
             <h3 class="text-3xl font-black text-main tracking-tighter" id="modal-title">Define Project</h3>
             <p class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mt-3 opacity-60">System Registry Entry</p>
           </div>
 
-          <form id="project-form" class="space-y-10">
+          <form id="project-form" class="space-y-6 text-left">
             <input type="hidden" name="id">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 text-left">
-              <div class="space-y-8">
-                <div class="space-y-3">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Project Name</label>
-                  <input type="text" name="name" required placeholder="Launch Campaign" class="w-full py-5 px-8 bg-app border-none rounded-2xl focus:ring-4 focus:ring-primary/10 text-main font-bold placeholder:opacity-30">
-                </div>
-
-                <div class="space-y-3">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Operational Status</label>
-                  <div class="relative group">
-                    <select name="status" class="w-full bg-app border-none rounded-2xl py-5 px-8 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
-                      <option value="Active">Active State</option>
-                      <option value="On Hold">Suspended</option>
-                      <option value="Completed">Finalized</option>
-                      <option value="Cancelled">Terminated</option>
-                    </select>
-                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="space-y-3">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Manual Progress Metric (%)</label>
-                  <div class="bg-app p-8 rounded-3xl space-y-5 shadow-inner">
-                    <input type="range" name="progress" min="0" max="100" value="0" class="w-full h-2 bg-card rounded-lg appearance-none cursor-pointer accent-primary shadow-sm border border-soft">
-                    <div class="flex justify-between text-[9px] font-black text-dim/40 uppercase tracking-widest px-1">
-                      <span>Minimum</span>
-                      <span>Target Reach</span>
-                      <span>Maximum</span>
-                    </div>
+            <!-- Row 1: Name + Organization -->
+            <div class="grid grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Project Name</label>
+                <input type="text" name="name" required placeholder="Launch Campaign" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold placeholder:opacity-30 text-sm">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Parent Organization</label>
+                <div class="relative group">
+                  <select name="customer_id" class="w-full bg-app border-none rounded-xl py-3 px-5 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
+                    <option value="">Global / Internal</option>
+                    ${customers.filter(c => c.is_client == 1).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                  </select>
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div class="space-y-8">
-                <div class="space-y-3">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Parent Organization</label>
-                  <div class="relative group">
-                    <select name="customer_id" class="w-full bg-app border-none rounded-2xl py-5 px-8 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
-                      <option value="">Global / Internal</option>
-                      ${customers.filter(c => c.is_client == 1).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                    </select>
-                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
+            <!-- Row 2: Status + Lead Contact -->
+            <div class="grid grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Status</label>
+                <div class="relative group">
+                  <select name="status" class="w-full bg-app border-none rounded-xl py-3 px-5 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
+                    <option value="Active">Active</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
                 </div>
-
-                <div class="space-y-3">
-                  <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Lead Contact</label>
-                  <div class="relative group">
-                    <select name="client_id" class="w-full bg-app border-none rounded-2xl py-5 px-8 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
-                      <option value="">Assign Later...</option>
-                    </select>
-                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Lead Contact</label>
+                <div class="relative group">
+                  <select name="client_id" class="w-full bg-app border-none rounded-xl py-3 px-5 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest">
+                    <option value="">Assign Later...</option>
+                  </select>
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div class="grid grid-cols-2 gap-6">
-                  <div class="space-y-3">
-                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Start Date</label>
-                    <input type="date" name="started_at" class="w-full py-5 px-8 bg-app border-none rounded-2xl focus:ring-4 focus:ring-primary/10 text-main font-bold">
-                  </div>
-                  <div class="space-y-3">
-                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Deadline</label>
-                    <input type="date" name="completed_at" class="w-full py-5 px-8 bg-app border-none rounded-2xl focus:ring-4 focus:ring-primary/10 text-main font-bold">
-                  </div>
+            <!-- Row 3: Start Date + Deadline -->
+            <div class="grid grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Start Date</label>
+                <input type="date" name="started_at" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold text-sm">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Deadline</label>
+                <input type="date" name="completed_at" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold text-sm">
+              </div>
+            </div>
+
+            <!-- Row 4: Progress (full width) -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between ml-2 mr-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">Progress</label>
+                <span id="project-progress-val" class="text-sm font-black text-primary tabular-nums">0%</span>
+              </div>
+              <div class="bg-app p-4 rounded-xl space-y-2 shadow-inner">
+                <input type="range" name="progress" min="0" max="100" value="0" id="project-progress-slider" class="w-full h-2 bg-card rounded-lg appearance-none cursor-pointer accent-primary shadow-sm border border-soft">
+                <div class="flex justify-between text-[8px] font-black text-dim/30 uppercase tracking-widest px-1">
+                  <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Row 5: Lane Order + Continuous -->
+            <div class="grid grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Timeline Lane Order</label>
+                <input type="number" name="lane_order" min="1" max="99" placeholder="Auto" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold text-sm">
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Tracking</label>
+                <label class="flex items-center gap-3 w-full py-3 px-5 bg-app rounded-xl cursor-pointer hover:bg-white/5 transition-all">
+                  <input type="checkbox" name="continuous" class="accent-primary w-4 h-4">
+                  <span class="text-[11px] font-black text-main uppercase tracking-widest">∞ Continuous</span>
+                </label>
               </div>
             </div>
 
@@ -384,6 +402,9 @@ export async function renderProjects() {
   modalPortal.querySelector('#randomize-colors').onclick = randomizeColors;
 
   const openProjModal = (project = null) => {
+    const pSlider = modalPortal.querySelector('#project-progress-slider');
+    const pLabel = modalPortal.querySelector('#project-progress-val');
+
     if (project) {
       modalTitle.textContent = 'Update Registry';
       submitBtn.textContent = 'Authorize Changes';
@@ -393,6 +414,11 @@ export async function renderProjects() {
       projectForm.started_at.value = project.started_at ? project.started_at.split('T')[0] : '';
       projectForm.completed_at.value = project.completed_at ? project.completed_at.split('T')[0] : '';
       projectForm.progress.value = project.progress || 0;
+      if (pLabel) pLabel.textContent = `${project.progress || 0}%`;
+
+      // Lane order & continuous
+      projectForm.lane_order.value = project.lane_order || '';
+      projectForm.continuous.checked = !!project.continuous;
 
       const org = customers.find(c => c.id == project.customer_id && c.is_client == 1);
       projectForm.customer_id.value = org ? org.id : '';
@@ -404,6 +430,7 @@ export async function renderProjects() {
       submitBtn.textContent = 'Initialize Project';
       projectForm.reset();
       projectForm.id.value = '';
+      if (pLabel) pLabel.textContent = '0%';
       updateClientOptions('');
       renderPalette();
     }
@@ -429,6 +456,22 @@ export async function renderProjects() {
   container.querySelector('#add-project-btn').onclick = () => openProjModal();
   modalPortal.querySelector('#close-project-modal').onclick = closeProjModal;
 
+  // Backdrop click to close
+  projModal.addEventListener('click', (e) => {
+    if (e.target === projModal || e.target === projModal.firstElementChild) {
+      closeProjModal();
+    }
+  });
+
+  // Progress slider live update
+  const progressSlider = modalPortal.querySelector('#project-progress-slider');
+  const progressLabel = modalPortal.querySelector('#project-progress-val');
+  if (progressSlider && progressLabel) {
+    progressSlider.oninput = () => {
+      progressLabel.textContent = `${progressSlider.value}%`;
+    };
+  }
+
   container.querySelector('#toggle-grid').onclick = () => {
     viewMode = 'grid';
     localStorage.setItem('project_view_mode', 'grid');
@@ -443,6 +486,10 @@ export async function renderProjects() {
   projectForm.onsubmit = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(projectForm).entries());
+    // Handle continuous checkbox (present = 'on' or absent)
+    data.continuous = data.continuous === 'on' ? true : false;
+    // Parse lane_order as number or null
+    data.lane_order = data.lane_order ? parseInt(data.lane_order) : null;
     try {
       await api.post('projects.php', data);
       store.update('projects', await api.get('projects.php'));
@@ -506,6 +553,15 @@ export async function renderProjects() {
     if (e.target.closest('.edit-btn')) {
       e.stopPropagation();
       const id = e.target.closest('.edit-btn').dataset.id;
+      const project = projects.find(p => p.id == id);
+      if (project) openProjModal(project);
+      return;
+    }
+
+    // Click on project card or table row to edit
+    const card = e.target.closest('.project-card, tr[data-id]');
+    if (card && !e.target.closest('.delete-btn') && !e.target.closest('.move-up-btn') && !e.target.closest('.move-down-btn') && !e.target.closest('.drag-handle')) {
+      const id = card.dataset.id;
       const project = projects.find(p => p.id == id);
       if (project) openProjModal(project);
     }

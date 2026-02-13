@@ -338,7 +338,9 @@ export async function renderDashboard() {
       modalPortal.innerHTML = `
         <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
           <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main">
-            <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10 text-muted hover:text-white hover:bg-white/10 text-lg font-bold transition-all z-10" title="Close">&times;</button>
+            <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
             <div class="mb-8">
               <h3 class="text-2xl font-bold text-main tracking-tight">Edit Current Task</h3>
               <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Live Update</p>
@@ -443,7 +445,9 @@ export async function renderDashboard() {
       modalPortal.innerHTML = `
         <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
           <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
-            <button id="close-modal-x" class="absolute top-6 right-6 text-2xl text-dim hover:text-red-500 transition-all">&times;</button>
+            <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
             <div class="text-center mb-8">
               <h3 class="text-xl font-bold">Edit History Entry</h3>
               <p class="text-[9px] font-black text-dim uppercase tracking-widest mt-2">Log Adjustment</p>

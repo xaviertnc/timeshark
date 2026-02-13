@@ -17,7 +17,9 @@ export const PlannerModal = {
             <div id="planner-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto overflow-y-auto">
                 <div class="w-full flex items-start justify-center py-6 px-4">
                     <div class="bg-card rounded-2xl shadow-soft w-full max-w-2xl p-8 md:p-10 transform transition-all scale-95 opacity-0 relative mx-3 sm:mx-auto" id="planner-modal-content">
-                        <button id="close-planner-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10 text-muted hover:text-white hover:bg-white/10 text-lg font-bold transition-all z-10" title="Close">&times;</button>
+                        <button id="close-planner-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
 
                         <div class="mb-8">
                             <h3 id="planner-modal-title" class="text-2xl font-bold text-main tracking-tight">New Task</h3>
@@ -61,6 +63,17 @@ export const PlannerModal = {
                                 </div>
                             </div>
 
+                            <!-- Row: Type -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Type</label>
+                                    <select name="task_type" id="modal-task-type" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
+                                        <option value="task">📋 Task</option>
+                                        <option value="project_span">🎯 Project Span</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- Notes -->
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
@@ -99,7 +112,7 @@ export const PlannerModal = {
                             </div>
 
                             <!-- Progress Section -->
-                            <div class="space-y-3 border-t border-white/5 pt-5">
+                            <div id="progress-section" class="space-y-3 border-t border-white/5 pt-5">
                                 <div class="flex justify-between items-center">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest">Progress</label>
                                     <span id="progress-val" class="text-xs font-black text-primary tabular-nums">0%</span>
@@ -152,6 +165,7 @@ export const PlannerModal = {
         const progressBar = portal.querySelector('#progress-bar-fill');
         const deleteBtn = portal.querySelector('#delete-btn');
         const commitBtn = portal.querySelector('#commit-btn');
+        const taskTypeSelect = portal.querySelector('#modal-task-type');
 
         closeBtn.onclick = () => this.close();
 
@@ -191,6 +205,16 @@ export const PlannerModal = {
                 form.end_date.value = '';
                 form.start_time.value = '09:00';
                 form.end_time.value = '17:00';
+            }
+        };
+
+        // Task Type change handler - hide progress for span tasks
+        const progressSection = portal.querySelector('#progress-section');
+        taskTypeSelect.onchange = () => {
+            if (taskTypeSelect.value === 'project_span') {
+                progressSection.classList.add('hidden');
+            } else {
+                progressSection.classList.remove('hidden');
             }
         };
 
@@ -268,6 +292,10 @@ export const PlannerModal = {
             // Ensure numeric progress
             data.progress = parseInt(data.progress) || 0;
 
+
+            // Preserve task_type
+            data.task_type = data.task_type || 'task';
+
             // Track completion timestamp
             if (data.status === 'done') {
                 // Preserve existing completed_at if task was already done, otherwise stamp now
@@ -321,6 +349,10 @@ export const PlannerModal = {
         progressVal.className = 'text-xs font-black text-dim tabular-nums';
         progressBar.className = 'absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-300';
 
+        // Reset type
+        const taskTypeSelect = portal.querySelector('#modal-task-type');
+        taskTypeSelect.value = 'task';
+
         // Reset quick buttons
         portal.querySelectorAll('.progress-quick-btn').forEach(btn => {
             const bv = parseInt(btn.dataset.progress);
@@ -347,6 +379,16 @@ export const PlannerModal = {
             form.status.value = task.status || 'todo';
             form.priority.value = task.priority || 'medium';
             form.notes.value = task.notes || '';
+
+            // Type
+            taskTypeSelect.value = task.task_type || 'task';
+            // Hide progress for span tasks
+            const progressSection = portal.querySelector('#progress-section');
+            if (task.task_type === 'project_span') {
+                progressSection.classList.add('hidden');
+            } else {
+                progressSection.classList.remove('hidden');
+            }
 
             // Progress
             const prog = task.progress || 0;

@@ -298,7 +298,7 @@ export async function renderPlanner() {
             listWrapper.classList.add('hidden');
             scaleContainer?.classList.remove('hidden');
             zoomContainer?.classList.remove('hidden');
-            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom);
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder);
         } else {
             // List View Logic (Global View)
             timelineWrapper.classList.add('hidden');
@@ -325,6 +325,30 @@ export async function renderPlanner() {
         });
     };
 
+    // Shared lane-reorder handler so both updateUI and ResizeObserver pass it
+    const handleLaneReorder = async (newOrder) => {
+        // Update local data immediately
+        const data = PlannerState.getCombinedData(projectFilter);
+        Object.entries(newOrder).forEach(([projectId, laneOrder]) => {
+            const proj = data.projects.find(p => String(p.id) === String(projectId));
+            if (proj) proj.lane_order = laneOrder;
+        });
+
+        // Re-render immediately so the user sees the change
+        updateUI();
+
+        // Save to API in background
+        try {
+            const savePromises = Object.entries(newOrder).map(([projectId, laneOrder]) =>
+                api.post('projects.php', { id: projectId, lane_order: laneOrder })
+            );
+            await Promise.all(savePromises);
+            store.update('projects', await api.get('projects.php'));
+        } catch (err) {
+            console.error('Lane reorder save failed:', err);
+        }
+    };
+
     // Resize Observer for Timeline scaling
     let resizeObserver = new ResizeObserver(() => {
         if (currentView === 'timeline') {
@@ -332,7 +356,7 @@ export async function renderPlanner() {
             const today = new Date();
             const config = PlannerUtils.getTimelineConfig(currentScale, timeOffset, today);
             const timelineContainer = container.querySelector('#planner-timeline-container');
-            if (timelineContainer) PlannerTimeline.render(timelineContainer, data, config, today, currentZoom);
+            if (timelineContainer) PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder);
         }
     });
 
