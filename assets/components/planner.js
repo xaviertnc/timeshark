@@ -114,7 +114,7 @@ export async function renderPlanner() {
             <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-10' : 'w-72 lg:w-80 xl:w-96'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-y-auto overflow-x-hidden backdrop-blur-sm transition-all duration-500 relative shrink-0 min-w-0">
                 <!-- Sidebar Header -->
                 <div class="${sidebarCollapsed ? 'p-1 justify-center' : 'p-2 justify-between'} border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-20 flex items-center min-h-[36px] gap-1">
-                    <h3 id="sidebar-title" class="px-2 text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'hidden' : 'block'}">Timeline</h3>
+                    <h3 id="sidebar-title" class="px-2 text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'hidden' : 'block'}">Todo</h3>
 
                     <div class="flex items-center gap-0.5 shrink-0">
                         <button id="toggle-sidebar-btn" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0">
@@ -311,8 +311,8 @@ export async function renderPlanner() {
         const projects = state.projects || [];
         const select = container.querySelector('#project-filter');
         if (select) {
-            select.innerHTML = `< option value = "all" ${projectFilter === 'all' ? 'selected' : ''}> Global View</option > ` +
-                projects.map(p => `< option value = "${p.id}" ${projectFilter == p.id ? 'selected' : ''}> ${p.name}</option > `).join('');
+            select.innerHTML = `<option value="all" ${projectFilter === 'all' ? 'selected' : ''}>Global View</option>` +
+                projects.map(p => `<option value="${p.id}" ${projectFilter == p.id ? 'selected' : ''}>${p.name}</option>`).join('');
         }
         updateUI();
     }

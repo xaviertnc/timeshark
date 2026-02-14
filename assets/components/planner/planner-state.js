@@ -12,13 +12,15 @@ export const PlannerState = {
     async init() {
         try {
             // Fetch latest data
-            const [tasks, timeEntries] = await Promise.all([
+            const [tasks, timeEntries, projects] = await Promise.all([
                 api.get('planner.php'),
-                api.get('time-entries.php')
+                api.get('time-entries.php'),
+                api.get('projects.php')
             ]);
 
             store.update('tasks', tasks);
             store.update('timeEntries', timeEntries);
+            store.update('projects', projects);
         } catch (err) {
             console.error("PlannerState: Failed to fetch data", err);
         }
