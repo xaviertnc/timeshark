@@ -87,28 +87,47 @@ export async function renderDashboard() {
             </div>
           </div>
         ` : `
-          <div class="bg-card rounded-2xl p-8 shadow-sm">
-            <form id="start-timer-form" class="flex flex-col md:flex-row items-end gap-4">
-              <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                <div class="space-y-1.5">
-                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">What are you doing?</label>
-                  <input type="text" name="description" list="todo-datalist" placeholder="Task description..." class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm focus:ring-2 focus:ring-primary/20">
-                  <datalist id="todo-datalist"></datalist>
+          <div class="bg-card rounded-2xl p-6 shadow-sm">
+            <form id="start-timer-form" class="space-y-3">
+              <!-- Row 1: Spacious description + START -->
+              <div class="flex items-center gap-3">
+                <div class="flex-1 space-y-1">
+                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">What are you working on?</label>
+                  <input type="text" name="description" placeholder="Task description..." class="w-full bg-app border-none rounded-xl px-5 py-3.5 font-bold text-main text-[15px] focus:ring-2 focus:ring-primary/20 placeholder:text-dim/25">
                 </div>
-                <div class="space-y-1.5">
-                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-                  <select name="project_id" required class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
-                    ${projects.map(p => `<option value="${p.id}" ${(p.name || '').toLowerCase() === 'personal' ? 'selected' : ''}>${p.name || 'Unnamed'}</option>`).join('')}
-                  </select>
+                <button type="submit" class="h-[52px] px-10 bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-primary/20 whitespace-nowrap self-end">
+                  Start
+                </button>
+              </div>
+              <!-- Row 2: Compact context bar -->
+              <div class="grid grid-cols-3 gap-3">
+                <div class="space-y-1">
+                  <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Project</label>
+                  <div class="relative">
+                    <select name="project_id" required class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] appearance-none cursor-pointer focus:ring-1 focus:ring-primary/20 uppercase tracking-wider">
+                      ${projects.map(p => `<option value="${p.id}" ${(p.name || '').toLowerCase() === 'personal' ? 'selected' : ''}>${p.name || 'Unnamed'}</option>`).join('')}
+                    </select>
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-30">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
                 </div>
-                <div class="space-y-1.5">
-                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Notes (Optional)</label>
-                  <input type="text" name="notes" placeholder="Additional details..." class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold text-main text-sm focus:ring-2 focus:ring-primary/20">
+                <div class="space-y-1">
+                  <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Link Todo</label>
+                  <div class="relative">
+                    <select name="task_id" id="link-todo-select" class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] appearance-none cursor-pointer focus:ring-1 focus:ring-primary/20 uppercase tracking-wider">
+                      <option value="">None</option>
+                    </select>
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-30">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Notes</label>
+                  <input type="text" name="notes" placeholder="Optional..." class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] focus:ring-1 focus:ring-primary/20 placeholder:text-dim/25">
                 </div>
               </div>
-              <button type="submit" class="h-12 px-8 bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-primary/20 whitespace-nowrap">
-                Start
-              </button>
             </form>
           </div>
         ` }
@@ -180,17 +199,30 @@ export async function renderDashboard() {
     </div>
   `;
 
-  // Filter Tasks for Datalist
+  // Link Todo dropdown — update when project changes
   if (!activeTimer) {
     const projectSelect = container.querySelector('select[name="project_id"]');
-    const datalist = container.querySelector('#todo-datalist');
-    const updateDatalist = () => {
+    const todoSelect = container.querySelector('#link-todo-select');
+    const descInput = container.querySelector('input[name="description"]');
+    const updateTodoOptions = () => {
       const pid = projectSelect.value;
-      const tasks = (state.tasks || []).filter(t => String(t.project_id) === String(pid));
-      datalist.innerHTML = tasks.map(t => `<option value="${t.title}">${t.title}</option>`).join('');
+      const tasks = (state.tasks || []).filter(t =>
+        String(t.project_id) === String(pid) && t.status !== 'done'
+      );
+      todoSelect.innerHTML = `<option value="">None</option>` +
+        tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
     };
-    projectSelect.addEventListener('change', updateDatalist);
-    updateDatalist();
+    projectSelect.addEventListener('change', updateTodoOptions);
+    updateTodoOptions();
+
+    // Auto-fill description when a todo is selected
+    todoSelect.addEventListener('change', () => {
+      if (!todoSelect.value) return;
+      const task = (state.tasks || []).find(t => String(t.id) === String(todoSelect.value));
+      if (task && !descInput.value.trim()) {
+        descInput.value = task.title;
+      }
+    });
   }
 
   // --- ACTIONS ---
@@ -243,9 +275,6 @@ export async function renderDashboard() {
   // Active Timer Actions
   const startForm = container.querySelector('#start-timer-form');
   if (startForm) {
-    const projectSelect = startForm.querySelector('select[name="project_id"]');
-    const descInput = startForm.querySelector('input[name="description"]');
-
     startForm.onsubmit = async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(startForm).entries());
@@ -255,34 +284,17 @@ export async function renderDashboard() {
       data.project_name = proj.name;
       data.resource_id = state.team?.[0]?.name || 'Main';
 
-      // Unified Task Logic: Check if task exists for this project/description
-      const allTasks = state.tasks || [];
-      const existingTask = allTasks.find(t =>
-        String(t.project_id) === String(data.project_id) &&
-        t.title.toLowerCase().trim() === data.description.toLowerCase().trim()
-      );
-
-      if (existingTask) {
-        data.task_id = existingTask.id;
-      } else if (data.description.trim() !== '') {
-        // No existing task, ask to create one
-        if (confirm(`No existing todo found for "${data.description}". Create it under ${proj.name}?`)) {
-          try {
-            const newTask = await api.post('planner.php', {
-              title: data.description,
-              project_id: data.project_id,
-              resource_id: data.resource_id,
-              start_date: null,
-              end_date: null
-            });
-            data.task_id = newTask.id;
-            // Update local state to include new task
-            store.update('tasks', [...allTasks, newTask]);
-          } catch (err) {
-            console.error("Failed to auto-gen todo", err);
-          }
-        }
+      // Use explicitly linked todo if selected, otherwise try silent match
+      if (!data.task_id && data.description.trim()) {
+        const allTasks = state.tasks || [];
+        const match = allTasks.find(t =>
+          String(t.project_id) === String(data.project_id) &&
+          t.title.toLowerCase().trim() === data.description.toLowerCase().trim()
+        );
+        if (match) data.task_id = match.id;
       }
+      // Clean up empty task_id
+      if (!data.task_id) data.task_id = null;
 
       try {
         const result = await api.post('time-entries.php?action=start', data);
