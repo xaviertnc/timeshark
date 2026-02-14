@@ -11,24 +11,24 @@ import { PlannerUtils } from './planner-utils.js';
 
 const ZOOM = {
     day: {
-        compact: { colWidth: 30, rowH: 36, barH: 14, barTop: 9, hoursToShow: 24, fontSize: 7, spanFontSize: 6 },
-        regular: { colWidth: 60, rowH: 48, barH: 22, barTop: 10, hoursToShow: 12, fontSize: 8, spanFontSize: 7 },
-        relaxed: { colWidth: 120, rowH: 64, barH: 28, barTop: 14, hoursToShow: 10, fontSize: 10, spanFontSize: 8 },
+        compact: { colWidth: 30, rowH: 36, barH: 14, barTop: 9, hoursToShow: 24, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 60, rowH: 95, barH: 27, barTop: 10, hoursToShow: 12, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 120, rowH: 64, barH: 28, barTop: 14, hoursToShow: 10, fontSize: 10, spanFontSize: 11 },
     },
     week: {
-        compact: { colWidth: 40, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 6 },
-        regular: { colWidth: 80, rowH: 48, barH: 22, barTop: 10, fontSize: 8, spanFontSize: 7 },
-        relaxed: { colWidth: 160, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 8 },
+        compact: { colWidth: 40, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 80, rowH: 95, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 160, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 11 },
     },
     month: {
-        compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 6 },
-        regular: { colWidth: 40, rowH: 48, barH: 22, barTop: 10, fontSize: 8, spanFontSize: 7 },
-        relaxed: { colWidth: 80, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 8 },
+        compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 40, rowH: 95, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 80, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 11 },
     },
     year: {
-        compact: { colWidth: 6, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 6 },
-        regular: { colWidth: 8, rowH: 48, barH: 22, barTop: 10, fontSize: 8, spanFontSize: 7 },
-        relaxed: { colWidth: 5, rowH: 96, barH: 42, barTop: 20, fontSize: 15, spanFontSize: 12 },
+        compact: { colWidth: 6, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 8, rowH: 95, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 5, rowH: 96, barH: 42, barTop: 20, fontSize: 15, spanFontSize: 14 },
     }
 };
 
@@ -45,9 +45,9 @@ export const PlannerTimeline = {
 
         // Responsive resource column
         const isWide = container.offsetWidth > 900;
-        const resourceWidth = isWide ? 180 : 120;
+        const resourceWidth = isWide ? 140 : 90;
         const isYearRelaxed = config.type === 'year' && zoom === 'relaxed';
-        const legendWidth = isWide ? (isYearRelaxed ? 210 : 100) : 0; // legend only on wide screens
+        const legendWidth = isWide ? (isYearRelaxed ? 210 : 140) : 0; // legend only on wide screens
         const leftWidth = resourceWidth + legendWidth;
 
         // Calculate dimensions
@@ -207,7 +207,7 @@ export const PlannerTimeline = {
                 Resource
             </div>
             ${legendWidth > 0 ? `<div class="flex-shrink-0 border-r border-white/2 bg-app sticky z-50 flex items-center px-2" style="width: ${legendWidth}px; left: ${resourceWidth}px">
-                <span class="text-[8px] font-black text-dim uppercase tracking-widest opacity-40">Project</span>
+                <span class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">Project</span>
             </div>` : ''}
             <div class="relative ${headerHeight}" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
                 ${headerCols}
@@ -230,8 +230,8 @@ export const PlannerTimeline = {
         if (config.isDayView) {
             const hourWidth = pxPerDay / 24;
             gridLines.innerHTML = Array.from({ length: 24 }).map((_, h) => `
-                <div class="absolute top-0 bottom-0 border-r border-white/1"
-                     style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}">
+                <div class="absolute top-0 bottom-0"
+                     style="left: ${h * hourWidth}px; width: ${hourWidth}px; border-right: 1px solid #222; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}">
                 </div>
             `).join('');
         } else if (config.type === 'year') {
@@ -243,8 +243,8 @@ export const PlannerTimeline = {
                 const monthWidth = g.count * pxPerDay;
                 const isCurrent = isCurrentYear && g.month === thisMonth;
                 const col = `
-                    <div class="absolute top-0 bottom-0 border-r border-white/2"
-                         style="left: ${monthOffset}px; width: ${monthWidth}px; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.02)' : 'transparent'}">
+                    <div class="absolute top-0 bottom-0"
+                         style="left: ${monthOffset}px; width: ${monthWidth}px; border-right: 1px solid #222; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.02)' : 'transparent'}">
                     </div>
                 `;
                 monthOffset += monthWidth;
@@ -254,8 +254,8 @@ export const PlannerTimeline = {
             gridLines.innerHTML = config.dates.map((d, i) => {
                 const isToday = d.toDateString() === today.toDateString();
                 return `
-                    <div class="absolute top-0 bottom-0 border-r border-white/1"
-                         style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${isToday ? 'rgba(var(--color-primary), 0.01)' : 'transparent'}">
+                    <div class="absolute top-0 bottom-0"
+                         style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; border-right: 1px solid #222; background-color: ${isToday ? 'rgba(var(--color-primary), 0.01)' : 'transparent'}">
                     </div>
                 `;
             }).join('');
@@ -279,7 +279,7 @@ export const PlannerTimeline = {
             // Get project lanes for this resource
             const projectLanes = getProjectLanes(row.tasks);
             const laneCount = Math.max(1, projectLanes.length);
-            const laneGap = 3;
+            const laneGap = zoom === 'regular' ? 10 : zoom === 'relaxed' ? 12 : 3;
             const totalBarArea = laneCount * zp.barH + (laneCount - 1) * laneGap;
             const timeEntryRowH = 14;
             const rowPaddingTop = 6;
@@ -302,7 +302,7 @@ export const PlannerTimeline = {
                         <div class="lane-legend-item absolute flex items-center gap-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors group/lane" data-project-id="${lane.project.id}" data-lane-index="${i}" style="top: ${topPos}px; height: ${zp.barH}px; left: 2px; right: 2px; padding: 0 2px;">
                             <span class="text-[8px] text-dim opacity-20 group-hover/lane:opacity-60 transition-opacity shrink-0 leading-none select-none pointer-events-none" style="letter-spacing: -1px;">⠿</span>
                             <span class="${isYearRelaxed ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'} rounded-sm shrink-0 pointer-events-none" style="background-color: ${lane.project.color}"></span>
-                            <span class="${isYearRelaxed ? 'text-[11px]' : 'text-[7px]'} font-bold text-dim opacity-50 truncate leading-none whitespace-nowrap pointer-events-none">${lane.project.name}</span>
+                            <span class="${isYearRelaxed ? 'text-[16px]' : 'text-[11px]'} font-bold text-dim opacity-50 truncate leading-none whitespace-nowrap pointer-events-none">${lane.project.name}</span>
                         </div>
                     `;
                 }).join('');
@@ -314,14 +314,12 @@ export const PlannerTimeline = {
             }
 
             rowEl.innerHTML = `
-                <div class="flex-shrink-0 ${resCompact ? 'px-2 py-1.5' : 'px-3 py-3'} border-r border-white/2 bg-app sticky left-0 z-30 flex items-center gap-2" style="width: ${resourceWidth}px">
-                    <div class="${resCompact ? 'w-6 h-6 text-[7px]' : 'w-8 h-8 text-[9px]'} rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center font-black text-primary shrink-0">
+                <div class="flex-shrink-0 ${resCompact ? 'px-2 py-1.5' : 'px-3 py-3'} border-r border-white/2 bg-app sticky left-0 z-30 flex flex-col items-center justify-center gap-1 text-center" style="width: ${resourceWidth}px">
+                    <div class="${resCompact ? 'w-6 h-6 text-[11px]' : 'w-9 h-9 text-[14px]'} rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center font-black text-primary shrink-0">
                         ${row.resource.substring(0, 1).toUpperCase()}${row.resource.split(' ')[1]?.substring(0, 1).toUpperCase() || row.resource.substring(1, 2).toUpperCase()}
                     </div>
-                    <div class="min-w-0">
-                        <span class="block ${resCompact ? 'text-[10px]' : 'text-[11px]'} font-black text-main truncate">${row.resource}</span>
-                        ${resCompact ? '' : '<span class="text-[7px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>'}
-                    </div>
+                    <span class="block ${resCompact ? 'text-[11px]' : 'text-[13px]'} font-black text-main truncate max-w-full">${row.resource}</span>
+                    ${resCompact ? '' : '<span class="text-[9px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>'}
                 </div>
                 ${legendHtml}
                 <div class="relative flex-grow" style="width: ${totalWidth}px; min-height: ${dynamicRowH}px">
@@ -383,13 +381,13 @@ export const PlannerTimeline = {
                             const tooltipText = `${task.title} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
 
                             if (isSpan) {
-                                // Project Span: flat bar sized to fit text, centered in lane
-                                const spanH = Math.max(zp.barH * 0.6, zp.spanFontSize + 6);
+                                // Project Span: flat bar 30% taller, centered in lane
+                                const spanH = Math.max(zp.barH * 0.67, zp.spanFontSize + 6);
                                 const spanTop = barTop + (zp.barH - spanH) / 2;
                                 // Compute progress from project's tasks
                                 const projProgress = getProjectProgress(task.project_id || 'personal');
                                 const spanTitle = showText && renderW > 50
-                                    ? `<span class="flex items-center justify-center gap-2 h-full px-2 pointer-events-none whitespace-nowrap overflow-hidden"><span class="text-[${zp.spanFontSize}px] font-black text-white/90 truncate leading-none">${task.title}</span><span class="text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0">${projProgress}%</span></span>`
+                                    ? `<span class="flex items-center justify-center gap-2 px-2 pointer-events-none whitespace-nowrap overflow-hidden" style="height:100%;line-height:${spanH}px"><span class="text-[${zp.spanFontSize}px] font-black text-white/90 truncate" style="line-height:${spanH}px">${task.title}</span><span class="text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0">${projProgress}%</span></span>`
                                     : '';
                                 html += `
                                     <div class="task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden"

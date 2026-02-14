@@ -16,6 +16,7 @@ export const PlannerList = {
         const limit = options.limit || 0;
         const showDone = options.showDone || false;
         const category = options.category || null;
+        const sidebarFilters = options.sidebarFilters || null;
         const hideQuickAdd = options.hideQuickAdd || false;
 
         container.innerHTML = '';
@@ -24,25 +25,16 @@ export const PlannerList = {
         const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
 
         // Separate Active and Completed
-        // Tasks completed today stay in active list (shown with 100% progress)
         const isCompletedToday = (t) => {
             if (t.status !== 'done') return false;
-            // Use completed_at if available, fall back to start_date for legacy data
             const completedDate = t.completed_at || t.start_date;
             if (!completedDate) return false;
             const d = new Date(completedDate); d.setHours(0, 0, 0, 0);
             return d.getTime() >= today.getTime() && d.getTime() < tomorrow.getTime();
         };
-        let activeTasks, completedTasks;
-        if (showDone) {
-            // When showing completed section, all done tasks go there
-            activeTasks = tasks.filter(t => t.status !== 'done');
-            completedTasks = tasks.filter(t => t.status === 'done');
-        } else {
-            // Default: completed-today stays in active list (shown with 100% progress)
-            activeTasks = tasks.filter(t => t.status !== 'done' || isCompletedToday(t));
-            completedTasks = tasks.filter(t => t.status === 'done' && !isCompletedToday(t));
-        }
+        // Completed tasks always go to completedTasks, never in active list
+        let activeTasks = tasks.filter(t => t.status !== 'done');
+        let completedTasks = tasks.filter(t => t.status === 'done');
 
         // Helper: does a task's date range intersect with today?
         const intersectsToday = (t) => {
@@ -53,11 +45,29 @@ export const PlannerList = {
             return startDay <= tomorrow && endDay >= today;
         };
 
-        // Category filtering for sidebar
-        if (category === 'today') {
+        // Multi-select sidebar filtering
+        if (sidebarFilters) {
+            const merged = new Set();
+            const mergedTasks = [];
+            const addTasks = (list) => {
+                list.forEach(t => { if (!merged.has(t.id)) { merged.add(t.id); mergedTasks.push(t); } });
+            };
+            if (sidebarFilters.today) addTasks(activeTasks.filter(t => intersectsToday(t)));
+            if (sidebarFilters.planned) addTasks(activeTasks.filter(t => t.task_type !== 'project_span'));
+            if (sidebarFilters.projects) addTasks(activeTasks.filter(t => t.task_type === 'project_span'));
+            // If only completed is on, clear active tasks
+            if (!sidebarFilters.today && !sidebarFilters.planned && !sidebarFilters.projects) {
+                activeTasks = [];
+            } else {
+                activeTasks = mergedTasks;
+            }
+        } else if (category === 'today') {
+            // Legacy single-category (dashboard uses this)
             activeTasks = activeTasks.filter(t => intersectsToday(t));
         } else if (category === 'completed') {
             activeTasks = [];
+        } else if (category === 'projects') {
+            activeTasks = activeTasks.filter(t => t.task_type === 'project_span');
         }
 
         if (limit > 0) activeTasks = activeTasks.slice(0, limit);
@@ -265,6 +275,8 @@ export const PlannerList = {
         ['today', 'overdue', 'projects', 'later', 'nodate'].forEach(key => {
             const gTasks = groups[key].tasks;
             if (gTasks.length === 0) return;
+            // Hide projects group unless projects filter is on
+            if (key === 'projects' && sidebarFilters && !sidebarFilters.projects) return;
 
             const groupEl = document.createElement('div');
             groupEl.className = 'animate-in fade-in slide-in-from-bottom-2 duration-500';
