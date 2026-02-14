@@ -6,12 +6,12 @@ export async function renderTeam() {
     const team = state.team || [];
 
     const container = document.createElement('div');
-    container.className = "max-w-6xl mx-auto";
+    container.className = "max-w-7xl mx-auto pb-20 px-4";
 
     container.innerHTML = `
         <div class="flex items-end justify-between mb-16 px-2">
             <div>
-                 <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-3">Resources</h2>
+                 <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Resources</h2>
                  <h1 class="text-3xl font-light text-main tracking-tight">Active <span class="font-bold italic text-primary">Team.</span></h1>
             </div>
             <button id="add-member-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl shadow-sm transition-all flex items-center font-black uppercase tracking-[0.2em] text-[10px]">

@@ -65,7 +65,7 @@
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col h-full relative overflow-hidden">
         <!-- Minimal Header -->
-        <header class="h-24 flex items-center justify-between px-16 z-20 sticky top-0">
+        <header class="h-20 flex items-center justify-between px-16 z-20 sticky top-0">
             <div class="opacity-0 transition-opacity duration-700" id="page-header-container">
                 <h1 class="text-xs font-black text-slate-300 uppercase tracking-[0.5em]" id="page-title">Dashboard</h1>
             </div>

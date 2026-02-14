@@ -21,6 +21,7 @@ let projectFilter = 'all';
 // displayLimit removed — all tasks shown, no artificial cap
 let sidebarFilters = { today: true, completed: false, planned: false, projects: false };
 let showSpans = true;
+let sidebarCompactMode = localStorage.getItem('planner_sidebar_compact') === 'true';
 
 
 export async function renderPlanner() {
@@ -30,7 +31,7 @@ export async function renderPlanner() {
 
     // Setup Main Layout
     const container = document.createElement('div');
-    container.className = 'planner-main h-full flex flex-col gap-6 animate-in fade-in duration-700';
+    container.className = 'planner-main h-full flex flex-col gap-6';
 
     // Header & Controls
     const state = store.get();
@@ -39,8 +40,8 @@ export async function renderPlanner() {
     container.innerHTML = `
         <!-- Title Row -->
         <div class="px-2 shrink-0 mb-4">
-            <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-1">Planning</h2>
-            <h1 class="text-4xl font-light text-main tracking-tight">Project <span class="font-bold italic text-primary">Timeline.</span></h1>
+            <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Timeline</h2>
+            <h1 class="text-3xl font-light text-main tracking-tight">Project <span class="font-bold italic text-primary">Planning.</span></h1>
         </div>
 
         <!--Filter Bar-->
@@ -111,12 +112,15 @@ export async function renderPlanner() {
 
 
             <!-- Sidebar: Navigation & Tasks (RIGHT side) -->
-            <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-10' : 'w-72 lg:w-80 xl:w-96'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-y-auto overflow-x-hidden backdrop-blur-sm transition-all duration-500 relative shrink-0 min-w-0">
+            <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-10' : 'w-72 lg:w-[28rem] xl:w-[32rem]'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-y-auto overflow-x-hidden backdrop-blur-sm transition-all duration-500 relative shrink-0 min-w-0">
                 <!-- Sidebar Header -->
                 <div class="${sidebarCollapsed ? 'p-1 justify-center' : 'p-2 justify-between'} border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-20 flex items-center min-h-[36px] gap-1">
                     <h3 id="sidebar-title" class="px-2 text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden transition-all duration-500 ${sidebarCollapsed ? 'hidden' : 'block'}">Todo</h3>
 
                     <div class="flex items-center gap-0.5 shrink-0">
+                        <button id="toggle-compact-mode-btn" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0 ${sidebarCollapsed ? 'hidden' : 'block'}" title="Toggle compact mode">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        </button>
                         <button id="toggle-sidebar-btn" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0">
                             <svg class="w-3.5 h-3.5 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 5l7 7-7 7m-8-14l7 7-7 7"></path></svg>
                         </button>
@@ -139,8 +143,8 @@ export async function renderPlanner() {
                     </div>
 
                     <!-- Task list -->
-                    <div class="px-2 border-t border-white/5">
-                        <div id="planner-list-container" class="p-2 pb-10">
+                    <div class="px-1 border-t border-white/5">
+                        <div id="planner-list-container" class="p-1 pb-10">
                             <!-- TODO Items Rendered Here -->
                         </div>
                     </div>
@@ -229,10 +233,11 @@ export async function renderPlanner() {
         // Update Sidebar classes based on collapsed state
         // Get the sidebar header for layout changes
         const sidebarHeader = sidebar.querySelector('.border-b');
+        const toggleCompactBtn = container.querySelector('#toggle-compact-mode-btn');
 
         if (sidebarCollapsed) {
             sidebar.classList.add('w-10');
-            sidebar.classList.remove('w-72', 'lg:w-80', 'xl:w-96');
+            sidebar.classList.remove('w-72', 'lg:w-[28rem]', 'xl:w-[32rem]');
             sidebarTitle.classList.add('hidden');
             sidebarTitle.classList.remove('block');
             sidebarNav.classList.add('opacity-0', 'pointer-events-none');
@@ -241,9 +246,11 @@ export async function renderPlanner() {
             sidebarHeader?.classList.remove('p-2', 'justify-between');
             toggleSidebarBtn.querySelector('svg').classList.add('rotate-180');
             toggleSidebarBtn.querySelector('svg').classList.remove('rotate-0');
+            toggleCompactBtn?.classList.add('hidden');
+            toggleCompactBtn?.classList.remove('block');
         } else {
             sidebar.classList.remove('w-10');
-            sidebar.classList.add('w-72', 'lg:w-80', 'xl:w-96');
+            sidebar.classList.add('w-72', 'lg:w-[28rem]', 'xl:w-[32rem]');
             sidebarTitle.classList.remove('hidden');
             sidebarTitle.classList.add('block');
             sidebarNav.classList.remove('opacity-0', 'pointer-events-none');
@@ -252,6 +259,8 @@ export async function renderPlanner() {
             sidebarHeader?.classList.add('p-2', 'justify-between');
             toggleSidebarBtn.querySelector('svg').classList.remove('rotate-180');
             toggleSidebarBtn.querySelector('svg').classList.add('rotate-0');
+            toggleCompactBtn?.classList.remove('hidden');
+            toggleCompactBtn?.classList.add('block');
         }
 
         // Timeline always visible
@@ -265,7 +274,8 @@ export async function renderPlanner() {
 
         PlannerList.render(listContainer, allThisProjectTasks, data.projects, {
             showDone: sidebarFilters.completed,
-            sidebarFilters: sidebarFilters
+            sidebarFilters: sidebarFilters,
+            compactMode: sidebarCompactMode
         });
     };
 
@@ -582,6 +592,32 @@ export async function renderPlanner() {
             projectFilter = e.target.value;
             updateUI();
         });
+    }
+
+    // Compact Mode Toggle
+    const toggleCompactBtn = container.querySelector('#toggle-compact-mode-btn');
+    if (toggleCompactBtn) {
+        toggleCompactBtn.addEventListener('click', () => {
+            sidebarCompactMode = !sidebarCompactMode;
+            localStorage.setItem('planner_sidebar_compact', String(sidebarCompactMode));
+
+            // Visual feedback: toggle icon highlight
+            if (sidebarCompactMode) {
+                toggleCompactBtn.classList.add('bg-primary/15', 'text-primary');
+                toggleCompactBtn.classList.remove('text-dim');
+            } else {
+                toggleCompactBtn.classList.remove('bg-primary/15', 'text-primary');
+                toggleCompactBtn.classList.add('text-dim');
+            }
+
+            updateUI();
+        });
+
+        // Set initial state
+        if (sidebarCompactMode) {
+            toggleCompactBtn.classList.add('bg-primary/15', 'text-primary');
+            toggleCompactBtn.classList.remove('text-dim');
+        }
     }
 
     // Spans Toggle

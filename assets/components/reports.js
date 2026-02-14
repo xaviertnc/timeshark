@@ -86,17 +86,17 @@ export async function renderReports() {
   const paginatedDays = sortedDays.slice((currentPage - 1) * DAYS_PER_PAGE, currentPage * DAYS_PER_PAGE);
 
   const container = document.createElement('div');
-  container.className = "max-w-7xl mx-auto pb-20 px-4 space-y-12";
+  container.className = "max-w-7xl mx-auto pb-20 px-4";
 
   const todayStr = new Date().toLocaleDateString('en-CA');
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
   container.innerHTML = `
-    <div class="flex items-end justify-between px-2 pt-8">
+    <div class="flex items-end justify-between px-2 mb-6">
       <div>
         <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Analytics</h2>
-        <h1 class="text-4xl font-light text-main tracking-tight">System <span class="font-bold italic text-primary">Performance.</span></h1>
+        <h1 class="text-3xl font-light text-main tracking-tight">Daily <span class="font-bold italic text-primary">Performance.</span></h1>
       </div>
     </div>
 
@@ -104,7 +104,6 @@ export async function renderReports() {
       <div class="flex-1 space-y-8 min-w-0">
         <div class="flex items-center justify-between px-2">
           <div>
-            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2">Daily Performance</h3>
             <p class="text-lg font-bold text-slate-200 uppercase tracking-widest">
               ${new Date(dailyReportDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>

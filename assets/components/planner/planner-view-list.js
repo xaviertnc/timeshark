@@ -18,6 +18,7 @@ export const PlannerList = {
         const category = options.category || null;
         const sidebarFilters = options.sidebarFilters || null;
         const hideQuickAdd = options.hideQuickAdd || false;
+        const compactMode = options.compactMode || false;
 
         container.innerHTML = '';
 
@@ -165,6 +166,51 @@ export const PlannerList = {
             return `${dateStr}, ${sTime}`;
         };
 
+        // ──── SINGLE-LINE COMPACT CARD ────
+        const renderSingleLineCard = (t) => {
+            const proj = projects.find(p => p.id == t.project_id) || { name: 'Unassigned', color: '#64748b' };
+            const isDone = t.status === 'done';
+            const isSpan = t.task_type === 'project_span';
+            const prio = prioConf[t.priority] || prioConf.medium;
+
+            // Stacked start and end display
+            let startStr = '';
+            let endStr = '';
+
+            if (t.start_date) {
+                const s = new Date(t.start_date.includes('T') ? t.start_date : `${t.start_date}T00:00:00`);
+                const sDate = s.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                const sTime = t.start_date.includes('T') ? s.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+                startStr = `${sDate} ${sTime}`.trim();
+            }
+
+            if (t.end_date) {
+                const e = new Date(t.end_date.includes('T') ? t.end_date : `${t.end_date}T00:00:00`);
+                const eDate = e.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                const eTime = t.end_date.includes('T') ? e.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+                endStr = `${eDate} ${eTime}`.trim();
+            }
+
+            return `
+                <div class="task-item group/task px-2 py-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[20px_1fr_120px_55px] gap-1 items-center min-h-[30px]" data-task-id="${t.id}">
+                    ${isSpan
+                    ? `<div class="shrink-0 w-4 h-4 rounded-sm bg-primary flex items-center justify-center">
+                            <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                       </div>`
+                    : `<button class="toggle-status-btn shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                       </button>`
+                }
+                    <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
+                    <span class="text-[9px] font-bold text-left leading-[1.1] break-words" style="color: ${proj.color}">${proj.name}</span>
+                    <div class="flex flex-col text-[9px] font-bold text-dim/50 text-left leading-[1.1] break-words">
+                        <span>${startStr}</span>
+                        ${endStr ? `<span class="opacity-60">${endStr}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        };
+
         // ──── SIDEBAR COMPACT CARD (progress BELOW content) ────
         const renderCompactCard = (t) => {
             const proj = projects.find(p => p.id == t.project_id) || { name: 'Unassigned', color: '#64748b' };
@@ -271,8 +317,8 @@ export const PlannerList = {
             `;
         };
 
-        // Choose render function
-        const renderCard = isFull ? renderFullCard : renderCompactCard;
+        // Choose render function based on view type and compact mode
+        const renderCard = compactMode ? renderSingleLineCard : (isFull ? renderFullCard : renderCompactCard);
 
         // Render Groups
         ['today', 'overdue', 'projects', 'later', 'nodate'].forEach(key => {
@@ -295,7 +341,7 @@ export const PlannerList = {
                     <div class="h-px flex-grow bg-white/5"></div>
                     <span class="text-[9px] font-black text-dim opacity-30">${gTasks.length}</span>
                 </div>
-                <div class="flex flex-col space-y-3">
+                <div class="flex flex-col ${compactMode ? 'space-y-px' : 'space-y-3'}">
                     ${gTasks.map(t => renderCard(t)).join('')}
                 </div>
             `;

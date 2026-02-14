@@ -46,7 +46,7 @@ export async function renderDashboard() {
   };
 
   const container = document.createElement('div');
-  container.className = 'max-w-5xl mx-auto pb-10 space-y-14';
+  container.className = 'max-w-6xl mx-auto pb-10 space-y-14';
 
   const shiftColor = (color, percent) => {
     if (!color || typeof color !== 'string' || !color.startsWith('#')) return color;
@@ -140,11 +140,21 @@ export async function renderDashboard() {
       </div>
     </div>
 
+    <!-- Decorative Divider with Glow -->
+    <div class="flex flex-col items-center justify-center relative">
+      <div class="absolute w-64 h-24 bg-[${pColor}] opacity-[0.07] blur-[60px] rounded-full pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col items-center gap-2 group cursor-default">
+        <div class="w-32 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-40 group-hover:opacity-80 transition-opacity duration-700"></div>
+        <div class="w-16 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-30 group-hover:opacity-60 transition-opacity duration-700 delay-75"></div>
+        <div class="w-6 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-20 group-hover:opacity-40 transition-opacity duration-700 delay-150"></div>
+      </div>
+    </div>
+
     <!-- Todo Section -->
     <div class="space-y-4">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Todo</h3>
-        <div id="task-filter-toggles" class="flex items-center gap-1 bg-app/30 p-0.5 rounded-lg border border-white/5">
+        <div id="task-filter-toggles" class="flex items-center gap-1 bg-app/30 p-1  rounded-lg border border-white/5">
         </div>
       </div>
 
@@ -289,7 +299,7 @@ export async function renderDashboard() {
     const toggleContainer = container.querySelector('#task-filter-toggles');
     if (!toggleContainer) return;
     toggleContainer.innerHTML = filterDefs.map(f => `
-      <button class="task-filter-btn inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wide leading-none transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
+      <button class="task-filter-btn inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide leading-none transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
       }" data-filter="${f.key}">
         <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
       </button>
