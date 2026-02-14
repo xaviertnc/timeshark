@@ -105,7 +105,31 @@ export async function renderDashboard() {
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Project</label>
                   <div class="relative">
                     <select name="project_id" required class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] appearance-none cursor-pointer focus:ring-1 focus:ring-primary/20 uppercase tracking-wider">
-                      ${projects.map(p => `<option value="${p.id}" ${(p.name || '').toLowerCase() === 'personal' ? 'selected' : ''}>${p.name || 'Unnamed'}</option>`).join('')}
+                      ${(() => {
+      // Compute recent project IDs from time entries (unique, ordered by most recent)
+      const recentPids = [];
+      const sorted = [...entries].sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
+      sorted.forEach(e => {
+        if (e.project_id && !recentPids.includes(String(e.project_id))) recentPids.push(String(e.project_id));
+      });
+      const recentProjects = recentPids.slice(0, 5).map(pid => projects.find(p => String(p.id) === pid)).filter(Boolean);
+      const recentIds = new Set(recentProjects.map(p => String(p.id)));
+      const otherProjects = projects.filter(p => !recentIds.has(String(p.id)));
+      const defaultId = recentProjects.length > 0 ? String(recentProjects[0].id) : '';
+
+      let html = '';
+      if (recentProjects.length > 0) {
+        html += `<optgroup label="Recent">`;
+        html += recentProjects.map(p => `<option value="${p.id}" ${String(p.id) === defaultId ? 'selected' : ''}>${p.name || 'Unnamed'}</option>`).join('');
+        html += `</optgroup>`;
+      }
+      if (otherProjects.length > 0) {
+        html += `<optgroup label="All Projects">`;
+        html += otherProjects.map(p => `<option value="${p.id}">${p.name || 'Unnamed'}</option>`).join('');
+        html += `</optgroup>`;
+      }
+      return html;
+    })()}
                     </select>
                     <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-30">
                       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
@@ -142,12 +166,12 @@ export async function renderDashboard() {
 
       <div class="space-y-3">
         ${entries.filter(e => e.end_time).slice(0, 10).map(e => {
-    const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
-    const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
-    const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
-    const taskColor = shiftColor(proj.color, -10);
+      const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
+      const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
+      const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
+      const taskColor = shiftColor(proj.color, -10);
 
-    return `
+      return `
             <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main cursor-pointer" data-entry-id="${e.id}">
               <div class="flex items-center gap-4 flex-1">
                 <div class="w-1 h-8 rounded-full" style="background-color: ${taskColor}"></div>
@@ -158,17 +182,17 @@ export async function renderDashboard() {
                   </div>
                   <p class="text-xs font-medium text-muted truncate">${proj.name} ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}</p>
                   ${(() => {
-        if (e.task_id) {
-          const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
-          return `<div class="mt-1 flex items-center gap-1.5">
+          if (e.task_id) {
+            const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
+            return `<div class="mt-1 flex items-center gap-1.5">
                       <span class="text-[8px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 flex items-center gap-1 uppercase tracking-tighter">
                         <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                         Linked Todo: ${t ? t.title : 'Deleted Todo'}
                       </span>
                     </div>`;
-        }
-        return '';
-      })()}
+          }
+          return '';
+        })()}
                   ${e.notes ? `<p class="text-[9px] text-dim italic mt-1.5">${e.notes}</p>` : ''}
                 </div>
               </div>
@@ -193,7 +217,7 @@ export async function renderDashboard() {
               </div>
             </div>
           `;
-  }).join('')}
+    }).join('')}
         ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-[9px] opacity-30">No history yet</p>' : ''}
       </div>
     </div>
