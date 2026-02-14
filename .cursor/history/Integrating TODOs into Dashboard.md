@@ -10,29 +10,29 @@ Please tell me about this codde base.
 
 Let me explore the codebase to give you a solid overview.
 
-*Listed directory [timeshark](file:///c:/laragon/www/timeshark) *
+*Listed directory [timeshark](file:///c:/laragon/www/timeshark)*
 
-*Searched filesystem*
+_Searched filesystem_
 
-*Viewed [README.md](file:///c:/laragon/www/timeshark/README.md) *
+*Viewed [README.md](file:///c:/laragon/www/timeshark/README.md)*
 
-*Listed directory [api](file:///c:/laragon/www/timeshark/api) *
+*Listed directory [api](file:///c:/laragon/www/timeshark/api)*
 
-*Listed directory [assets](file:///c:/laragon/www/timeshark/assets) *
+*Listed directory [assets](file:///c:/laragon/www/timeshark/assets)*
 
-*Analyzed [index.php](file:///c:/laragon/www/timeshark/index.php) *
+*Analyzed [index.php](file:///c:/laragon/www/timeshark/index.php)*
 
-*Listed directory [docs](file:///c:/laragon/www/timeshark/docs) *
+*Listed directory [docs](file:///c:/laragon/www/timeshark/docs)*
 
-*Listed directory [components](file:///c:/laragon/www/timeshark/assets/components) *
+*Listed directory [components](file:///c:/laragon/www/timeshark/assets/components)*
 
-*Listed directory [utils](file:///c:/laragon/www/timeshark/assets/utils) *
+*Listed directory [utils](file:///c:/laragon/www/timeshark/assets/utils)*
 
-*Analyzed [app.js](file:///c:/laragon/www/timeshark/assets/app.js) *
+*Analyzed [app.js](file:///c:/laragon/www/timeshark/assets/app.js)*
 
-*Analyzed [store.php](file:///c:/laragon/www/timeshark/api/store.php) *
+*Analyzed [store.php](file:///c:/laragon/www/timeshark/api/store.php)*
 
-*Listed directory [planner](file:///c:/laragon/www/timeshark/assets/components/planner) *
+*Listed directory [planner](file:///c:/laragon/www/timeshark/assets/components/planner)*
 
 ### Planner Response
 
@@ -149,9 +149,9 @@ Dig into the dashboard and how it works
 
 Let me read through the full dashboard component to give you a detailed breakdown.
 
-*Analyzed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js) *
+*Analyzed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js)*
 
-*Viewed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js) *
+*Viewed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js)*
 
 ### Planner Response
 
@@ -189,12 +189,14 @@ When idle, the dashboard shows a **two-row form**:
 | **Row 2** | 3-column grid: Project dropdown, Link Todo dropdown, Notes input |
 
 **Smart behaviors:**
+
 - **Project dropdown** groups projects into "Recent" (top 5 from recent time entries) and "All Projects"
 - **Link Todo** dropdown dynamically populates with active (non-`done`) tasks for the selected project — updates on project change via [updateTodoOptions()](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:230:4-237:6) (line 231)
 - **Auto-fill**: Selecting a todo auto-fills the description if it's empty (line 243-249)
 - **Silent match**: On submit, if no todo is explicitly linked but the description exactly matches a task title (case-insensitive), it silently links it (lines 312-318)
 
 **On submit** (`startForm.onsubmit`, line 302):
+
 1. Reads form data via `FormData`
 2. Resolves `project_name` from the selected project
 3. Sets `resource_id` to the first team member's name (or `'Main'`)
@@ -207,6 +209,7 @@ When idle, the dashboard shows a **two-row form**:
 ### 2. Active Timer Widget (Timer Running)
 
 When a timer is active, the form is replaced with:
+
 - A **"Chomping"** status badge with project color
 - The **task description** in large text
 - The **project name** and optional notes
@@ -222,6 +225,7 @@ When a timer is active, the form is replaced with:
 ### 3. Recent History (Always Shown)
 
 Below the timer widget/form, the last **10 completed entries** are displayed as cards, each showing:
+
 - Color-shifted project accent bar
 - Description + resource tag
 - Project name (+ organization if linked)
@@ -242,6 +246,7 @@ Two edit modals are built inline within the function:
 | **Edit History Entry** | Click any history row (not buttons) | `#edit-history-form` |
 
 Both modals:
+
 - Render into `#modal-portal` (a fixed overlay div in [index.php](cci:7://file:///c:/laragon/www/timeshark/index.php:0:0-0:0))
 - Have animated scale/opacity transitions
 - Include a **Project ↔ Linked Todo** cascade (changing project re-populates the todo dropdown)
@@ -272,6 +277,7 @@ sequenceDiagram
 ```
 
 **Key pattern**: Every action (start, stop, edit, delete, resume) follows the same cycle:
+
 1. API call
 2. Update store
 3. Re-fetch time entries from backend
@@ -293,6 +299,7 @@ sequenceDiagram
 ### External Dependencies
 
 The dashboard imports from the **Planner** subsystem:
+
 - `PlannerModal` — renders and opens the task detail modal (used when clicking a linked todo on the active timer)
 - `PlannerState` — initializes planner state if tasks aren't loaded yet
 
@@ -310,25 +317,25 @@ Now dig into the planning page.
 
 Let me read through all the planner files — it's the largest feature in the app, split across 6 files.
 
-*Analyzed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js) *
+*Analyzed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
 
-*Analyzed [planner-state.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-state.js) *
+*Analyzed [planner-state.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-state.js)*
 
-*Analyzed [planner-utils.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js) *
+*Analyzed [planner-utils.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js)*
 
-*Analyzed [planner-modal.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js) *
+*Analyzed [planner-modal.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js)*
 
-*Analyzed [planner-view-list.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js) *
+*Analyzed [planner-view-list.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js)*
 
-*Analyzed [planner-view-timeline.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js) *
+*Analyzed [planner-view-timeline.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js)*
 
 ### Planner Response
 
 Now let me read the key sections of the main controller and the views in more detail:
 
-*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js) *
+*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
 
-*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js) *
+*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
 
 ### Planner Response
 
@@ -376,6 +383,7 @@ The controller manages **all state** and **all event handling** via module-level
 | `listViewMode` | `'list'` or `'grid'` (persisted in localStorage) | `'list'` |
 
 The core render loop is a single [updateUI()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner.js:184:4-327:6) function that:
+
 1. Gets combined data from `PlannerState.getCombinedData(projectFilter)`
 2. Generates a timeline config from `PlannerUtils.getTimelineConfig()`
 3. Updates all toggle button states (view, scale, zoom, sidebar category)
@@ -452,6 +460,7 @@ The **Gantt chart**. This is the most complex renderer.
 - **[isCompletedToday(t)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:26:8-35:10)** — Determines if a task was completed today (keeps it visible with 100% progress)
 
 The timeline renders:
+
 - **Column headers** (hours for day view, dates for week/month, months for year)
 - **Today marker** (a vertical red/primary line)
 - **Resource rows** with per-project lanes, each containing positioned task bars
@@ -472,12 +481,14 @@ Renders tasks as cards in two modes: **list** (vertical) and **grid** (CSS grid)
 | **Completed** | `status === 'done'` |
 
 **Two card types:**
+
 - **Compact cards** (sidebar) — smaller, progress bar below content
 - **Full cards** (main area) — larger with more detail, including time tracking info
 
 **Completed tasks** support grouping by **week**, **month**, or **year** with pagination and a toggle to expand/collapse.
 
 Each card shows:
+
 - Project color badge
 - Task title
 - Priority indicator (low/medium/high/critical)
@@ -493,6 +504,7 @@ Each card shows:
 A comprehensive task create/edit modal rendered into `#modal-portal`.
 
 **Fields:**
+
 - Title (required)
 - Project (dropdown)
 - Resource/Assignee (dropdown from team members)
@@ -508,6 +520,7 @@ A comprehensive task create/edit modal rendered into `#modal-portal`.
 **[open(task, defaults)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js:331:4-484:5)** — Opens in edit mode if `task` is provided, or create mode with optional `defaults`.
 
 **[attachEvents()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js:154:4-329:5)** — Wires up all form interactions:
+
 - Progress quick-buttons update the slider and vice versa
 - Date toggle shows/hides time pickers
 - Form submit creates (`POST planner.php`) or updates (`POST planner.php?action=update_task`)
@@ -529,6 +542,7 @@ A comprehensive task create/edit modal rendered into `#modal-portal`.
 | [getTimelineConfig(scale, offset, today)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:59:4-185:5) | **Core** — generates the date grid, column widths, and total width for the timeline based on scale |
 
 [getTimelineConfig](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:59:4-185:5) returns different configurations per scale:
+
 - **Day**: 24 columns × 120px = 2880px total (one column per hour)
 - **Week**: 14 columns × 80px = 1120px (2 weeks of days)
 - **Month**: N columns × 30px (one column per day of the month)
@@ -538,7 +552,7 @@ A comprehensive task create/edit modal rendered into `#modal-portal`.
 
 ### Event Handling Pattern
 
-The controller uses **event delegation** — a single [click](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:475:24-475:109) listener on the container handles *everything* via `e.target.closest()`:
+The controller uses **event delegation** — a single [click](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:475:24-475:109) listener on the container handles _everything_ via `e.target.closest()`:
 
 ```
 Click Event → closest('.toggle-status-btn')  → Toggle done/todo
@@ -561,40 +575,13 @@ All actions use **optimistic updates** — the UI updates immediately, then the 
 ### Integration with Dashboard
 
 The planner is referenced from the dashboard in two ways:
+
 1. The dashboard imports `PlannerModal` to let you click linked todos on active timer entries
 2. The planner's "Track" button on tasks starts a timer and navigates to `#dashboard`
 
 Want me to dig into any specific sub-component in more detail?
 
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
-
-*Edited relevant file*
+_Edited relevant file_
 
 ### User Input
 
@@ -604,19 +591,19 @@ Dig into TODOs and how they work
 
 Let me dig into the backend API and data model for TODOs/tasks.
 
-*Viewed [planner.php](file:///c:/laragon/www/timeshark/api/planner.php) *
+*Viewed [planner.php](file:///c:/laragon/www/timeshark/api/planner.php)*
 
-*Searched filesystem*
+_Searched filesystem_
 
-*Viewed [tasks.json](file:///c:/laragon/www/timeshark/data/tasks.json) *
+*Viewed [tasks.json](file:///c:/laragon/www/timeshark/data/tasks.json)*
 
-*Viewed [planner-modal.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js) *
+*Viewed [planner-modal.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js)*
 
 ### Planner Response
 
 Now let me also check how time entries link to tasks:
 
-*Viewed [time-entries.php](file:///c:/laragon/www/timeshark/api/time-entries.php) *
+*Viewed [time-entries.php](file:///c:/laragon/www/timeshark/api/time-entries.php)*
 
 ### Planner Response
 
@@ -673,6 +660,7 @@ Simple REST-ish PHP endpoint backed by [JsonStore](cci:2://file:///c:/laragon/ww
 | **DELETE** `?id=` | Delete task | Removes by ID |
 
 **Validation rules:**
+
 - Create: `title` is required, cannot be blank
 - Update: if `title` is provided, it cannot be blank (but you can update other fields without sending `title`)
 - Update: returns 404 if task ID doesn't exist
@@ -697,11 +685,13 @@ stateDiagram-v2
 ```
 
 **Status/progress auto-sync:**
+
 - Setting progress to 100 → status auto-changes to `"done"`
 - Setting progress below 100 when status is `"done"` → reverts to `"in-progress"` (or `"todo"` if 0)
 - Toggling the checkbox sets progress to 100/0 accordingly
 
 **`completed_at` logic:**
+
 - When marked done, `completed_at` is set to:
   1. The task's `end_date` if it's in the past
   2. `now()` if no end date or end date is in the future
@@ -769,6 +759,7 @@ Only **scheduled tasks** (those with `start_date`) appear as horizontal bars. Po
 #### Dashboard
 
 Tasks appear indirectly as:
+
 - Linked todo badges on time entries
 - Todo dropdown options for linking
 
@@ -794,6 +785,7 @@ The `PlannerModal` singleton manages all task CRUD UI:
 | **Progress** | Slider (0–100, step 5) + quick buttons (0/25/50/75/100); visual bar with color transitions (primary → emerald at 100%) |
 
 **Save flow:**
+
 1. Collects form data via `FormData`
 2. Combines date + time into ISO strings (or nulls if schedule is off)
 3. Ensures numeric progress
@@ -806,8 +798,69 @@ The `PlannerModal` singleton manages all task CRUD UI:
 ### 8. Data Storage
 
 Tasks live in [data/tasks.json](cci:7://file:///c:/laragon/www/timeshark/data/tasks.json:0:0-0:0) — a flat JSON array. Currently holds **35 tasks** (~16KB). The [JsonStore](cci:2://file:///c:/laragon/www/timeshark/api/store.php:2:0-90:1) class handles:
+
 - Atomic writes with file locking (`flock`)
 - Auto-generated IDs via PHP's `uniqid()`
 - No indexing, no relations — everything is scanned linearly
 
 Want me to dig into any other part of the system?
+
+_Edited relevant file_
+
+### User Input
+
+Please evaluate how we can implement the TODO's feature better.  It feels a bit high friction.  I don't want to go to ANOTHER page to add todo's.  Addin Todos needs to be as natural and easy to to do as tracking my time!  I'm thinking todos should live between the timer start and time entry histor section on the dashboard.  I definitely want to get rid of the grid" view version of TODOs, it's just not adding any value and doesn't suit this feature.  I do like the TODO's sidebar on the planning page, but maybe to to the right?  Please grace me with your superior design knowledge and wisdom Claude.
+
+*Viewed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js)*
+
+### Planner Response
+
+Now let me look at the current planner page more closely, particularly the sidebar and list view, to understand what we'd be bringing to the dashboard:
+
+*Viewed [planner-view-list.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js)*
+
+*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
+
+### Planner Response
+
+Now let me look at the planner's sidebar section and the remaining dashboard code to understand the full picture before designing the plan:
+
+*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
+
+### Planner Response
+
+Now I have a thorough understanding of the codebase. Let me check for existing tests:
+
+_Searched filesystem_
+
+_Searched filesystem_
+
+### Planner Response
+
+Now I have a complete picture. Let me write the implementation plan:
+
+_Edited relevant file_
+
+### User Input
+
+I don't want to see completed or all project todos by default. By default I should only see TODAY (which includes overdue items and items completed today).  We should have a bar to the top/left/right (configurable?) where we can select if we want to see TODAY, PLANNED / BACKLOG, PROJECT SPANS and / or COMLETED items.  Maybe it should be a check button group so we can toggle any section on or off?  The font size of time and todo entries should be bigger in general than what the are at the moment.  We need to make our ddashboard items easy to read, even for old eyes.
+
+### Planner Response
+
+Let me also quickly check the current font sizes on the history entries to understand the baseline:
+
+*Viewed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js)*
+
+### Planner Response
+
+Good — I can see the current font sizes. Now let me update the plan with all the user's feedback:
+
+_Edited relevant file_
+
+### User Input
+
+### Planner Response
+
+Plan approved — let's build it. I'll start with the task breakdown and then execute.
+
+_Edited relevant file_
