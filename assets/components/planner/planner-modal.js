@@ -331,6 +331,48 @@ export const PlannerModal = {
             }
         });
 
+        // Duration-preserving manual edits
+        let lastKnownDuration = 0;
+        const startDateInput = form.querySelector('input[name="start_date"]');
+        const startTimeInput = form.querySelector('input[name="start_time"]');
+        const endDateInput = form.querySelector('input[name="end_date"]');
+        const endTimeInput = form.querySelector('input[name="end_time"]');
+
+        const calculateDuration = () => {
+            if (startDateInput.value && startTimeInput.value && endDateInput.value && endTimeInput.value) {
+                const s = new Date(`${startDateInput.value}T${startTimeInput.value}`);
+                const e = new Date(`${endDateInput.value}T${endTimeInput.value}`);
+                lastKnownDuration = e.getTime() - s.getTime();
+            }
+        };
+
+        [startDateInput, startTimeInput, endDateInput, endTimeInput].forEach(el => {
+            el.addEventListener('focus', calculateDuration);
+        });
+
+        const syncEndToStart = () => {
+            if (lastKnownDuration > 0 && startDateInput.value && startTimeInput.value) {
+                const s = new Date(`${startDateInput.value}T${startTimeInput.value}`);
+                const e = new Date(s.getTime() + lastKnownDuration);
+                endDateInput.value = e.toISOString().split('T')[0];
+                endTimeInput.value = e.toTimeString().substring(0, 5);
+            }
+        };
+
+        const syncStartToEnd = () => {
+            if (lastKnownDuration > 0 && endDateInput.value && endTimeInput.value) {
+                const e = new Date(`${endDateInput.value}T${endTimeInput.value}`);
+                const s = new Date(e.getTime() - lastKnownDuration);
+                startDateInput.value = s.toISOString().split('T')[0];
+                startTimeInput.value = s.toTimeString().substring(0, 5);
+            }
+        };
+
+        startDateInput.addEventListener('change', syncEndToStart);
+        startTimeInput.addEventListener('change', syncEndToStart);
+        endDateInput.addEventListener('change', syncStartToEnd);
+        endTimeInput.addEventListener('change', syncStartToEnd);
+
         // Unassign member button
         if (unassignMemberBtn) {
             unassignMemberBtn.onclick = () => {
