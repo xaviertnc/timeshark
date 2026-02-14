@@ -42,7 +42,7 @@ export const PlannerList = {
             const startDay = new Date(t.start_date); startDay.setHours(0, 0, 0, 0);
             const endDay = t.end_date ? new Date(t.end_date) : new Date(startDay);
             endDay.setHours(23, 59, 59, 999);
-            return startDay <= tomorrow && endDay >= today;
+            return startDay <= today && endDay >= today;
         };
 
         // Multi-select sidebar filtering
@@ -53,7 +53,10 @@ export const PlannerList = {
                 list.forEach(t => { if (!merged.has(t.id)) { merged.add(t.id); mergedTasks.push(t); } });
             };
             if (sidebarFilters.today) addTasks(activeTasks.filter(t => intersectsToday(t)));
-            if (sidebarFilters.planned) addTasks(activeTasks.filter(t => t.task_type !== 'project_span'));
+            if (sidebarFilters.planned) addTasks(activeTasks.filter(t => {
+                // Only tasks with dates that DON'T intersect today (future tasks)
+                return t.task_type !== 'project_span' && t.start_date && !intersectsToday(t);
+            }));
             if (sidebarFilters.projects) addTasks(activeTasks.filter(t => t.task_type === 'project_span'));
             // If only completed is on, clear active tasks
             if (!sidebarFilters.today && !sidebarFilters.planned && !sidebarFilters.projects) {
@@ -275,8 +278,13 @@ export const PlannerList = {
         ['today', 'overdue', 'projects', 'later', 'nodate'].forEach(key => {
             const gTasks = groups[key].tasks;
             if (gTasks.length === 0) return;
-            // Hide projects group unless projects filter is on
-            if (key === 'projects' && sidebarFilters && !sidebarFilters.projects) return;
+
+            // Hide groups that don't match active filters
+            if (sidebarFilters) {
+                if (key === 'projects' && !sidebarFilters.projects) return;
+                if (key === 'later' && !sidebarFilters.planned) return;
+                if (key === 'nodate' && !sidebarFilters.planned) return;
+            }
 
             const groupEl = document.createElement('div');
             groupEl.className = 'animate-in fade-in slide-in-from-bottom-2 duration-500';

@@ -104,14 +104,24 @@ export const PlannerModal = {
                                     <div class="space-y-2">
                                         <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Start</label>
                                         <div class="flex gap-2">
-                                            <input type="date" name="start_date" class="flex-1 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                            <div class="flex-1 flex gap-1 items-center">
+                                                <input type="date" name="start_date" class="flex-1 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                                <div class="flex flex-col gap-0.5">
+                                                    <button type="button" class="date-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="1" title="+1 day">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                                                    </button>
+                                                    <button type="button" class="date-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="-1" title="-1 day">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
                                             <div class="flex gap-1 items-center">
                                                 <input type="time" name="start_time" class="w-24 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
                                                 <div class="flex flex-col gap-0.5">
-                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="start" data-direction="1" title="+15 min">
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="1" title="+15 min">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
                                                     </button>
-                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="start" data-direction="-1" title="-15 min">
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="-1" title="-15 min">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                                                     </button>
                                                 </div>
@@ -122,14 +132,24 @@ export const PlannerModal = {
                                     <div class="space-y-2">
                                         <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">End</label>
                                         <div class="flex gap-2">
-                                            <input type="date" name="end_date" class="flex-1 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                            <div class="flex-1 flex gap-1 items-center">
+                                                <input type="date" name="end_date" class="flex-1 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                                <div class="flex flex-col gap-0.5">
+                                                    <button type="button" class="date-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="1" title="+1 day">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                                                    </button>
+                                                    <button type="button" class="date-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="-1" title="-1 day">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
                                             <div class="flex gap-1 items-center">
                                                 <input type="time" name="end_time" class="w-24 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
                                                 <div class="flex flex-col gap-0.5">
-                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="end" data-direction="1" title="+15 min">
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="1" title="+15 min">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
                                                     </button>
-                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="end" data-direction="-1" title="-15 min">
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-direction="-1" title="-15 min">
                                                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                                                     </button>
                                                 </div>
@@ -301,13 +321,14 @@ export const PlannerModal = {
             }
         });
 
-        // Time shift buttons (±15 min) - MAINTAINS DURATION
+        // Time/Date shift buttons - MAINTAINS DURATION
         portal.addEventListener('click', (e) => {
-            const shiftBtn = e.target.closest('.time-shift-btn');
+            const shiftBtn = e.target.closest('.time-shift-btn, .date-shift-btn');
             if (!shiftBtn) return;
 
+            const isTime = shiftBtn.classList.contains('time-shift-btn');
             const direction = parseInt(shiftBtn.dataset.direction); // 1 or -1
-            const shiftAmount = direction * 15; // minutes
+            const shiftMinutes = isTime ? direction * 15 : direction * 1440; // 15 min or 1 day
 
             // Get both date/time inputs
             const startDateInput = form.querySelector('input[name="start_date"]');
@@ -318,65 +339,22 @@ export const PlannerModal = {
             // Shift both start and end to preserve duration
             if (startDateInput.value && startTimeInput.value) {
                 const startDt = new Date(`${startDateInput.value}T${startTimeInput.value}`);
-                startDt.setMinutes(startDt.getMinutes() + shiftAmount);
+                startDt.setMinutes(startDt.getMinutes() + shiftMinutes);
                 startDateInput.value = startDt.toISOString().split('T')[0];
                 startTimeInput.value = startDt.toTimeString().substring(0, 5);
             }
 
             if (endDateInput.value && endTimeInput.value) {
                 const endDt = new Date(`${endDateInput.value}T${endTimeInput.value}`);
-                endDt.setMinutes(endDt.getMinutes() + shiftAmount);
+                endDt.setMinutes(endDt.getMinutes() + shiftMinutes);
                 endDateInput.value = endDt.toISOString().split('T')[0];
                 endTimeInput.value = endDt.toTimeString().substring(0, 5);
             }
         });
 
-        // Duration-preserving manual edits
-        let lastKnownDuration = 0;
-        const startDateInput = form.querySelector('input[name="start_date"]');
-        const startTimeInput = form.querySelector('input[name="start_time"]');
-        const endDateInput = form.querySelector('input[name="end_date"]');
-        const endTimeInput = form.querySelector('input[name="end_time"]');
-
-        const calculateDuration = () => {
-            if (startDateInput.value && startTimeInput.value && endDateInput.value && endTimeInput.value) {
-                const s = new Date(`${startDateInput.value}T${startTimeInput.value}`);
-                const e = new Date(`${endDateInput.value}T${endTimeInput.value}`);
-                lastKnownDuration = e.getTime() - s.getTime();
-            }
-        };
-
-        [startDateInput, startTimeInput, endDateInput, endTimeInput].forEach(el => {
-            el.addEventListener('focus', calculateDuration);
-        });
-
-        const syncEndToStart = () => {
-            if (lastKnownDuration > 0 && startDateInput.value && startTimeInput.value) {
-                const s = new Date(`${startDateInput.value}T${startTimeInput.value}`);
-                const e = new Date(s.getTime() + lastKnownDuration);
-                endDateInput.value = e.toISOString().split('T')[0];
-                endTimeInput.value = e.toTimeString().substring(0, 5);
-            }
-        };
-
-        const syncStartToEnd = () => {
-            if (lastKnownDuration > 0 && endDateInput.value && endTimeInput.value) {
-                const e = new Date(`${endDateInput.value}T${endTimeInput.value}`);
-                const s = new Date(e.getTime() - lastKnownDuration);
-                startDateInput.value = s.toISOString().split('T')[0];
-                startTimeInput.value = s.toTimeString().substring(0, 5);
-            }
-        };
-
-        startDateInput.addEventListener('change', syncEndToStart);
-        startTimeInput.addEventListener('change', syncEndToStart);
-        endDateInput.addEventListener('change', syncStartToEnd);
-        endTimeInput.addEventListener('change', syncStartToEnd);
-
-        // Unassign member button
         if (unassignMemberBtn) {
             unassignMemberBtn.onclick = () => {
-                resourceSelect.value = '';
+                resourceSelect.value = 'me';
             };
         }
 
@@ -466,7 +444,7 @@ export const PlannerModal = {
         if (!resources.includes('General')) resources.push('General');
 
         const rSelect = form.querySelector('#modal-resource');
-        rSelect.innerHTML = resources.map(r => `<option value="${r}">${r}</option>`).join('');
+        rSelect.innerHTML = '<option value="me"></option>' + resources.map(r => `<option value="${r}">${r}</option>`).join('');
 
         const pSelect = form.querySelector('#modal-project');
         const entries = state.timeEntries || [];
@@ -506,7 +484,7 @@ export const PlannerModal = {
 
             form.id.value = task.id;
             form.title.value = task.title;
-            form.resource_id.value = task.resource_id || 'General';
+            form.resource_id.value = task.resource_id || 'me';
             form.project_id.value = task.project_id;
             form.status.value = task.status || 'todo';
             form.priority.value = task.priority || 'medium';
