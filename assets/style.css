@@ -115,21 +115,21 @@ body {
 /* Refined Form Styles */
 input,
 select {
-    border: none !important;
-    background-color: var(--bg-input) !important;
-    border-radius: 16px !important;
-    padding: 1.1rem 1.4rem;
+    border: none;
+    background-color: var(--bg-input);
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-main) !important;
-    transition: all 0.2s ease !important;
+    color: var(--text-main);
+    transition: all 0.2s ease;
 }
 
 input:focus,
 select:focus {
-    background-color: var(--bg-card) !important;
-    box-shadow: 0 0 0 3px rgba(51, 138, 129, 0.1) !important;
-    outline: none !important;
+    background-color: var(--bg-card);
+    box-shadow: 0 0 0 2px rgba(51, 138, 129, 0.15);
+    outline: none;
 }
 
 /* Date Input Fixes */

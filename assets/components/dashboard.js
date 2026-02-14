@@ -1,5 +1,6 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
+import { buildRecentOptions, populateSelectWithRecent } from '../utils/select-helpers.js';
 import { PlannerModal } from './planner/planner-modal.js';
 import { PlannerState } from './planner/planner-state.js';
 import { PlannerList } from './planner/planner-view-list.js';
@@ -44,7 +45,7 @@ export async function renderDashboard() {
   };
 
   const container = document.createElement('div');
-  container.className = 'max-w-5xl mx-auto pb-10 space-y-8';
+  container.className = 'max-w-5xl mx-auto pb-10 space-y-14';
 
   const shiftColor = (color, percent) => {
     if (!color || typeof color !== 'string' || !color.startsWith('#')) return color;
@@ -64,8 +65,8 @@ export async function renderDashboard() {
     <div class="relative overflow-hidden transition-all duration-300">
       <div class="relative z-10">
         ${activeTimer ? `
-          <div class="flex flex-col md:flex-row items-center justify-between gap-8 bg-card/40 backdrop-blur-sm rounded-2xl pb-4 shadow-sm">
-            <div id="active-task-display" class="flex-1 cursor-pointer group/task relative py-3 px-5 rounded-xl hover:bg-primary/5 transition-all">
+          <div class="flex flex-col md:flex-row items-center justify-between gap-8 pb-4">
+            <div id="active-task-display" class="flex-1 cursor-pointer group/task relative py-3 rounded-xl hover:bg-primary/5 transition-all">
               <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-3" style="background-color: ${pColor}1a; color: ${pColor}">
                 <span class="w-1 h-1 rounded-full animate-pulse" style="background-color: ${pColor}"></span>
                 Chomping
@@ -80,7 +81,7 @@ export async function renderDashboard() {
               </div>
             </div>
 
-            <div class="flex flex-col items-center gap-4 px-8">
+            <div class="flex flex-col items-end gap-4">
               <div id="active-timer-counter" class="text-5xl font-black text-main tabular-nums tracking-tighter">00:00:00</div>
               <button id="dashboard-stop-btn" class="flex items-center justify-center min-w-[180px] h-12 bg-[#FF3B30] hover:bg-[#FF453A] text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-xl transition-all duration-150 active:scale-95 shadow-lg shadow-red-500/20">
                 Stop Tracking
@@ -88,15 +89,15 @@ export async function renderDashboard() {
             </div>
           </div>
         ` : `
-          <div class="bg-card rounded-2xl p-6 shadow-sm">
+          <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em] mb-4">What are you working on?</h3>
+          <div class="bg-card rounded-2xl border border-soft shadow-sm p-5">
             <form id="start-timer-form" class="space-y-3">
               <!-- Row 1: Spacious description + START -->
               <div class="flex items-center gap-3">
-                <div class="flex-1 space-y-1">
-                  <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">What are you working on?</label>
-                  <input type="text" name="description" placeholder="Task description..." class="w-full bg-app border-none rounded-xl px-5 py-3.5 font-bold text-main text-[15px] focus:ring-2 focus:ring-primary/20 placeholder:text-dim/25">
+                <div class="flex-1">
+                  <input type="text" name="description" placeholder="Task description..." class="w-full bg-app border-none rounded-lg px-5 py-2.5 font-bold text-main text-[15px] focus:ring-2 focus:ring-primary/20 placeholder:text-dim/15 placeholder:font-normal">
                 </div>
-                <button type="submit" class="h-[52px] px-10 bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-primary/20 whitespace-nowrap self-end">
+                <button type="submit" class="h-[42px] px-10 bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-primary/20 whitespace-nowrap self-end">
                   Start
                 </button>
               </div>
@@ -106,31 +107,10 @@ export async function renderDashboard() {
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Project</label>
                   <div class="relative">
                     <select name="project_id" required class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] appearance-none cursor-pointer focus:ring-1 focus:ring-primary/20 uppercase tracking-wider">
-                      ${(() => {
-      // Compute recent project IDs from time entries (unique, ordered by most recent)
-      const recentPids = [];
-      const sorted = [...entries].sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
-      sorted.forEach(e => {
-        if (e.project_id && !recentPids.includes(String(e.project_id))) recentPids.push(String(e.project_id));
-      });
-      const recentProjects = recentPids.slice(0, 5).map(pid => projects.find(p => String(p.id) === pid)).filter(Boolean);
-      const recentIds = new Set(recentProjects.map(p => String(p.id)));
-      const otherProjects = projects.filter(p => !recentIds.has(String(p.id)));
-      const defaultId = recentProjects.length > 0 ? String(recentProjects[0].id) : '';
-
-      let html = '';
-      if (recentProjects.length > 0) {
-        html += `<optgroup label="Recent">`;
-        html += recentProjects.map(p => `<option value="${p.id}" ${String(p.id) === defaultId ? 'selected' : ''}>${p.name || 'Unnamed'}</option>`).join('');
-        html += `</optgroup>`;
-      }
-      if (otherProjects.length > 0) {
-        html += `<optgroup label="All Projects">`;
-        html += otherProjects.map(p => `<option value="${p.id}">${p.name || 'Unnamed'}</option>`).join('');
-        html += `</optgroup>`;
-      }
-      return html;
-    })()}
+                      ${buildRecentOptions(projects, entries, 'project_id', {
+    selectedId: entries.length > 0 ? [...entries].sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0)).find(e => e.project_id)?.project_id : '',
+    allLabel: 'All Projects'
+  })}
                     </select>
                     <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-30">
                       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
@@ -159,52 +139,47 @@ export async function renderDashboard() {
       </div>
     </div>
 
-    <!-- Today's Tasks Section -->
+    <!-- Todo Section -->
     <div class="space-y-4">
-      <div class="flex items-center justify-between px-2 flex-wrap gap-2">
-        <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Today's Tasks</h3>
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Todo</h3>
         <div id="task-filter-toggles" class="flex items-center gap-1 bg-app/30 p-0.5 rounded-lg border border-white/5">
         </div>
       </div>
 
       <!-- Quick Add -->
-      <div class="px-1">
-        <div class="bg-white/2 hover:bg-white/3 border border-white/5 rounded-xl p-2 transition-all focus-within:bg-white/5 focus-within:ring-1 focus-within:ring-primary/20 shadow-sm">
-          <div class="flex items-center gap-2">
-            <div class="shrink-0 w-8 h-8 flex items-center justify-center text-primary/40">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
-            </div>
-            <input type="text" id="dashboard-quick-add" placeholder="Add a task..."
-                   class="flex-1 bg-transparent border-none text-[15px] font-bold text-main outline-none placeholder:text-dim/30 min-w-0 px-3 py-2">
-          </div>
-        </div>
+      <div class="flex items-center gap-3 border border-soft rounded-lg px-5 py-2 transition-all focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/10">
+        <span class="text-dim/30 text-base font-bold">+</span>
+        <input type="text" id="dashboard-quick-add" placeholder="Add a task..."
+               class="flex-1 border-none rounded-none text-base font-bold text-main outline-none min-w-0 placeholder:text-dim/15 placeholder:font-normal"
+               style="background: transparent; padding: 0; box-shadow: none;">
       </div>
 
       <!-- Task List Container -->
-      <div id="dashboard-task-list" class="px-1">
+      <div id="dashboard-task-list">
         <!-- Tasks rendered here by PlannerList.render() -->
       </div>
 
-      <!-- View All Link -->
-      <div class="text-center">
-        <a href="#planner" class="text-xs font-bold text-primary/60 hover:text-primary transition-colors uppercase tracking-widest">View all in Planner →</a>
+      <!-- Spans Timeline Chart -->
+      <div id="dashboard-spans-chart">
+        <!-- Mini Gantt rendered here when Spans tab active -->
       </div>
     </div>
 
     <!-- History Section -->
     <div class="space-y-4">
-      <div class="flex items-center justify-between px-2">
+      <div class="flex items-center justify-between">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Recent History</h3>
       </div>
 
       <div class="space-y-3">
         ${entries.filter(e => e.end_time).slice(0, 10).map(e => {
-      const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
-      const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
-      const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
-      const taskColor = shiftColor(proj.color, -10);
+    const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
+    const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
+    const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
+    const taskColor = shiftColor(proj.color, -10);
 
-      return `
+    return `
             <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main cursor-pointer" data-entry-id="${e.id}">
               <div class="flex items-center gap-4 flex-1">
                 <div class="w-1 h-10 rounded-full" style="background-color: ${taskColor}"></div>
@@ -215,17 +190,17 @@ export async function renderDashboard() {
                   </div>
                   <p class="text-sm font-medium text-muted truncate">${proj.name} ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}</p>
                   ${(() => {
-          if (e.task_id) {
-            const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
-            return `<div class="mt-1 flex items-center gap-1.5">
+        if (e.task_id) {
+          const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
+          return `<div class="mt-1 flex items-center gap-1.5">
                       <span class="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 flex items-center gap-1 uppercase tracking-tighter">
                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                         Linked Todo: ${t ? t.title : 'Deleted Todo'}
                       </span>
                     </div>`;
-          }
-          return '';
-        })()}
+        }
+        return '';
+      })()}
                   ${e.notes ? `<p class="text-xs text-dim italic mt-1.5">${e.notes}</p>` : ''}
                 </div>
               </div>
@@ -235,22 +210,22 @@ export async function renderDashboard() {
                   <div class="text-xs font-black text-dim uppercase tracking-widest mb-0.5 opacity-40">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
                   <div class="text-lg font-bold tracking-tighter tabular-nums">${formatDuration(duration)}</div>
                 </div>
-                <div class="flex gap-1">
-                  <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all"
+                <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                  <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-primary hover:bg-primary/10 transition-all"
                           data-project-id="${e.project_id}"
                           data-description="${e.description || ''}"
                           data-notes="${e.notes || ''}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </button>
-                  <button class="delete-history-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-red-500 hover:bg-red-500/10 transition-all"
+                  <button class="delete-history-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
                           data-id="${e.id}">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
                 </div>
               </div>
             </div>
           `;
-    }).join('')}
+  }).join('')}
         ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-xs opacity-30">No history yet</p>' : ''}
       </div>
     </div>
@@ -265,7 +240,7 @@ export async function renderDashboard() {
       const pid = projectSelect.value;
       const tasks = (state.tasks || []).filter(t =>
         String(t.project_id) === String(pid) && t.status !== 'done'
-      );
+      ).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
       todoSelect.innerHTML = `<option value="">None</option>` +
         tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
     };
@@ -304,18 +279,18 @@ export async function renderDashboard() {
 
   const filterDefs = [
     { key: 'today', label: 'Today', icon: '☀' },
+    { key: 'completed', label: 'Completed', icon: '✓' },
     { key: 'planned', label: 'Planned', icon: '📅' },
-    { key: 'spans', label: 'Spans', icon: '▓' },
-    { key: 'completed', label: 'Completed', icon: '✓' }
+    { key: 'spans', label: 'Projects', icon: '▓' }
   ];
 
   const renderTaskToggles = () => {
     const toggleContainer = container.querySelector('#task-filter-toggles');
     if (!toggleContainer) return;
     toggleContainer.innerHTML = filterDefs.map(f => `
-      <button class="task-filter-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
+      <button class="task-filter-btn inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wide leading-none transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
       }" data-filter="${f.key}">
-        <span class="text-xs">${f.icon}</span>${f.label}
+        <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
       </button>
     `).join('');
   };
@@ -348,7 +323,7 @@ export async function renderDashboard() {
     if (taskFilters.today) {
       filtered.push(...allTasks.filter(t =>
         t.task_type !== 'project_span' &&
-        (t.status !== 'done' || isCompletedToday(t)) &&
+        t.status !== 'done' &&
         (intersectsToday(t) || !t.start_date)
       ));
     }
@@ -360,29 +335,207 @@ export async function renderDashboard() {
         (t.start_date && !intersectsToday(t) || !t.start_date)
       ));
     }
-    if (taskFilters.spans) {
+    if (taskFilters.completed) {
       filtered.push(...allTasks.filter(t =>
-        t.task_type === 'project_span' &&
+        t.task_type !== 'project_span' &&
+        t.status === 'done' &&
         !filtered.some(f => f.id === t.id)
       ));
+    }
+    if (taskFilters.spans) {
+      // Separate spans from other tasks for special rendering
+      const spanTasks = allTasks.filter(t => t.task_type === 'project_span');
+      const nonSpanFiltered = filtered.filter(t => t.task_type !== 'project_span');
+      filtered = nonSpanFiltered;
+
+      // Render mini Gantt for spans
+      renderSpansChart(spanTasks);
+    } else {
+      // Clear spans chart when not active
+      const spansChartEl = container.querySelector('#dashboard-spans-chart');
+      if (spansChartEl) spansChartEl.innerHTML = '';
     }
 
     // Deduplicate
     const seen = new Set();
     filtered = filtered.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
 
-    PlannerList.render(taskListEl, filtered, projects, {
-      fullWidth: true,
-      showDone: taskFilters.completed,
-      category: taskFilters.today && !taskFilters.planned ? 'today' : null
+    // Only render task list if there are non-span tasks to show
+    if (filtered.length > 0 || !taskFilters.spans) {
+      PlannerList.render(taskListEl, filtered, projects, {
+        fullWidth: true,
+        showDone: taskFilters.completed,
+        category: taskFilters.today && !taskFilters.planned ? 'today' : null,
+        hideQuickAdd: true
+      });
+    } else if (taskFilters.spans && filtered.length === 0) {
+      taskListEl.innerHTML = '';
+    }
+
+    // If no filters active, just clear the list
+    if (!taskFilters.today && !taskFilters.planned && !taskFilters.spans && !taskFilters.completed) {
+      taskListEl.innerHTML = '';
+      const spansChartEl = container.querySelector('#dashboard-spans-chart');
+      if (spansChartEl) spansChartEl.innerHTML = '';
+    }
+  };
+
+  // ─── SPANS MINI GANTT CHART ───
+  const renderSpansChart = (spans) => {
+    const chartEl = container.querySelector('#dashboard-spans-chart');
+    if (!chartEl) return;
+    if (!spans || spans.length === 0) {
+      chartEl.innerHTML = `<div class="text-center py-6 opacity-30">
+        <p class="text-xs font-bold text-dim uppercase tracking-widest">No project spans found</p>
+      </div>`;
+      return;
+    }
+
+    // Parse dates and filter out spans without valid dates
+    const parsed = spans.map(s => {
+      const proj = projects.find(p => String(p.id) === String(s.project_id)) || { name: 'Unassigned', color: '#64748b' };
+      const startDate = s.start_date ? new Date(s.start_date) : null;
+      const endDate = s.end_date ? new Date(s.end_date) : null;
+      return { ...s, proj, startDate, endDate };
+    }).filter(s => s.startDate && s.endDate);
+
+    if (parsed.length === 0) {
+      chartEl.innerHTML = `<div class="text-center py-6 opacity-30">
+        <p class="text-xs font-bold text-dim uppercase tracking-widest">No dated spans to display</p>
+      </div>`;
+      return;
+    }
+
+    // Sort: earliest start first, if tie then latest end last
+    parsed.sort((a, b) => {
+      const d = a.startDate - b.startDate;
+      return d !== 0 ? d : b.endDate - a.endDate;
     });
 
-    // If no filters active, show hint
-    if (!taskFilters.today && !taskFilters.planned && !taskFilters.spans && !taskFilters.completed) {
-      taskListEl.innerHTML = `<div class="text-center py-8 opacity-30">
-        <p class="text-xs font-bold text-dim uppercase tracking-widest">Toggle a filter above to see tasks</p>
-      </div>`;
+    // Find min/max with some padding
+    const allDates = parsed.flatMap(s => [s.startDate, s.endDate]);
+    const minDate = new Date(Math.min(...allDates));
+    const maxDate = new Date(Math.max(...allDates));
+
+    // Add ~5% padding on each side
+    const totalMs = maxDate - minDate || 1;
+    const padMs = totalMs * 0.05;
+    const scaleStart = new Date(minDate.getTime() - padMs);
+    const scaleEnd = new Date(maxDate.getTime() + padMs);
+    const scaleMs = scaleEnd - scaleStart;
+
+    const toPercent = (date) => ((date.getTime() - scaleStart.getTime()) / scaleMs) * 100;
+
+    // Today indicator
+    const now = new Date();
+    const todayPct = toPercent(now);
+    const showToday = todayPct >= 0 && todayPct <= 100;
+
+    // Generate month ticks
+    const ticks = [];
+    const tickStart = new Date(scaleStart.getFullYear(), scaleStart.getMonth(), 1);
+    let cursor = new Date(tickStart);
+    while (cursor <= scaleEnd) {
+      const pct = toPercent(cursor);
+      if (pct >= 0 && pct <= 100) {
+        const label = cursor.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        ticks.push({ pct, label });
+      }
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
     }
+
+    const rowHeight = 64;
+    const chartPadTop = 24;
+    const chartHeight = chartPadTop + parsed.length * rowHeight + 8;
+
+    const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const progress = (s) => {
+      const allProjectTasks = allTasks.filter(t =>
+        String(t.project_id) === String(s.project_id) && t.task_type !== 'project_span'
+      );
+      if (allProjectTasks.length === 0) return 0;
+      const totalProgress = allProjectTasks.reduce((sum, t) => sum + (t.progress || 0), 0);
+      return Math.round(totalProgress / allProjectTasks.length);
+    };
+
+    chartEl.innerHTML = `
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Projects</span>
+        <div class="h-px flex-grow bg-white/5"></div>
+        <span class="text-[9px] font-black text-dim opacity-30">${parsed.length}</span>
+      </div>
+      <div class="bg-card rounded-xl border border-soft shadow-sm p-4 pb-3 overflow-hidden">
+        <div class="relative" style="height: ${chartHeight}px;">
+          <!-- Month tick labels -->
+          ${ticks.map(t => `
+            <div class="absolute top-0 text-[9px] font-black text-dim/25 uppercase tracking-wider" style="left: ${t.pct}%; transform: translateX(-50%);">
+              ${t.label}
+            </div>
+          `).join('')}
+
+          <!-- Tick grid lines -->
+          ${ticks.map(t => `
+            <div class="absolute bg-white/4" style="left: ${t.pct}%; top: ${chartPadTop}px; bottom: 0; width: 1px;"></div>
+          `).join('')}
+
+          <!-- Today indicator -->
+          ${showToday ? `
+            <div class="absolute z-20" style="left: ${todayPct}%; top: 0; bottom: 0;">
+              <div class="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-red-500/90 text-[7px] font-black text-white uppercase tracking-wider whitespace-nowrap shadow-lg shadow-red-500/30">
+                Today
+              </div>
+              <div class="absolute top-4 bottom-0 w-px bg-red-500/50 left-1/2 -translate-x-1/2">
+                <div class="absolute inset-0 bg-red-500/30 animate-pulse"></div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Span rows -->
+          ${parsed.map((s, i) => {
+      const left = toPercent(s.startDate);
+      const right = toPercent(s.endDate);
+      const width = Math.max(right - left, 2);
+      const top = chartPadTop + i * rowHeight;
+      const prog = progress(s);
+      const isPast = s.endDate < now;
+      const isCurrent = s.startDate <= now && s.endDate >= now;
+      const barHeight = 28;
+
+      return `
+            <!-- Label row -->
+            <div class="absolute flex items-center gap-2 whitespace-nowrap cursor-pointer ${isPast ? 'opacity-40' : ''}" style="left: ${left}%; top: ${top}px; height: 20px;" data-span-project-id="${s.project_id}">
+              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${s.proj.color};"></span>
+              <span class="text-xs font-bold text-main">${s.proj.name}</span>
+              <span class="text-[10px] text-dim/40 font-bold">${formatDate(s.startDate)} – ${formatDate(s.endDate)}</span>
+              <span class="text-xs font-black" style="color: ${s.proj.color};">${prog}%</span>
+            </div>
+
+            <!-- Bar -->
+            <div class="absolute rounded-lg overflow-hidden cursor-pointer ${isPast ? 'opacity-40' : ''} ${isCurrent ? 'shadow-md' : ''}" style="left: ${left}%; width: ${width}%; top: ${top + 22}px; height: ${barHeight}px; background-color: ${s.proj.color}15; border: 1px solid ${s.proj.color}30;" data-span-project-id="${s.project_id}">
+              <!-- Progress fill -->
+              <div class="absolute inset-y-0 left-0 rounded-lg pointer-events-none" style="width: ${Math.max(prog, 1)}%; background-color: ${s.proj.color}; opacity: 0.5;"></div>
+            </div>
+          `;
+    }).join('')}
+        </div>
+      </div>
+    `;
+
+    // Click handler: open span task in PlannerModal for editing
+    chartEl.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-span-project-id]');
+      if (!el) return;
+      const projectId = el.dataset.spanProjectId;
+      const spanTask = allTasks.find(t => t.task_type === 'project_span' && String(t.project_id) === String(projectId));
+      if (spanTask) {
+        PlannerModal.onSave = async () => {
+          const fresh = await api.getTasks();
+          store.update({ tasks: fresh });
+          renderDashboardTasks();
+        };
+        PlannerModal.open(spanTask);
+      }
+    });
   };
 
   renderTaskToggles();
@@ -435,9 +588,9 @@ export async function renderDashboard() {
   }
 
   // Task interaction handlers (delegated)
-  const taskListEl = container.querySelector('#dashboard-task-list');
-  if (taskListEl) {
-    taskListEl.addEventListener('click', async (e) => {
+  const dashboardTaskList = container.querySelector('#dashboard-task-list');
+  if (dashboardTaskList) {
+    dashboardTaskList.addEventListener('click', async (e) => {
       // Toggle status
       const toggleBtn = e.target.closest('.toggle-status-btn');
       if (toggleBtn) {
@@ -498,6 +651,19 @@ export async function renderDashboard() {
           store.update('timeEntries', await api.get('time-entries.php'));
           refreshView();
         } catch (err) { console.error('Track failed:', err); }
+        return;
+      }
+      // Delete task button
+      const deleteTaskBtn = e.target.closest('.delete-task-btn');
+      if (deleteTaskBtn) {
+        e.stopPropagation();
+        const taskId = deleteTaskBtn.dataset.taskId;
+        if (!confirm('Delete this task?')) return;
+        try {
+          await api.post('planner.php?action=delete', { id: taskId });
+          await PlannerState.init();
+          refreshView();
+        } catch (err) { console.error('Delete task failed:', err); }
         return;
       }
 
@@ -642,12 +808,7 @@ export async function renderDashboard() {
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Project</label>
                   <select name="project_id" id="active-project-select" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
-                    <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
-                    ${projects.map(p => {
-        const pid = String(p.id);
-        const isSelected = currentPid === pid;
-        return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
-      }).join('')}
+                    ${buildRecentOptions(projects, entries, 'project_id', { selectedId: currentPid, placeholder: 'Unassigned', allLabel: 'All Projects' })}
                   </select>
                 </div>
                 <div class="space-y-2">
@@ -691,7 +852,8 @@ export async function renderDashboard() {
 
       const updateTasks = () => {
         const pid = projectSelect.value;
-        const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid));
+        const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid))
+          .sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
         taskSelect.innerHTML = `<option value="">No Linked Todo</option>` +
           tasks.map(t => `<option value="${t.id}" ${String(t.id) === String(activeTimer.task_id) ? 'selected' : ''}>${t.title}</option>`).join('');
       };
@@ -747,12 +909,7 @@ export async function renderDashboard() {
                 <div class="space-y-1.5">
                   <label class="block text-[9px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
                   <select name="project_id" id="history-project-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
-                    <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
-                    ${projects.map(p => {
-      const pid = String(p.id);
-      const isSelected = currentPid === pid;
-      return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
-    }).join('')}
+                    ${buildRecentOptions(projects, entries, 'project_id', { selectedId: currentPid, placeholder: 'Unassigned', allLabel: 'All Projects' })}
                   </select>
                 </div>
                 <div class="space-y-1.5">
@@ -800,7 +957,8 @@ export async function renderDashboard() {
 
     const updateTasks = () => {
       const pid = projectSelect.value;
-      const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid));
+      const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid))
+        .sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
       taskSelect.innerHTML = `<option value="">No Linked Todo</option>` +
         tasks.map(t => `<option value="${t.id}" ${String(t.id) === String(entry.task_id) ? 'selected' : ''}>${t.title}</option>`).join('');
     };

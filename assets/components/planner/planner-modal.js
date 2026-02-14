@@ -7,6 +7,7 @@
 
 import { api } from '../../utils/api.js';
 import { store } from '../../utils/store.js';
+import { populateSelectWithRecent } from '../../utils/select-helpers.js';
 
 export const PlannerModal = {
     render(containerId) {
@@ -353,8 +354,11 @@ export const PlannerModal = {
         rSelect.innerHTML = resources.map(r => `<option value="${r}">${r}</option>`).join('');
 
         const pSelect = form.querySelector('#modal-project');
-        pSelect.innerHTML = `<option value="">Select Project...</option>` +
-            (state.projects || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        const entries = state.timeEntries || [];
+        populateSelectWithRecent(pSelect, state.projects || [], entries, 'project_id', {
+            placeholder: 'Select Project...',
+            allLabel: 'All Projects'
+        });
 
         // Reset
         form.reset();

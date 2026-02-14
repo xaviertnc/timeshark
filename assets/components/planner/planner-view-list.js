@@ -16,6 +16,7 @@ export const PlannerList = {
         const limit = options.limit || 0;
         const showDone = options.showDone || false;
         const category = options.category || null;
+        const hideQuickAdd = options.hideQuickAdd || false;
 
         container.innerHTML = '';
 
@@ -32,8 +33,16 @@ export const PlannerList = {
             const d = new Date(completedDate); d.setHours(0, 0, 0, 0);
             return d.getTime() >= today.getTime() && d.getTime() < tomorrow.getTime();
         };
-        let activeTasks = tasks.filter(t => t.status !== 'done' || isCompletedToday(t));
-        let completedTasks = tasks.filter(t => t.status === 'done' && !isCompletedToday(t));
+        let activeTasks, completedTasks;
+        if (showDone) {
+            // When showing completed section, all done tasks go there
+            activeTasks = tasks.filter(t => t.status !== 'done');
+            completedTasks = tasks.filter(t => t.status === 'done');
+        } else {
+            // Default: completed-today stays in active list (shown with 100% progress)
+            activeTasks = tasks.filter(t => t.status !== 'done' || isCompletedToday(t));
+            completedTasks = tasks.filter(t => t.status === 'done' && !isCompletedToday(t));
+        }
 
         // Helper: does a task's date range intersect with today?
         const intersectsToday = (t) => {
@@ -96,7 +105,7 @@ export const PlannerList = {
         });
 
         const listContent = document.createElement('div');
-        listContent.className = isFull ? 'py-6 px-6 space-y-8' : 'space-y-4';
+        listContent.className = isFull ? 'space-y-6' : 'space-y-4';
 
         // Compute project-level progress for span tasks
         const getProjectProgress = (projectId) => {
@@ -201,9 +210,9 @@ export const PlannerList = {
             const timeStr = formatTime(t);
             const isContinuous = !!proj.continuous;
 
-            // List row — fills full width
+            // List row — card style matching history entries
             return `
-                <div class="task-item group/task relative flex items-center gap-4 p-3 px-4 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all cursor-pointer" data-task-id="${t.id}">
+                <div class="task-item group/task relative flex items-center gap-3 p-4 rounded-xl bg-card border border-soft shadow-sm hover:border-primary/20 transition-all cursor-pointer" data-task-id="${t.id}">
                     ${isSpan
                     ? `<div class="shrink-0 w-5 h-5 rounded-sm bg-primary flex items-center justify-center">
                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -214,18 +223,18 @@ export const PlannerList = {
                 }
 
                     <div class="flex-grow min-w-0">
-                        <span class="text-[13px] font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
+                        <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
                         <div class="flex items-center gap-2.5 mt-1 opacity-40">
-                            <span class="w-1.5 h-1.5 rounded-full ${prio.dot}" title="${prio.label} priority"></span>
                             <div class="flex items-center gap-1">
                                 <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${proj.color}"></span>
-                                <span class="text-[9px] font-black text-dim uppercase tracking-wider">${proj.name}</span>
+                                <span class="text-xs font-black text-dim uppercase tracking-wider">${proj.name}</span>
                             </div>
                             ${timeStr ? `<div class="flex items-center gap-1 text-dim">
                                 <span class="w-px h-2 bg-white/5"></span>
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <span class="text-[9px] font-bold tracking-tight">${timeStr}</span>
+                                <span class="text-xs font-bold tracking-tight">${timeStr}</span>
                             </div>` : ''}
+                            ${t.priority && t.priority !== 'low' ? `<span class="${prio.bg} ${prio.color} text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none" title="${prio.label} priority">${prio.label}</span>` : ''}
                         </div>
                     </div>
 
@@ -233,13 +242,16 @@ export const PlannerList = {
                     ${!isContinuous ? `
                     <div class="inline-progress-bar shrink-0 w-24 h-5 bg-white/10 rounded-md overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
                         <div class="absolute inset-y-0 left-0 rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%; background-color: ${proj.color}; opacity: ${isDone ? 0.35 : 1}"></div>
-                        <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
+                        <span class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
                     </div>` : `
                     <span class="shrink-0 text-[8px] font-black uppercase tracking-wider text-dim/30">∞ Continuous</span>`}
 
                     <div class="flex items-center opacity-0 group-hover/task:opacity-100 transition-opacity gap-1 shrink-0">
-                         <button class="track-btn p-1.5 rounded-lg hover:bg-primary/10 text-dim/50 hover:text-primary transition-colors" title="Track Time" data-task-id="${t.id}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
+                         <button class="track-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-primary hover:bg-primary/10 transition-all" title="Track Time" data-task-id="${t.id}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                         </button>
+                         <button class="delete-task-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Delete" data-task-id="${t.id}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                          </button>
                     </div>
                 </div>
@@ -250,7 +262,7 @@ export const PlannerList = {
         const renderCard = isFull ? renderFullCard : renderCompactCard;
 
         // Render Groups
-        ['overdue', 'projects', 'today', 'later', 'nodate'].forEach(key => {
+        ['today', 'overdue', 'projects', 'later', 'nodate'].forEach(key => {
             const gTasks = groups[key].tasks;
             if (gTasks.length === 0) return;
 
@@ -258,20 +270,20 @@ export const PlannerList = {
             groupEl.className = 'animate-in fade-in slide-in-from-bottom-2 duration-500';
 
             groupEl.innerHTML = `
-                <div class="flex items-center gap-2 mb-2 px-1">
+                <div class="flex items-center gap-2 mb-2">
                     <span class="text-[10px] font-black uppercase tracking-[0.2em] ${groups[key].color}">${groups[key].label}</span>
                     <div class="h-px flex-grow bg-white/5"></div>
                     <span class="text-[9px] font-black text-dim opacity-30">${gTasks.length}</span>
                 </div>
-                <div class="flex flex-col">
+                <div class="flex flex-col space-y-3">
                     ${gTasks.map(t => renderCard(t)).join('')}
                 </div>
             `;
             listContent.appendChild(groupEl);
         });
 
-        // Quick-add (only for full view)
-        if (isFull) {
+        // Quick-add (only for full view, unless explicitly hidden)
+        if (isFull && !hideQuickAdd) {
             const currentProjectFilter = options.projectFilter || 'all';
 
             const quickAdd = document.createElement('div');
@@ -309,11 +321,12 @@ export const PlannerList = {
         if (completedTasks.length > 0 && showDone) {
             const completedEl = document.createElement('div');
             completedEl.className = isFull ? 'mt-8 pt-4 border-t border-white/5' : 'mt-4 pt-3 border-t border-white/5';
+            listContent.appendChild(completedEl);
 
-            let perPage = 10;
+            let perPage = 'today';
             let currentPage = 1;
             let searchQuery = '';
-            let groupBy = 'day'; // day | week | month | year
+            const groupBy = 'day';
 
             // Group tasks by time period
             const getGroupLabel = (dateStr, mode) => {
@@ -333,6 +346,17 @@ export const PlannerList = {
             const renderCompleted = () => {
                 // Filter
                 let filtered = completedTasks;
+
+                // 'today' show filter: only show tasks completed today
+                if (perPage === 'today') {
+                    filtered = filtered.filter(t => {
+                        const completedDate = t.completed_at || t.start_date;
+                        if (!completedDate) return false;
+                        const d = new Date(completedDate); d.setHours(0, 0, 0, 0);
+                        return d.getTime() >= today.getTime() && d.getTime() < tomorrow.getTime();
+                    });
+                }
+
                 if (searchQuery) {
                     const q = searchQuery.toLowerCase();
                     filtered = filtered.filter(t => {
@@ -358,18 +382,17 @@ export const PlannerList = {
                     groups.get(label).push(t);
                 });
 
-                // Pagination strategy:
-                // - Day mode: paginate by individual tasks, then re-group (tasks within a day stay close)
-                // - Week/Month/Year: paginate by groups so complete groups are never split across pages
+                // Pagination (skip when perPage is 'today' — show all today's items)
+                const numericPerPage = (perPage === 'today') ? filtered.length || 1 : perPage;
                 let totalPages;
                 let pageGroups;
 
                 if (groupBy === 'day') {
                     const totalItems = filtered.length;
-                    totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+                    totalPages = Math.max(1, Math.ceil(totalItems / numericPerPage));
                     if (currentPage > totalPages) currentPage = totalPages;
-                    const startIdx = (currentPage - 1) * perPage;
-                    const pageItems = filtered.slice(startIdx, startIdx + perPage);
+                    const startIdx = (currentPage - 1) * numericPerPage;
+                    const pageItems = filtered.slice(startIdx, startIdx + numericPerPage);
 
                     pageGroups = new Map();
                     pageItems.forEach(t => {
@@ -378,12 +401,12 @@ export const PlannerList = {
                         pageGroups.get(label).push(t);
                     });
                 } else {
-                    // Paginate by groups — perPage controls how many groups are shown per page
+                    // Paginate by groups
                     const groupsArr = [...groups.entries()];
-                    totalPages = Math.max(1, Math.ceil(groupsArr.length / perPage));
+                    totalPages = Math.max(1, Math.ceil(groupsArr.length / numericPerPage));
                     if (currentPage > totalPages) currentPage = totalPages;
-                    const startIdx = (currentPage - 1) * perPage;
-                    pageGroups = new Map(groupsArr.slice(startIdx, startIdx + perPage));
+                    const startIdx = (currentPage - 1) * numericPerPage;
+                    pageGroups = new Map(groupsArr.slice(startIdx, startIdx + numericPerPage));
                 }
 
                 const innerEl = completedEl.querySelector('#completed-inner');
@@ -438,85 +461,60 @@ export const PlannerList = {
                 }
             };
 
-            completedEl.innerHTML = `
-                <!-- Header row: title + count + pagination -->
-                <div class="flex items-center flex-wrap mb-3 px-1 gap-x-2 gap-y-1">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <button id="toggle-completed-list" class="flex items-center gap-2 group/comp">
-                            <svg class="w-3.5 h-3.5 text-dim/40 group-hover/comp:text-dim transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-dim/60 group-hover/comp:text-dim transition-colors whitespace-nowrap">Completed</span>
-                        </button>
-                        <span class="text-[10px] font-bold text-dim/30 tabular-nums">${completedTasks.length}</span>
+            const initCompleted = () => {
+                completedEl.innerHTML = `
+                    <!-- Header row: styled like TODAY/OVERDUE sections -->
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">${perPage === 'today' ? 'Completed Today' : 'Completed'}</span>
+                        <div class="h-px flex-grow bg-white/5"></div>
+                        <span class="text-[9px] font-black text-dim opacity-30">${completedTasks.length}</span>
                     </div>
-                    <div id="completed-header-pagination" class="shrink-0 ml-auto"></div>
-                </div>
 
-                <div id="completed-controls" class="flex flex-col gap-2.5 mb-4">
-                    <!-- Search -->
-                    <div class="relative w-full">
-                        <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-dim/30">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </div>
-                        <input type="text" id="completed-search" placeholder="Search..." class="w-full bg-white/3 border border-white/5 rounded-lg pl-8 pr-3 py-1.5 text-[11px] font-bold text-main focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-dim/25">
-                    </div>
-                    <!-- Group By + Per Page row -->
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <!-- Group By -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest">Group:</span>
-                            <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
-                                ${['day', 'week', 'month', 'year'].map(g => `
-                                    <button class="comp-group-btn px-1.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all ${g === groupBy ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-group="${g}">${g}</button>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <!-- Per Page -->
-                        <div class="flex items-center gap-1.5">
+                    <div id="completed-controls" class="flex items-center gap-2 mb-4">
+                        <!-- Show -->
+                        <div class="flex items-center gap-1.5 shrink-0">
                             <span class="text-[9px] font-bold text-dim/25 uppercase tracking-widest whitespace-nowrap">Show:</span>
                             <div class="flex items-center gap-0 bg-white/3 rounded-lg border border-white/5 p-0.5">
-                                ${[10, 25, 50, 100].map(n => `
-                                    <button class="comp-perpage-btn px-1.5 py-1 rounded-md text-[9px] font-bold tabular-nums transition-all ${n === perPage ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-perpage="${n}">${n}</button>
+                                ${['today', 3, 5, 10, 16, 20].map(n => `
+                                    <button class="comp-perpage-btn px-1.5 py-1 rounded-md text-[9px] font-bold tabular-nums transition-all ${String(n) === String(perPage) ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/40 hover:text-dim hover:bg-white/5'}" data-perpage="${n}">${n === 'today' ? 'Today' : n}</button>
                                 `).join('')}
                             </div>
                         </div>
+                        <!-- Pagination -->
+                        <div id="completed-header-pagination" class="shrink-0"></div>
+                        <!-- Search (only when not 'today') -->
+                        ${perPage !== 'today' ? `
+                        <div class="relative w-48 shrink-0">
+                            <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-dim/30">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <input type="text" id="completed-search" placeholder="Search..." class="w-full bg-white/3 border border-white/5 rounded-lg pl-8 pr-3 py-1.5 text-[11px] font-bold text-main focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-dim/25">
+                        </div>` : ''}
                     </div>
-                </div>
 
-                <div id="completed-inner"></div>
-            `;
-            listContent.appendChild(completedEl);
+                    <div id="completed-inner"></div>
+                `;
 
-            // Wire up controls
-            const searchInput = completedEl.querySelector('#completed-search');
-            searchInput.oninput = (e) => { searchQuery = e.target.value; currentPage = 1; renderCompleted(); };
+                // Wire up controls
+                const searchInput = completedEl.querySelector('#completed-search');
+                if (searchInput) {
+                    searchInput.oninput = (e) => { searchQuery = e.target.value; currentPage = 1; renderCompleted(); };
+                }
 
-            completedEl.querySelectorAll('.comp-group-btn').forEach(btn => {
-                btn.onclick = () => {
-                    groupBy = btn.dataset.group;
-                    currentPage = 1;
-                    completedEl.querySelectorAll('.comp-group-btn').forEach(b => {
-                        b.className = b.dataset.group === groupBy
-                            ? 'comp-group-btn px-1.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all bg-primary/20 text-primary shadow-sm'
-                            : 'comp-group-btn px-1.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all text-dim/40 hover:text-dim hover:bg-white/5';
-                    });
-                    renderCompleted();
-                };
-            });
+                completedEl.querySelectorAll('.comp-perpage-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const val = btn.dataset.perpage;
+                        perPage = val === 'today' ? 'today' : parseInt(val);
+                        currentPage = 1;
+                        searchQuery = '';
+                        initCompleted();
+                    };
+                });
 
-            completedEl.querySelectorAll('.comp-perpage-btn').forEach(btn => {
-                btn.onclick = () => {
-                    perPage = parseInt(btn.dataset.perpage);
-                    currentPage = 1;
-                    completedEl.querySelectorAll('.comp-perpage-btn').forEach(b => {
-                        b.className = parseInt(b.dataset.perpage) === perPage
-                            ? 'comp-perpage-btn px-1.5 py-1 rounded-md text-[9px] font-bold tabular-nums transition-all bg-primary/20 text-primary shadow-sm'
-                            : 'comp-perpage-btn px-1.5 py-1 rounded-md text-[9px] font-bold tabular-nums transition-all text-dim/40 hover:text-dim hover:bg-white/5';
-                    });
-                    renderCompleted();
-                };
-            });
+                renderCompleted();
+            };
 
-            renderCompleted();
+            initCompleted();
         }
 
         // Empty state

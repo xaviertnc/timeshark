@@ -1,5 +1,6 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
+import { buildRecentOptions } from '../utils/select-helpers.js';
 
 /**
  * assets/components/reports.js
@@ -298,8 +299,7 @@ export async function renderReports() {
             <div class="space-y-2">
               <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
               <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
-                <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
-                ${projects.map(p => `<option value="${p.id}" ${currentPid === String(p.id) ? 'selected' : ''}>${p.name}</option>`).join('')}
+                ${buildRecentOptions(projects, entries, 'project_id', { selectedId: currentPid, placeholder: 'Unassigned', allLabel: 'All Projects' })}
               </select>
             </div>
             <div class="space-y-2">
