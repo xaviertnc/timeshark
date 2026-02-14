@@ -393,7 +393,7 @@ export const PlannerTimeline = {
                                     : '';
                                 html += `
                                     <div class="task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden"
-                                         style="left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${projProgress}%, ${proj.color}44 ${projProgress}%); border-top: 2px solid ${proj.color}; border-bottom: 2px solid ${proj.color};"
+                                         style="left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${projProgress}%, ${proj.color}44 ${projProgress}%); border: 2px solid ${proj.color};"
                                          data-task-id="${task.id}"
                                          title="${tooltipText} • ${projProgress}% complete">
                                          ${spanTitle}
@@ -410,12 +410,20 @@ export const PlannerTimeline = {
                                     <div class="absolute inset-0 bg-black/15 pointer-events-none" style="width: ${task.progress}%"></div>
                                 ` : '';
 
+                                const isDone = status === 'done';
+
+                                // Hatched overlay for done tasks
+                                const doneOverlay = isDone ? `
+                                    <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.25) 3px, rgba(0,0,0,0.25) 5px);"></div>
+                                ` : '';
+
                                 html += `
                                     <div class="task-bar absolute rounded shadow-sm border border-white/5 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all group/task cursor-pointer overflow-hidden"
-                                         style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color};"
+                                         style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color}; ${isDone ? 'opacity: 0.45;' : ''}"
                                          data-task-id="${task.id}"
                                          title="${tooltipText}">
                                          ${progressHtml}
+                                         ${doneOverlay}
                                          ${titleHtml}
                                     </div>
                                 `;

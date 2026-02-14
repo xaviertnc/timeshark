@@ -23,7 +23,7 @@ try {
 
             debug_log('planner', 'POST received', $data);
 
-            if (isset($data['id'])) {
+            if (!empty($data['id'])) {
                 // Update — must find existing record
                 if (!$store->find($file, $data['id'])) {
                     debug_log('planner', 'NOT FOUND for update', $data['id']);

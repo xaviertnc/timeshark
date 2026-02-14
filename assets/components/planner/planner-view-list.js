@@ -74,12 +74,18 @@ export const PlannerList = {
         // Group
         const groups = {
             'overdue': { label: 'Overdue', tasks: [], color: 'text-red-500/80' },
+            'projects': { label: 'Projects', tasks: [], color: 'text-primary' },
             'today': { label: 'Today', tasks: [], color: 'text-primary' },
             'later': { label: 'Planned', tasks: [], color: 'text-dim' },
             'nodate': { label: 'Backlog', tasks: [], color: 'text-dim' }
         };
 
         activeTasks.forEach(t => {
+            // Project span tasks always go to PROJECTS group
+            if (t.task_type === 'project_span') {
+                groups['projects'].tasks.push(t);
+                return;
+            }
             if (!t.start_date) { groups['nodate'].tasks.push(t); return; }
             const startD = new Date(t.start_date);
             // Use end_date for overdue check — task is only overdue if its end time has passed
@@ -286,7 +292,7 @@ export const PlannerList = {
         const renderCard = isFull ? renderFullCard : renderCompactCard;
 
         // Render Groups
-        ['overdue', 'today', 'later', 'nodate'].forEach(key => {
+        ['overdue', 'projects', 'today', 'later', 'nodate'].forEach(key => {
             const gTasks = groups[key].tasks;
             if (gTasks.length === 0) return;
 

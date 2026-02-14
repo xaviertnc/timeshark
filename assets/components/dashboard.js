@@ -129,7 +129,7 @@ export async function renderDashboard() {
     const taskColor = shiftColor(proj.color, -10);
 
     return `
-            <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main">
+            <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main cursor-pointer" data-entry-id="${e.id}">
               <div class="flex items-center gap-4 flex-1">
                 <div class="w-1 h-8 rounded-full" style="background-color: ${taskColor}"></div>
                 <div class="min-w-0">
@@ -165,10 +165,6 @@ export async function renderDashboard() {
                           data-description="${e.description || ''}"
                           data-notes="${e.notes || ''}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  </button>
-                  <button class="edit-history-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all"
-                          data-id="${e.id}">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                   </button>
                   <button class="delete-history-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-red-500 hover:bg-red-500/10 transition-all"
                           data-id="${e.id}">
@@ -434,15 +430,19 @@ export async function renderDashboard() {
     };
   }
 
-  // Edit History Entry
-  container.querySelectorAll('.edit-history-btn').forEach(btn => {
-    btn.onclick = () => {
-      const entry = entries.find(e => String(e.id) === String(btn.dataset.id));
-      if (!entry) return;
-      const currentPid = entry.project_id ? String(entry.project_id) : '';
-      const projExists = projects.some(p => String(p.id) === currentPid);
+  // Edit History Entry — click anywhere on the row (except action buttons)
+  container.addEventListener('click', (e) => {
+    const row = e.target.closest('[data-entry-id]');
+    if (!row) return;
+    // Don't trigger edit if clicking action buttons
+    if (e.target.closest('.resume-btn') || e.target.closest('.delete-history-btn')) return;
 
-      modalPortal.innerHTML = `
+    const entry = entries.find(en => String(en.id) === String(row.dataset.entryId));
+    if (!entry) return;
+    const currentPid = entry.project_id ? String(entry.project_id) : '';
+    const projExists = projects.some(p => String(p.id) === currentPid);
+
+    modalPortal.innerHTML = `
         <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
           <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
             <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
@@ -460,10 +460,10 @@ export async function renderDashboard() {
                   <select name="project_id" id="history-project-select" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
                     <option value="" ${!projExists ? 'selected' : ''}>Unassigned</option>
                     ${projects.map(p => {
-        const pid = String(p.id);
-        const isSelected = currentPid === pid;
-        return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
-      }).join('')}
+      const pid = String(p.id);
+      const isSelected = currentPid === pid;
+      return `<option value="${pid}" ${isSelected ? 'selected' : ''}>${p.name}</option>`;
+    }).join('')}
                   </select>
                 </div>
                 <div class="space-y-1.5">
@@ -499,40 +499,39 @@ export async function renderDashboard() {
           </div>
         </div>
       `;
-      setTimeout(() => {
-        const content = modalPortal.querySelector('#modal-content');
-        if (content) content.classList.add('scale-100', 'opacity-100');
-      }, 10);
-      modalPortal.querySelector('#close-modal-x').onclick = closeModal;
-      modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+    setTimeout(() => {
+      const content = modalPortal.querySelector('#modal-content');
+      if (content) content.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    modalPortal.querySelector('#close-modal-x').onclick = closeModal;
+    modalPortal.querySelector('#cancel-modal').onclick = closeModal;
 
-      const projectSelect = modalPortal.querySelector('#history-project-select');
-      const taskSelect = modalPortal.querySelector('#history-task-select');
+    const projectSelect = modalPortal.querySelector('#history-project-select');
+    const taskSelect = modalPortal.querySelector('#history-task-select');
 
-      const updateTasks = () => {
-        const pid = projectSelect.value;
-        const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid));
-        taskSelect.innerHTML = `<option value="">No Linked Todo</option>` +
-          tasks.map(t => `<option value="${t.id}" ${String(t.id) === String(entry.task_id) ? 'selected' : ''}>${t.title}</option>`).join('');
-      };
+    const updateTasks = () => {
+      const pid = projectSelect.value;
+      const tasks = (store.get().tasks || []).filter(t => String(t.project_id) === String(pid));
+      taskSelect.innerHTML = `<option value="">No Linked Todo</option>` +
+        tasks.map(t => `<option value="${t.id}" ${String(t.id) === String(entry.task_id) ? 'selected' : ''}>${t.title}</option>`).join('');
+    };
 
-      projectSelect.onchange = updateTasks;
-      updateTasks();
+    projectSelect.onchange = updateTasks;
+    updateTasks();
 
-      modalPortal.querySelector('#edit-history-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const data = Object.fromEntries(new FormData(e.target).entries());
-        data.task_id = data.task_id || null;
-        data.start_time = new Date(data.start_time).toISOString();
-        data.end_time = new Date(data.end_time).toISOString();
-        data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
-        try {
-          await api.post('time-entries.php', data);
-          store.update('timeEntries', await api.get('time-entries.php'));
-          closeModal();
-          setTimeout(refreshView, 350);
-        } catch (err) { alert('Update failed'); }
-      };
+    modalPortal.querySelector('#edit-history-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target).entries());
+      data.task_id = data.task_id || null;
+      data.start_time = new Date(data.start_time).toISOString();
+      data.end_time = new Date(data.end_time).toISOString();
+      data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
+      try {
+        await api.post('time-entries.php', data);
+        store.update('timeEntries', await api.get('time-entries.php'));
+        closeModal();
+        setTimeout(refreshView, 350);
+      } catch (err) { alert('Update failed'); }
     };
   });
 
