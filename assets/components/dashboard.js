@@ -2,6 +2,7 @@ import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { PlannerModal } from './planner/planner-modal.js';
 import { PlannerState } from './planner/planner-state.js';
+import { PlannerList } from './planner/planner-view-list.js';
 
 /**
  * assets/components/dashboard.js
@@ -158,10 +159,42 @@ export async function renderDashboard() {
       </div>
     </div>
 
+    <!-- Today's Tasks Section -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between px-2 flex-wrap gap-2">
+        <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Today's Tasks</h3>
+        <div id="task-filter-toggles" class="flex items-center gap-1 bg-app/30 p-0.5 rounded-lg border border-white/5">
+        </div>
+      </div>
+
+      <!-- Quick Add -->
+      <div class="px-1">
+        <div class="bg-white/2 hover:bg-white/3 border border-white/5 rounded-xl p-2 transition-all focus-within:bg-white/5 focus-within:ring-1 focus-within:ring-primary/20 shadow-sm">
+          <div class="flex items-center gap-2">
+            <div class="shrink-0 w-8 h-8 flex items-center justify-center text-primary/40">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+            </div>
+            <input type="text" id="dashboard-quick-add" placeholder="Add a task..."
+                   class="flex-1 bg-transparent border-none text-[15px] font-bold text-main outline-none placeholder:text-dim/30 min-w-0 px-3 py-2">
+          </div>
+        </div>
+      </div>
+
+      <!-- Task List Container -->
+      <div id="dashboard-task-list" class="px-1">
+        <!-- Tasks rendered here by PlannerList.render() -->
+      </div>
+
+      <!-- View All Link -->
+      <div class="text-center">
+        <a href="#planner" class="text-xs font-bold text-primary/60 hover:text-primary transition-colors uppercase tracking-widest">View all in Planner →</a>
+      </div>
+    </div>
+
     <!-- History Section -->
     <div class="space-y-4">
       <div class="flex items-center justify-between px-2">
-        <h3 class="text-[9px] font-black text-dim uppercase tracking-[0.4em]">Recent History</h3>
+        <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Recent History</h3>
       </div>
 
       <div class="space-y-3">
@@ -174,33 +207,33 @@ export async function renderDashboard() {
       return `
             <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main cursor-pointer" data-entry-id="${e.id}">
               <div class="flex items-center gap-4 flex-1">
-                <div class="w-1 h-8 rounded-full" style="background-color: ${taskColor}"></div>
+                <div class="w-1 h-10 rounded-full" style="background-color: ${taskColor}"></div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 mb-0.5">
-                    <h4 class="text-sm font-bold tracking-tight">${e.description || 'No description'}</h4>
-                    <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${e.resource_id || 'Main'}</span>
+                    <h4 class="text-base font-bold tracking-tight">${e.description || 'No description'}</h4>
+                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${e.resource_id || 'Main'}</span>
                   </div>
-                  <p class="text-xs font-medium text-muted truncate">${proj.name} ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}</p>
+                  <p class="text-sm font-medium text-muted truncate">${proj.name} ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}</p>
                   ${(() => {
           if (e.task_id) {
             const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
             return `<div class="mt-1 flex items-center gap-1.5">
-                      <span class="text-[8px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 flex items-center gap-1 uppercase tracking-tighter">
-                        <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                      <span class="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 flex items-center gap-1 uppercase tracking-tighter">
+                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                         Linked Todo: ${t ? t.title : 'Deleted Todo'}
                       </span>
                     </div>`;
           }
           return '';
         })()}
-                  ${e.notes ? `<p class="text-[9px] text-dim italic mt-1.5">${e.notes}</p>` : ''}
+                  ${e.notes ? `<p class="text-xs text-dim italic mt-1.5">${e.notes}</p>` : ''}
                 </div>
               </div>
 
               <div class="flex items-center gap-6">
                 <div class="text-right whitespace-nowrap">
-                  <div class="text-[9px] font-black text-dim uppercase tracking-widest mb-0.5 opacity-40">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
-                  <div class="text-base font-bold tracking-tighter tabular-nums">${formatDuration(duration)}</div>
+                  <div class="text-xs font-black text-dim uppercase tracking-widest mb-0.5 opacity-40">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
+                  <div class="text-lg font-bold tracking-tighter tabular-nums">${formatDuration(duration)}</div>
                 </div>
                 <div class="flex gap-1">
                   <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg bg-app text-dim hover:text-primary hover:bg-primary/10 transition-all"
@@ -218,7 +251,7 @@ export async function renderDashboard() {
             </div>
           `;
     }).join('')}
-        ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-[9px] opacity-30">No history yet</p>' : ''}
+        ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-xs opacity-30">No history yet</p>' : ''}
       </div>
     </div>
   `;
@@ -264,6 +297,226 @@ export async function renderDashboard() {
     app.innerHTML = '';
     app.appendChild(await renderDashboard());
   };
+
+  // ─── TASK PANEL LOGIC ───
+  const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{"today":true,"planned":false,"spans":false,"completed":false}');
+  const allTasks = state.tasks || [];
+
+  const filterDefs = [
+    { key: 'today', label: 'Today', icon: '☀' },
+    { key: 'planned', label: 'Planned', icon: '📅' },
+    { key: 'spans', label: 'Spans', icon: '▓' },
+    { key: 'completed', label: 'Completed', icon: '✓' }
+  ];
+
+  const renderTaskToggles = () => {
+    const toggleContainer = container.querySelector('#task-filter-toggles');
+    if (!toggleContainer) return;
+    toggleContainer.innerHTML = filterDefs.map(f => `
+      <button class="task-filter-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
+      }" data-filter="${f.key}">
+        <span class="text-xs">${f.icon}</span>${f.label}
+      </button>
+    `).join('');
+  };
+
+  const renderDashboardTasks = () => {
+    const taskListEl = container.querySelector('#dashboard-task-list');
+    if (!taskListEl) return;
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+
+    const intersectsToday = (t) => {
+      if (!t.start_date) return false;
+      const startDay = new Date(t.start_date); startDay.setHours(0, 0, 0, 0);
+      const endDay = t.end_date ? new Date(t.end_date) : new Date(startDay);
+      endDay.setHours(23, 59, 59, 999);
+      return startDay <= tomorrow && endDay >= today;
+    };
+
+    const isCompletedToday = (t) => {
+      if (t.status !== 'done') return false;
+      const completedDate = t.completed_at || t.start_date;
+      if (!completedDate) return false;
+      const d = new Date(completedDate); d.setHours(0, 0, 0, 0);
+      return d.getTime() >= today.getTime() && d.getTime() < tomorrow.getTime();
+    };
+
+    let filtered = [];
+
+    if (taskFilters.today) {
+      filtered.push(...allTasks.filter(t =>
+        t.task_type !== 'project_span' &&
+        (t.status !== 'done' || isCompletedToday(t)) &&
+        (intersectsToday(t) || !t.start_date)
+      ));
+    }
+    if (taskFilters.planned) {
+      filtered.push(...allTasks.filter(t =>
+        t.task_type !== 'project_span' &&
+        t.status !== 'done' &&
+        !filtered.some(f => f.id === t.id) &&
+        (t.start_date && !intersectsToday(t) || !t.start_date)
+      ));
+    }
+    if (taskFilters.spans) {
+      filtered.push(...allTasks.filter(t =>
+        t.task_type === 'project_span' &&
+        !filtered.some(f => f.id === t.id)
+      ));
+    }
+
+    // Deduplicate
+    const seen = new Set();
+    filtered = filtered.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+
+    PlannerList.render(taskListEl, filtered, projects, {
+      fullWidth: true,
+      showDone: taskFilters.completed,
+      category: taskFilters.today && !taskFilters.planned ? 'today' : null
+    });
+
+    // If no filters active, show hint
+    if (!taskFilters.today && !taskFilters.planned && !taskFilters.spans && !taskFilters.completed) {
+      taskListEl.innerHTML = `<div class="text-center py-8 opacity-30">
+        <p class="text-xs font-bold text-dim uppercase tracking-widest">Toggle a filter above to see tasks</p>
+      </div>`;
+    }
+  };
+
+  renderTaskToggles();
+  renderDashboardTasks();
+
+  // Toggle filter clicks
+  container.querySelector('#task-filter-toggles')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.task-filter-btn');
+    if (!btn) return;
+    const key = btn.dataset.filter;
+    taskFilters[key] = !taskFilters[key];
+    localStorage.setItem('dashboard_task_filters', JSON.stringify(taskFilters));
+    renderTaskToggles();
+    renderDashboardTasks();
+  });
+
+  // Quick Add
+  const quickAddInput = container.querySelector('#dashboard-quick-add');
+  if (quickAddInput) {
+    quickAddInput.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+      const title = quickAddInput.value.trim();
+      if (!title) return;
+
+      // Default to most recent project
+      const sorted = [...entries].sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
+      const recentPid = sorted.find(en => en.project_id)?.project_id || (projects[0]?.id || '');
+
+      const today = new Date();
+      const isoDate = today.toISOString().split('T')[0] + 'T00:00:00';
+
+      const taskData = {
+        title,
+        project_id: recentPid,
+        resource_id: state.team?.[0]?.name || 'me',
+        priority: 'low',
+        start_date: isoDate,
+        end_date: isoDate.replace('T00:00:00', 'T23:59:00'),
+        status: 'todo',
+        progress: 0
+      };
+
+      try {
+        await api.post('planner.php', taskData);
+        await PlannerState.init();
+        quickAddInput.value = '';
+        refreshView();
+      } catch (err) { console.error('Quick add failed:', err); }
+    });
+  }
+
+  // Task interaction handlers (delegated)
+  const taskListEl = container.querySelector('#dashboard-task-list');
+  if (taskListEl) {
+    taskListEl.addEventListener('click', async (e) => {
+      // Toggle status
+      const toggleBtn = e.target.closest('.toggle-status-btn');
+      if (toggleBtn) {
+        e.stopPropagation();
+        const taskId = toggleBtn.dataset.taskId;
+        const task = (store.get().tasks || []).find(t => String(t.id) === String(taskId));
+        if (!task) return;
+        const isDone = task.status === 'done';
+        const update = isDone
+          ? { id: taskId, status: 'todo', progress: 0, completed_at: null }
+          : { id: taskId, status: 'done', progress: 100, completed_at: new Date().toISOString() };
+        try {
+          await api.post('planner.php', update);
+          await PlannerState.init();
+          refreshView();
+        } catch (err) { console.error('Toggle failed:', err); }
+        return;
+      }
+
+      // Progress bar click
+      const progressBar = e.target.closest('.inline-progress-bar');
+      if (progressBar) {
+        e.stopPropagation();
+        const taskId = progressBar.dataset.taskId;
+        const current = parseInt(progressBar.dataset.progress) || 0;
+        const steps = [0, 25, 50, 75, 100];
+        const nextIdx = (steps.indexOf(current) + 1) % steps.length;
+        const newProgress = steps[nextIdx] !== undefined ? steps[nextIdx] : steps[0];
+        const newStatus = newProgress >= 100 ? 'done' : newProgress > 0 ? 'in-progress' : 'todo';
+        const update = { id: taskId, progress: newProgress, status: newStatus };
+        if (newStatus === 'done') update.completed_at = new Date().toISOString();
+        if (newStatus !== 'done') update.completed_at = null;
+        try {
+          await api.post('planner.php', update);
+          await PlannerState.init();
+          refreshView();
+        } catch (err) { console.error('Progress update failed:', err); }
+        return;
+      }
+
+      // Track button
+      const trackBtn = e.target.closest('.track-btn');
+      if (trackBtn) {
+        e.stopPropagation();
+        const taskId = trackBtn.dataset.taskId;
+        const task = (store.get().tasks || []).find(t => String(t.id) === String(taskId));
+        if (!task) return;
+        const proj = projects.find(p => String(p.id) === String(task.project_id));
+        try {
+          const result = await api.post('time-entries.php?action=start', {
+            description: task.title,
+            project_id: task.project_id,
+            project_name: proj?.name || 'Unassigned',
+            task_id: task.id,
+            resource_id: state.team?.[0]?.name || 'Main'
+          });
+          store.update('activeTimer', result);
+          store.update('timeEntries', await api.get('time-entries.php'));
+          refreshView();
+        } catch (err) { console.error('Track failed:', err); }
+        return;
+      }
+
+      // Click task item → open PlannerModal for editing
+      const taskItem = e.target.closest('.task-item');
+      if (taskItem) {
+        const taskId = taskItem.dataset.taskId;
+        const task = (store.get().tasks || []).find(t => String(t.id) === String(taskId));
+        if (task) {
+          PlannerModal.onSave = async () => {
+            await PlannerState.init();
+            refreshView();
+          };
+          PlannerModal.open(task);
+        }
+        return;
+      }
+    });
+  }
 
   const closeModal = () => {
     const content = modalPortal.querySelector('#modal-content');

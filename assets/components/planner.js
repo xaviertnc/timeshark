@@ -20,7 +20,7 @@ let sidebarCollapsed = false;
 let projectFilter = 'all';
 // displayLimit removed — all tasks shown, no artificial cap
 let sidebarCategory = 'today'; // 'today', 'planned', 'completed'
-let listViewMode = localStorage.getItem('planner_list_view') || 'list'; // 'list' or 'grid'
+
 
 export async function renderPlanner() {
 
@@ -102,7 +102,24 @@ export async function renderPlanner() {
         </div>
 
         <div class="flex gap-4 flex-grow min-h-0 items-stretch overflow-hidden">
-            <!-- Sidebar: Navigation & Tasks -->
+            <!-- Timeline -->
+            <div id="timeline-wrapper" class="flex-grow flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
+                 <div id="planner-timeline-container" class="flex-grow overflow-x-auto overflow-y-auto custom-scrollbar relative">
+                    <!-- Timeline Content -->
+                 </div>
+            </div>
+
+            <!-- Full List View -->
+            <div id="full-list-wrapper" class="hidden flex-grow flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
+                <div class="p-3 border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-10 flex items-center px-6">
+                    <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">All Tasks</h3>
+                </div>
+                <div id="planner-full-list-container" class="flex-grow overflow-y-auto p-4 md:p-10 custom-scrollbar">
+                    <!-- List Content -->
+                </div>
+            </div>
+
+            <!-- Sidebar: Navigation & Tasks (RIGHT side) -->
             <div id="planner-sidebar" class="${sidebarCollapsed ? 'w-10' : 'w-72 lg:w-80 xl:w-96'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-y-auto overflow-x-hidden backdrop-blur-sm transition-all duration-500 relative shrink-0 min-w-0">
                 <!-- Sidebar Header -->
                 <div class="${sidebarCollapsed ? 'p-1 justify-center' : 'p-2 justify-between'} border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-20 flex items-center min-h-[36px] gap-1">
@@ -110,7 +127,7 @@ export async function renderPlanner() {
 
                     <div class="flex items-center gap-0.5 shrink-0">
                         <button id="toggle-sidebar-btn" class="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-dim hover:text-main shrink-0">
-                            <svg class="w-3.5 h-3.5 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                            <svg class="w-3.5 h-3.5 transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 5l7 7-7 7m-8-14l7 7-7 7"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -148,31 +165,6 @@ export async function renderPlanner() {
                             <!-- TODO Items Rendered Here -->
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Timeline -->
-            <div id="timeline-wrapper" class="flex-grow flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
-                 <div id="planner-timeline-container" class="flex-grow overflow-x-auto overflow-y-auto custom-scrollbar relative">
-                    <!-- Timeline Content -->
-                 </div>
-            </div>
-
-            <!-- Full List View -->
-            <div id="full-list-wrapper" class="hidden flex-grow flex flex-col bg-card/10 rounded-xl border border-white/5 overflow-hidden relative transition-all duration-500 min-w-0">
-                <div class="p-3 border-b border-white/5 bg-app/20 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-6">
-                    <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.2em]">All Tasks</h3>
-                    <div class="flex bg-app p-0.5 rounded-lg border border-white/5">
-                        <button id="toggle-list-grid" class="p-1.5 rounded-md transition-all ${listViewMode === 'grid' ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-main'}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                        </button>
-                        <button id="toggle-list-list" class="p-1.5 rounded-md transition-all ${listViewMode === 'list' ? 'bg-card text-primary shadow-sm' : 'text-dim hover:text-main'}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                        </button>
-                    </div>
-                </div>
-                <div id="planner-full-list-container" class="flex-grow overflow-y-auto p-4 md:p-10 custom-scrollbar">
-                    <!-- List Content -->
                 </div>
             </div>
         </div>
@@ -313,7 +305,6 @@ export async function renderPlanner() {
             PlannerList.render('planner-full-list-container', allTasks, data.projects, {
                 fullWidth: true,
                 showDone: true,
-                viewMode: listViewMode,
                 projectFilter: projectFilter
             });
         }
@@ -566,15 +557,7 @@ export async function renderPlanner() {
             return;
         }
 
-        // List View Mode Toggle
-        const gridBtn = e.target.closest('#toggle-list-grid');
-        const listBtn = e.target.closest('#toggle-list-list');
-        if (gridBtn || listBtn) {
-            listViewMode = gridBtn ? 'grid' : 'list';
-            localStorage.setItem('planner_list_view', listViewMode);
-            updateUI();
-            return;
-        }
+
 
         // View Mode
         const viewBtn = e.target.closest('.view-toggle');

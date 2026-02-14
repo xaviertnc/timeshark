@@ -15,8 +15,6 @@ export const PlannerList = {
         const isFull = options.fullWidth || false;
         const limit = options.limit || 0;
         const showDone = options.showDone || false;
-        const viewMode = options.viewMode || 'list';
-        const useGrid = isFull && viewMode === 'grid';
         const category = options.category || null;
 
         container.innerHTML = '';
@@ -203,46 +201,6 @@ export const PlannerList = {
             const timeStr = formatTime(t);
             const isContinuous = !!proj.continuous;
 
-            if (useGrid) {
-                return `
-                    <div class="task-item group/task bg-card/40 rounded-xl border border-white/5 hover:border-white/10 p-4 transition-all cursor-pointer hover:shadow-lg hover:shadow-black/10 relative overflow-hidden min-w-[280px] max-w-[340px] flex-shrink" style="flex-basis: 320px;" data-task-id="${t.id}">
-        
-                        <div class="flex items-start gap-3 mb-3">
-                            ${isSpan
-                        ? `<div class="mt-0.5 shrink-0 w-5 h-5 rounded-sm bg-primary flex items-center justify-center">
-                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                                   </div>`
-                        : `<button class="toggle-status-btn mt-0.5 shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
-                                   </button>`
-                    }
-                            <span class="text-[13px] font-bold leading-snug truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
-                        </div>
-
-                        <div class="flex flex-wrap items-center gap-2 mb-3 pl-8">
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${prio.bg} ${prio.color}">
-                                <span class="w-1 h-1 rounded-full ${prio.dot}"></span>${prio.label}
-                            </span>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-white/5 text-dim opacity-40">
-                                <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${proj.color}"></span>${proj.name}
-                            </span>
-                        </div>
-
-                        ${timeStr ? `<div class="flex items-center gap-1.5 text-dim opacity-40 mb-3 pl-8">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span class="text-[9px] font-bold tracking-tight">${timeStr}</span>
-                        </div>` : ''}
-
-                        ${!isContinuous ? `<div class="pl-8">
-                            <div class="inline-progress-bar relative h-5 bg-white/5 rounded-md overflow-hidden cursor-pointer w-full" data-task-id="${t.id}" data-progress="${progress}">
-                                <div class="absolute inset-y-0 left-0 rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%; background-color: ${proj.color}; opacity: ${isDone ? 0.35 : 1}"></div>
-                                <span class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
-                            </div>
-                        </div>` : `<div class="pl-8"><span class="text-[8px] font-black uppercase tracking-wider text-dim/30">∞ Continuous</span></div>`}
-                    </div>
-                `;
-            }
-
             // List row — fills full width
             return `
                 <div class="task-item group/task relative flex items-center gap-4 p-3 px-4 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all cursor-pointer" data-task-id="${t.id}">
@@ -305,7 +263,7 @@ export const PlannerList = {
                     <div class="h-px flex-grow bg-white/5"></div>
                     <span class="text-[9px] font-black text-dim opacity-30">${gTasks.length}</span>
                 </div>
-                <div class="${useGrid ? 'flex flex-wrap gap-3' : 'flex flex-col'}">
+                <div class="flex flex-col">
                     ${gTasks.map(t => renderCard(t)).join('')}
                 </div>
             `;
@@ -440,7 +398,7 @@ export const PlannerList = {
                                 <div class="h-px flex-grow bg-white/5"></div>
                                 <span class="text-[8px] font-black text-dim/30">${tasks.length}</span>
                             </div>
-                            <div class="${useGrid ? 'flex flex-wrap gap-3' : 'flex flex-col'}">
+                            <div class="flex flex-col">
                                 ${tasks.map(t => renderCard(t)).join('')}
                             </div>
                         </div>
