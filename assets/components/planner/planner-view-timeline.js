@@ -33,7 +33,7 @@ const ZOOM = {
 };
 
 export const PlannerTimeline = {
-    render(container, data, config, today, zoom = 'regular', onLaneReorder = null) {
+    render(container, data, config, today, zoom = 'regular', onLaneReorder = null, options = {}) {
         if (typeof container === 'string') container = document.getElementById(container);
         if (!container) return;
 
@@ -277,7 +277,16 @@ export const PlannerTimeline = {
         // ───── Rows ─────
         data.rows.forEach(row => {
             // Get project lanes for this resource
-            const projectLanes = getProjectLanes(row.tasks);
+            let projectLanes = getProjectLanes(row.tasks);
+
+            // When spans are hidden, remove span-only lanes and strip span tasks from mixed lanes
+            if (options.showSpans === false) {
+                projectLanes = projectLanes.map(lane => ({
+                    ...lane,
+                    tasks: lane.tasks.filter(t => t.task_type !== 'project_span')
+                })).filter(lane => lane.tasks.length > 0);
+            }
+
             const laneCount = Math.max(1, projectLanes.length);
             const laneGap = zoom === 'regular' ? 10 : zoom === 'relaxed' ? 12 : 3;
             const totalBarArea = laneCount * zp.barH + (laneCount - 1) * laneGap;
@@ -356,8 +365,11 @@ export const PlannerTimeline = {
                         lane.tasks.forEach(task => {
                             if (!task.start_date) return;
 
-                            // Year view: skip short tasks (< 3 days), only show spans and long tasks
+                            // Skip spans if toggled off
                             const isSpanEarly = task.task_type === 'project_span';
+                            if (isSpanEarly && options.showSpans === false) return;
+
+                            // Year view: skip short tasks (< 3 days), only show spans and long tasks
                             if (config.type === 'year' && !isSpanEarly) {
                                 const taskDays = task.end_date
                                     ? (new Date(task.end_date) - new Date(task.start_date)) / (24 * 60 * 60 * 1000)
@@ -404,8 +416,9 @@ export const PlannerTimeline = {
                                     : '';
 
                                 // Progress overlay (skip for continuous projects)
-                                const progressHtml = (!proj.continuous && task.progress) ? `
-                                    <div class="absolute inset-0 bg-black/15 pointer-events-none" style="width: ${task.progress}%"></div>
+                                const taskProgress = task.progress || 0;
+                                const progressHtml = (!proj.continuous && taskProgress) ? `
+                                    <div class="absolute inset-0 bg-black/15 pointer-events-none" style="width: ${taskProgress}%"></div>
                                 ` : '';
 
                                 const isDone = status === 'done';
@@ -600,11 +613,19 @@ export const PlannerTimeline = {
             }, { signal: ac.signal });
         }
 
-        // Initial Scroll for Day View
-        if (config.isDayView) {
-            if (container.scrollLeft < 10) {
+        // Center scroll on today/current time on initial render
+        const scrollParent = container.closest('.overflow-x-auto') || container;
+        if (scrollParent.scrollLeft < 10) {
+            if (config.isDayView) {
                 const hourWidth = pxPerDay / 24;
-                container.scrollLeft = 6 * hourWidth;
+                const now = new Date();
+                const nowX = leftWidth + (now.getHours() + now.getMinutes() / 60) * hourWidth;
+                scrollParent.scrollLeft = Math.max(0, nowX - scrollParent.clientWidth / 2);
+            } else {
+                const todayX = getX(today);
+                if (todayX >= 0 && todayX <= totalWidth) {
+                    scrollParent.scrollLeft = Math.max(0, leftWidth + todayX - scrollParent.clientWidth / 2);
+                }
             }
         }
     }

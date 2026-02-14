@@ -685,9 +685,11 @@ export async function renderDashboard() {
   }
 
   const closeModal = () => {
-    const content = modalPortal.querySelector('#modal-content');
+    const overlay = modalPortal.querySelector('.dashboard-modal-overlay');
+    if (!overlay) return;
+    const content = overlay.querySelector('#modal-content');
     if (content) content.classList.remove('scale-100', 'opacity-100');
-    setTimeout(() => { modalPortal.innerHTML = ''; }, 300);
+    setTimeout(() => { overlay.remove(); }, 300);
   };
 
   // Timer Ticker
@@ -786,8 +788,8 @@ export async function renderDashboard() {
       const currentPid = activeTimer.project_id ? String(activeTimer.project_id) : '';
       const projExists = projects.some(p => String(p.id) === currentPid);
 
-      modalPortal.innerHTML = `
-        <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
+      modalPortal.insertAdjacentHTML('beforeend', `
+        <div class="dashboard-modal-overlay fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
           <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main">
             <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -839,13 +841,14 @@ export async function renderDashboard() {
             </form>
           </div>
         </div>
-      `;
+      `);
+      const activeOverlay = modalPortal.querySelector('.dashboard-modal-overlay:last-child');
       setTimeout(() => {
-        const content = modalPortal.querySelector('#modal-content');
+        const content = activeOverlay.querySelector('#modal-content');
         if (content) content.classList.add('scale-100', 'opacity-100');
       }, 10);
-      modalPortal.querySelector('#close-modal-x').onclick = closeModal;
-      modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+      activeOverlay.querySelector('#close-modal-x').onclick = closeModal;
+      activeOverlay.querySelector('#cancel-modal').onclick = closeModal;
 
       const projectSelect = modalPortal.querySelector('#active-project-select');
       const taskSelect = modalPortal.querySelector('#active-task-select');
@@ -893,8 +896,8 @@ export async function renderDashboard() {
     const currentPid = entry.project_id ? String(entry.project_id) : '';
     const projExists = projects.some(p => String(p.id) === currentPid);
 
-    modalPortal.innerHTML = `
-        <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
+    modalPortal.insertAdjacentHTML('beforeend', `
+        <div class="dashboard-modal-overlay fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
           <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
             <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -944,13 +947,14 @@ export async function renderDashboard() {
             </form>
           </div>
         </div>
-      `;
+      `);
+    const historyOverlay = modalPortal.querySelector('.dashboard-modal-overlay:last-child');
     setTimeout(() => {
-      const content = modalPortal.querySelector('#modal-content');
+      const content = historyOverlay.querySelector('#modal-content');
       if (content) content.classList.add('scale-100', 'opacity-100');
     }, 10);
-    modalPortal.querySelector('#close-modal-x').onclick = closeModal;
-    modalPortal.querySelector('#cancel-modal').onclick = closeModal;
+    historyOverlay.querySelector('#close-modal-x').onclick = closeModal;
+    historyOverlay.querySelector('#cancel-modal').onclick = closeModal;
 
     const projectSelect = modalPortal.querySelector('#history-project-select');
     const taskSelect = modalPortal.querySelector('#history-task-select');

@@ -20,6 +20,7 @@ let sidebarCollapsed = false;
 let projectFilter = 'all';
 // displayLimit removed — all tasks shown, no artificial cap
 let sidebarFilters = { today: true, completed: false, planned: false, projects: false };
+let showSpans = true;
 
 
 export async function renderPlanner() {
@@ -89,6 +90,11 @@ export async function renderPlanner() {
                         </button>
                     `).join('')}
                 </div>
+
+                <!-- Spans Toggle -->
+                <button id="toggle-spans-btn" class="px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all border ${showSpans ? 'bg-primary/15 text-primary border-primary/30' : 'bg-app/30 text-dim border-white/5 opacity-40 hover:opacity-100'}">
+                    ▓ Spans
+                </button>
 
 
             </div>
@@ -252,7 +258,7 @@ export async function renderPlanner() {
         timelineWrapper.classList.remove('hidden');
         scaleContainer?.classList.remove('hidden');
         zoomContainer?.classList.remove('hidden');
-        PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder);
+        PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { showSpans });
 
         // Sidebar List Logic
         const allThisProjectTasks = [...data.backlog, ...data.rows.flatMap(r => r.tasks)];
@@ -289,7 +295,7 @@ export async function renderPlanner() {
         const today = new Date();
         const config = PlannerUtils.getTimelineConfig(currentScale, timeOffset, today);
         const timelineContainer = container.querySelector('#planner-timeline-container');
-        if (timelineContainer) PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder);
+        if (timelineContainer) PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { showSpans });
     });
 
     const timelineContainer = container.querySelector('#planner-timeline-container');
@@ -445,9 +451,7 @@ export async function renderPlanner() {
             e.stopPropagation();
             const taskId = progressBar.dataset.taskId;
             const currentProgress = parseInt(progressBar.dataset.progress) || 0;
-            const steps = [0, 25, 50, 75, 100];
-            const nextIdx = (steps.indexOf(currentProgress) + 1) % steps.length;
-            const newProgress = steps[nextIdx];
+            const newProgress = Math.min(100, currentProgress + 15);
 
             // Optimistic update
             const tasks = store.get().tasks || [];
@@ -576,6 +580,23 @@ export async function renderPlanner() {
     if (filterSelect) {
         filterSelect.addEventListener('change', (e) => {
             projectFilter = e.target.value;
+            updateUI();
+        });
+    }
+
+    // Spans Toggle
+    const spansBtn = container.querySelector('#toggle-spans-btn');
+    if (spansBtn) {
+        spansBtn.addEventListener('click', () => {
+            showSpans = !showSpans;
+            // Update button styling
+            if (showSpans) {
+                spansBtn.classList.add('bg-primary/15', 'text-primary', 'border-primary/30');
+                spansBtn.classList.remove('bg-app/30', 'text-dim', 'border-white/5', 'opacity-40');
+            } else {
+                spansBtn.classList.remove('bg-primary/15', 'text-primary', 'border-primary/30');
+                spansBtn.classList.add('bg-app/30', 'text-dim', 'border-white/5', 'opacity-40');
+            }
             updateUI();
         });
     }

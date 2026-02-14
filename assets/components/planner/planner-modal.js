@@ -52,6 +52,7 @@ export const PlannerModal = {
                                         <option value="todo">Todo</option>
                                         <option value="in-progress">In-Progress</option>
                                         <option value="done">Done</option>
+                                        <option value="backlog">Backlog</option>
                                     </select>
                                 </div>
                             </div>
@@ -192,20 +193,21 @@ export const PlannerModal = {
             if (e.target.checked) {
                 dateFields.classList.remove('hidden');
                 dateFields.classList.add('grid');
+                // If status is backlog, restore to todo
+                if (form.status.value === 'backlog') form.status.value = 'todo';
                 if (!form.start_date.value) {
-                    const today = new Date().toISOString().split('T')[0];
-                    form.start_date.value = today;
-                    form.end_date.value = today;
+                    const now = new Date();
+                    form.start_date.value = now.toISOString().split('T')[0];
+                    form.start_time.value = now.toTimeString().substring(0, 5);
+                    const end = new Date(now.getTime() + 60 * 60 * 1000);
+                    form.end_date.value = end.toISOString().split('T')[0];
+                    form.end_time.value = end.toTimeString().substring(0, 5);
                 }
-                if (!form.start_time.value) form.start_time.value = '09:00';
-                if (!form.end_time.value) form.end_time.value = '17:00';
             } else {
                 dateFields.classList.add('hidden');
                 dateFields.classList.remove('grid');
-                form.start_date.value = '';
-                form.end_date.value = '';
-                form.start_time.value = '09:00';
-                form.end_time.value = '17:00';
+                // Mark as backlog but preserve date values in the form
+                form.status.value = 'backlog';
             }
         };
 
@@ -274,21 +276,13 @@ export const PlannerModal = {
             e.preventDefault();
             const data = Object.fromEntries(new FormData(form).entries());
 
-            // Handle Dates + Times
-            if (!dateToggle.checked) {
-                data.start_date = null;
-                data.end_date = null;
-                delete data.start_time;
-                delete data.end_time;
-            } else {
-                // Combine date + time into ISO strings
-                const st = data.start_time || '09:00';
-                const et = data.end_time || '17:00';
-                if (data.start_date) data.start_date = `${data.start_date}T${st}:00`;
-                if (data.end_date) data.end_date = `${data.end_date}T${et}:00`;
-                delete data.start_time;
-                delete data.end_time;
-            }
+            // Handle Dates + Times — always send dates, use status for active/inactive
+            const st = data.start_time || '09:00';
+            const et = data.end_time || '17:00';
+            if (data.start_date) data.start_date = `${data.start_date}T${st}:00`;
+            if (data.end_date) data.end_date = `${data.end_date}T${et}:00`;
+            delete data.start_time;
+            delete data.end_time;
 
             // Ensure numeric progress
             data.progress = parseInt(data.progress) || 0;
@@ -433,11 +427,17 @@ export const PlannerModal = {
             });
 
             // Dates + Times
-            if (task.start_date) {
-                dateToggle.checked = true;
+            const isActive = task.status !== 'backlog';
+            dateToggle.checked = isActive;
+            if (isActive) {
                 dateFields.classList.remove('hidden');
                 dateFields.classList.add('grid');
+            } else {
+                dateFields.classList.add('hidden');
+                dateFields.classList.remove('grid');
+            }
 
+            if (task.start_date) {
                 const startParts = task.start_date.split('T');
                 const endParts = (task.end_date || task.start_date).split('T');
 
@@ -446,9 +446,13 @@ export const PlannerModal = {
                 form.start_time.value = startParts[1] ? startParts[1].substring(0, 5) : '09:00';
                 form.end_time.value = endParts[1] ? endParts[1].substring(0, 5) : '17:00';
             } else {
-                dateToggle.checked = false;
-                dateFields.classList.add('hidden');
-                dateFields.classList.remove('grid');
+                // No dates yet — default to now + 1 hour
+                const now = new Date();
+                form.start_date.value = now.toISOString().split('T')[0];
+                form.start_time.value = now.toTimeString().substring(0, 5);
+                const end = new Date(now.getTime() + 60 * 60 * 1000);
+                form.end_date.value = end.toISOString().split('T')[0];
+                form.end_time.value = end.toTimeString().substring(0, 5);
             }
 
         } else {
@@ -464,19 +468,25 @@ export const PlannerModal = {
             if (defaults.project_id) form.project_id.value = defaults.project_id;
             form.priority.value = defaults.priority || 'medium';
 
+            // Default dates: now + 1 hour
+            const now = new Date();
+            const end = new Date(now.getTime() + 60 * 60 * 1000);
+
             if (defaults.date) {
                 dateToggle.checked = true;
                 dateFields.classList.remove('hidden');
                 dateFields.classList.add('grid');
                 form.start_date.value = defaults.date;
                 form.end_date.value = defaults.date;
-                form.start_time.value = '09:00';
-                form.end_time.value = '17:00';
             } else {
-                dateToggle.checked = false;
-                dateFields.classList.add('hidden');
-                dateFields.classList.remove('grid');
+                dateToggle.checked = true;
+                dateFields.classList.remove('hidden');
+                dateFields.classList.add('grid');
+                form.start_date.value = now.toISOString().split('T')[0];
+                form.end_date.value = end.toISOString().split('T')[0];
             }
+            form.start_time.value = now.toTimeString().substring(0, 5);
+            form.end_time.value = end.toTimeString().substring(0, 5);
         }
 
         modal.classList.remove('hidden');
