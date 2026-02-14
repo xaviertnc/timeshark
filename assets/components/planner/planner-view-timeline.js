@@ -393,19 +393,45 @@ export const PlannerTimeline = {
                             const tooltipText = `${task.title} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
 
                             if (isSpan) {
-                                // Project Span: flat bar 30% taller, centered in lane
+                                // Project Span: flat bar with correctly calculated progress
                                 const spanH = Math.max(zp.barH * 0.67, zp.spanFontSize + 6);
                                 const spanTop = barTop + (zp.barH - spanH) / 2;
                                 // Compute progress from project's tasks
                                 const projProgress = getProjectProgress(task.project_id || 'personal');
+
+                                // CRITICAL FIX: Calculate progress based on FULL span width, not visible width
+                                // The full width of the span (even if clipped)
+                                const fullSpanW = w;
+                                // How much of the full span should be filled with progress
+                                const progressW = (fullSpanW * projProgress) / 100;
+                                // Where the progress bar starts (could be negative if span starts before visible area)
+                                const progressStartX = x;
+                                // Where the progress bar ends
+                                const progressEndX = progressStartX + progressW;
+
+                                // Clamp progress bar to visible area
+                                const visibleProgressStartX = Math.max(0, progressStartX);
+                                const visibleProgressEndX = Math.min(totalWidth, progressEndX);
+                                const visibleProgressW = Math.max(0, visibleProgressEndX - visibleProgressStartX);
+
+                                // Progress gradient calculation
+                                // We need to figure out what % of the renderW the progress occupies
+                                let gradientProgressPercent;
+                                if (renderW <= 0) {
+                                    gradientProgressPercent = 0;
+                                } else {
+                                    // The progress width as a percentage of the visible render width
+                                    gradientProgressPercent = (visibleProgressW / renderW) * 100;
+                                }
+
                                 const spanTitle = showText && renderW > 50
-                                    ? `<span class="flex items-center justify-center gap-2 px-2 pointer-events-none whitespace-nowrap overflow-hidden" style="height:100%;line-height:${spanH}px"><span class="text-[${zp.spanFontSize}px] font-black text-white/90 truncate" style="line-height:${spanH}px">${task.title}</span><span class="text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0">${projProgress}%</span></span>`
+                                    ? `<span class=\"flex items-center justify-center gap-2 px-2 pointer-events-none whitespace-nowrap overflow-hidden\" style=\"height:100%;line-height:${spanH}px\"><span class=\"text-[${zp.spanFontSize}px] font-black text-white/90 truncate\" style=\"line-height:${spanH}px\">${task.title}</span><span class=\"text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0\">${projProgress}%</span></span>`
                                     : '';
                                 html += `
-                                    <div class="task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden"
-                                         style="left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${projProgress}%, ${proj.color}44 ${projProgress}%); border: 2px solid ${proj.color};"
-                                         data-task-id="${task.id}"
-                                         title="${tooltipText} • ${projProgress}% complete">
+                                    <div class=\"task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden\"
+                                         style=\"left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${gradientProgressPercent}%, ${proj.color}44 ${gradientProgressPercent}%); border: 2px solid ${proj.color};\"
+                                         data-task-id=\"${task.id}\"
+                                         title=\"${tooltipText} • ${projProgress}% complete\">
                                          ${spanTitle}
                                     </div>
                                 `;

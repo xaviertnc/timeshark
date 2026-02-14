@@ -8,6 +8,7 @@
 import { api } from '../../utils/api.js';
 import { store } from '../../utils/store.js';
 import { populateSelectWithRecent } from '../../utils/select-helpers.js';
+import { syncSpanToProject } from '../../utils/project-span-sync.js';
 
 export const PlannerModal = {
     render(containerId) {
@@ -40,7 +41,12 @@ export const PlannerModal = {
                             <div class="flex gap-3">
                                 <div class="space-y-2 w-[130px] shrink-0">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Member</label>
-                                    <select name="resource_id" id="modal-resource" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none"></select>
+                                    <div class="flex gap-1">
+                                        <select name="resource_id" id="modal-resource" class="flex-1 bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none min-w-0"></select>
+                                        <button type="button" id="unassign-member-btn" class="px-2  bg-white/5 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 rounded-xl text-dim hover:text-red-500 transition-all" title="Unassign member">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="space-y-2 flex-1 min-w-0">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Project</label>
@@ -99,7 +105,17 @@ export const PlannerModal = {
                                         <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Start</label>
                                         <div class="flex gap-2">
                                             <input type="date" name="start_date" class="flex-1 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
-                                            <input type="time" name="start_time" value="09:00" class="w-24 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                            <div class="flex gap-1 items-center">
+                                                <input type="time" name="start_time" class="w-24 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                                <div class="flex flex-col gap-0.5">
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="start" data-direction="1" title="+15 min">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                                                    </button>
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="start" data-direction="-1" title="-15 min">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <!-- End -->
@@ -107,7 +123,17 @@ export const PlannerModal = {
                                         <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">End</label>
                                         <div class="flex gap-2">
                                             <input type="date" name="end_date" class="flex-1 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
-                                            <input type="time" name="end_time" value="17:00" class="w-24 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                            <div class="flex gap-1 items-center">
+                                                <input type="time" name="end_time" class="w-24 py-2.5 px-3 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-[11px] font-bold text-main outline-none transition-all">
+                                                <div class="flex flex-col gap-0.5">
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="end" data-direction="1" title="+15 min">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                                                    </button>
+                                                    <button type="button" class="time-shift-btn px-1.5 py-0.5 bg-white/5 hover:bg-primary/10 border border-white/5 hover:border-primary/20 rounded text-dim hover:text-primary transition-all" data-target="end" data-direction="-1" title="-15 min">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -115,15 +141,18 @@ export const PlannerModal = {
 
                             <!-- Progress Section -->
                             <div id="progress-section" class="space-y-3 border-t border-white/5 pt-5">
-                                <div class="flex justify-between items-center">
+                                <div class="flex justify-between items-center gap-3">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest">Progress</label>
-                                    <span id="progress-val" class="text-xs font-black text-primary tabular-nums">0%</span>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="progress-number-input" min="0" max="100" step="1" value="0" class="w-16 py-1 px-2 bg-app border border-white/5 rounded-lg text-xs font-black text-primary text-center outline-none focus:ring-2 focus:ring-primary/20 tabular-nums">
+                                        <span class="text-xs font-black text-dim">%</span>
+                                    </div>
                                 </div>
 
                                 <!-- Combined Progress Bar + Slider -->
                                 <div class="relative h-3 bg-white/5 rounded-full group/progress cursor-pointer">
                                     <div id="progress-bar-fill" class="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-300 pointer-events-none" style="width: 0%"></div>
-                                    <input type="range" name="progress" min="0" max="100" value="0" step="5" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                    <input type="range" name="progress" min="0" max="100" value="0" step="1" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                                 </div>
 
                                 <!-- Quick Buttons -->
@@ -163,11 +192,13 @@ export const PlannerModal = {
         const dateToggle = portal.querySelector('#toggle-dates');
         const dateFields = portal.querySelector('#date-fields');
         const progressInput = portal.querySelector('input[name="progress"]');
-        const progressVal = portal.querySelector('#progress-val');
+        const progressNumberInput = portal.querySelector('#progress-number-input');
         const progressBar = portal.querySelector('#progress-bar-fill');
         const deleteBtn = portal.querySelector('#delete-btn');
         const commitBtn = portal.querySelector('#commit-btn');
         const taskTypeSelect = portal.querySelector('#modal-task-type');
+        const unassignMemberBtn = portal.querySelector('#unassign-member-btn');
+        const resourceSelect = portal.querySelector('#modal-resource');
 
         closeBtn.onclick = () => this.close();
 
@@ -211,20 +242,18 @@ export const PlannerModal = {
             }
         };
 
-        // Task Type change handler - hide progress for span tasks
-        const progressSection = portal.querySelector('#progress-section');
+        // Task Type change handler
+        // Note: Progress is now always editable for all task types including spans
         taskTypeSelect.onchange = () => {
-            if (taskTypeSelect.value === 'project_span') {
-                progressSection.classList.add('hidden');
-            } else {
-                progressSection.classList.remove('hidden');
-            }
+            // No special handling needed - progress stays visible
         };
 
         // Progress Slider
+        // Progress Update Function
         const statusSelect = form.querySelector('select[name="status"]');
         const updateProgress = (val) => {
-            progressVal.innerText = `${val}%`;
+            val = Math.max(0, Math.min(100, parseInt(val) || 0));
+            progressNumberInput.value = val;
             progressInput.value = val;
             progressBar.style.width = `${val}%`;
 
@@ -238,13 +267,8 @@ export const PlannerModal = {
             // Color transitions
             if (val >= 100) {
                 progressBar.className = 'absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all duration-300';
-                progressVal.className = 'text-xs font-black text-emerald-500 tabular-nums';
-            } else if (val > 0) {
-                progressBar.className = 'absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-300';
-                progressVal.className = 'text-xs font-black text-primary tabular-nums';
             } else {
                 progressBar.className = 'absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-300';
-                progressVal.className = 'text-xs font-black text-dim tabular-nums';
             }
 
             // Highlight active quick button
@@ -262,14 +286,57 @@ export const PlannerModal = {
             });
         };
 
+        // Progress controls - all sync together
         progressInput.oninput = (e) => updateProgress(parseInt(e.target.value));
 
-        // Quick Progress Buttons
-        portal.querySelectorAll('.progress-quick-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                updateProgress(parseInt(btn.dataset.progress));
-            });
+        // Number input needs both oninput and onchange for best compatibility
+        progressNumberInput.addEventListener('input', (e) => updateProgress(parseInt(e.target.value) || 0));
+        progressNumberInput.addEventListener('change', (e) => updateProgress(parseInt(e.target.value) || 0));
+
+        portal.addEventListener('click', (e) => {
+            const quickBtn = e.target.closest('.progress-quick-btn');
+            if (quickBtn) {
+                e.preventDefault();
+                updateProgress(parseInt(quickBtn.dataset.progress));
+            }
         });
+
+        // Time shift buttons (±15 min) - MAINTAINS DURATION
+        portal.addEventListener('click', (e) => {
+            const shiftBtn = e.target.closest('.time-shift-btn');
+            if (!shiftBtn) return;
+
+            const direction = parseInt(shiftBtn.dataset.direction); // 1 or -1
+            const shiftAmount = direction * 15; // minutes
+
+            // Get both date/time inputs
+            const startDateInput = form.querySelector('input[name="start_date"]');
+            const startTimeInput = form.querySelector('input[name="start_time"]');
+            const endDateInput = form.querySelector('input[name="end_date"]');
+            const endTimeInput = form.querySelector('input[name="end_time"]');
+
+            // Shift both start and end to preserve duration
+            if (startDateInput.value && startTimeInput.value) {
+                const startDt = new Date(`${startDateInput.value}T${startTimeInput.value}`);
+                startDt.setMinutes(startDt.getMinutes() + shiftAmount);
+                startDateInput.value = startDt.toISOString().split('T')[0];
+                startTimeInput.value = startDt.toTimeString().substring(0, 5);
+            }
+
+            if (endDateInput.value && endTimeInput.value) {
+                const endDt = new Date(`${endDateInput.value}T${endTimeInput.value}`);
+                endDt.setMinutes(endDt.getMinutes() + shiftAmount);
+                endDateInput.value = endDt.toISOString().split('T')[0];
+                endTimeInput.value = endDt.toTimeString().substring(0, 5);
+            }
+        });
+
+        // Unassign member button
+        if (unassignMemberBtn) {
+            unassignMemberBtn.onclick = () => {
+                resourceSelect.value = '';
+            };
+        }
 
         // Form Submit
         form.onsubmit = async (e) => {
@@ -316,6 +383,18 @@ export const PlannerModal = {
 
             try {
                 await api.post('planner.php', data);
+
+                // Sync span → project if this is a project span
+                if (data.task_type === 'project_span' && data.project_id) {
+                    // Refresh tasks first to get the saved task
+                    const tasks = await api.get('planner.php');
+                    store.update('tasks', tasks);
+                    const savedTask = tasks.find(t => String(t.id) === String(data.id));
+                    if (savedTask) {
+                        await syncSpanToProject(savedTask);
+                    }
+                }
+
                 this.onSave();
                 this.close();
             } catch (err) {
@@ -336,7 +415,7 @@ export const PlannerModal = {
         const dateToggle = portal.querySelector('#toggle-dates');
         const dateFields = portal.querySelector('#date-fields');
         const progressInput = portal.querySelector('input[name="progress"]');
-        const progressVal = portal.querySelector('#progress-val');
+        const progressNumberInput = portal.querySelector('#progress-number-input');
         const progressBar = portal.querySelector('#progress-bar-fill');
 
         // Populate Selects
@@ -357,8 +436,7 @@ export const PlannerModal = {
         // Reset
         form.reset();
         progressBar.style.width = '0%';
-        progressVal.innerText = '0%';
-        progressVal.className = 'text-xs font-black text-dim tabular-nums';
+        progressNumberInput.value = 0;
         progressBar.className = 'absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-300';
 
         // Reset type
@@ -394,24 +472,15 @@ export const PlannerModal = {
 
             // Type
             taskTypeSelect.value = task.task_type || 'task';
-            // Hide progress for span tasks
-            const progressSection = portal.querySelector('#progress-section');
-            if (task.task_type === 'project_span') {
-                progressSection.classList.add('hidden');
-            } else {
-                progressSection.classList.remove('hidden');
-            }
+            // Progress is now always editable for all task types
 
             // Progress
             const prog = task.progress || 0;
             progressInput.value = prog;
-            progressVal.innerText = `${prog}%`;
+            progressNumberInput.value = prog;
             progressBar.style.width = `${prog}%`;
             if (prog >= 100) {
                 progressBar.className = 'absolute inset-y-0 left-0 bg-emerald-500 rounded-full transition-all duration-300';
-                progressVal.className = 'text-xs font-black text-emerald-500 tabular-nums';
-            } else if (prog > 0) {
-                progressVal.className = 'text-xs font-black text-primary tabular-nums';
             }
 
             // Highlight matching quick button
@@ -466,7 +535,7 @@ export const PlannerModal = {
             // Defaults
             if (defaults.resource_id) form.resource_id.value = defaults.resource_id;
             if (defaults.project_id) form.project_id.value = defaults.project_id;
-            form.priority.value = defaults.priority || 'medium';
+            form.priority.value = defaults.priority || 'low';
 
             // Default dates: now + 1 hour
             const now = new Date();

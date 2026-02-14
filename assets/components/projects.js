@@ -17,6 +17,7 @@
 
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
+import { syncProjectToSpan } from '../utils/project-span-sync.js';
 
 
 const applyAlpha = (color, alpha) => {
@@ -486,6 +487,12 @@ export async function renderProjects() {
     data.lane_order = data.lane_order ? parseInt(data.lane_order) : null;
     try {
       await api.post('projects.php', data);
+
+      // Sync project → span if project has dates
+      if (data.started_at && data.completed_at) {
+        await syncProjectToSpan(data);
+      }
+
       store.update('projects', await api.get('projects.php'));
       closeProjModal();
       refreshView();

@@ -4,6 +4,7 @@ import { buildRecentOptions, populateSelectWithRecent } from '../utils/select-he
 import { PlannerModal } from './planner/planner-modal.js';
 import { PlannerState } from './planner/planner-state.js';
 import { PlannerList } from './planner/planner-view-list.js';
+import { syncSpanToProject } from '../utils/project-span-sync.js';
 
 /**
  * assets/components/dashboard.js
@@ -450,12 +451,9 @@ export async function renderDashboard() {
 
     const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const progress = (s) => {
-      const allProjectTasks = allTasks.filter(t =>
-        String(t.project_id) === String(s.project_id) && t.task_type !== 'project_span'
-      );
-      if (allProjectTasks.length === 0) return 0;
-      const totalProgress = allProjectTasks.reduce((sum, t) => sum + (t.progress || 0), 0);
-      return Math.round(totalProgress / allProjectTasks.length);
+      // Use synced project progress field
+      const proj = projects.find(p => String(p.id) === String(s.project_id));
+      return proj?.progress || 0;
     };
 
     chartEl.innerHTML = `
@@ -529,8 +527,13 @@ export async function renderDashboard() {
       const spanTask = allTasks.find(t => t.task_type === 'project_span' && String(t.project_id) === String(projectId));
       if (spanTask) {
         PlannerModal.onSave = async () => {
-          const fresh = await api.getTasks();
-          store.update({ tasks: fresh });
+          // Trigger sync after span task save
+          const tasks = await api.get('planner.php');
+          const updatedSpan = tasks.find(t => String(t.id) === String(spanTask.id));
+          if (updatedSpan) {
+            await syncSpanToProject(updatedSpan);
+          }
+          store.update({ tasks });
           renderDashboardTasks();
         };
         PlannerModal.open(spanTask);

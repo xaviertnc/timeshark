@@ -333,7 +333,7 @@ export async function renderPlanner() {
                     title,
                     project_id: defaultProject ? defaultProject.id : null,
                     start_date: new Date().toISOString().split('T')[0],
-                    priority: 'medium'
+                    priority: 'low'
                 });
                 await PlannerState.init();
                 refresh();
