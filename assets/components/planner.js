@@ -10,8 +10,9 @@ import { PlannerState } from './planner/planner-state.js';
 import { PlannerUtils } from './planner/planner-utils.js';
 import { PlannerTimeline } from './planner/planner-view-timeline.js';
 import { PlannerList } from './planner/planner-view-list.js';
-import { PlannerModal } from './planner/planner-modal.js';
+import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
+import { ProjectModal } from './project-modal.js';
 
 
 let currentScale = 'week';     // 'day', 'week', 'month'
@@ -153,10 +154,6 @@ export async function renderPlanner() {
             </div>
         </div>
     `;
-
-    // Initialize Modal
-    PlannerModal.render('modal-portal');
-    PlannerModal.onSave = () => refresh();
 
     // Initial Render
     const updateUI = () => {
@@ -494,7 +491,7 @@ export async function renderPlanner() {
             const state = PlannerState.getCombinedData('all');
             const tasks = [...state.backlog, ...state.rows.flatMap(r => r.tasks)];
             const task = tasks.find(t => t.id == taskId);
-            if (task) PlannerModal.open(task);
+            if (task) TaskModal.open(task, { onSave: () => refresh() });
             return;
         }
 
@@ -506,6 +503,18 @@ export async function renderPlanner() {
             const entry = entries.find(en => String(en.id) === String(entryId));
             if (entry) {
                 TimeEntryModal.open(entry, { onSave: () => refresh() });
+            }
+            return;
+        }
+
+        // Project Legend Click (Open Modal) — .project-legend-item (timeline legend)
+        const projectEl = e.target.closest('.project-legend-item');
+        if (projectEl) {
+            const projectId = projectEl.dataset.projectId;
+            const projects = store.get().projects || [];
+            const project = projects.find(p => String(p.id) === String(projectId));
+            if (project) {
+                ProjectModal.open(project, { onSave: () => refresh() });
             }
             return;
         }

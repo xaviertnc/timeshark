@@ -308,7 +308,7 @@ export const PlannerTimeline = {
                 const legendItems = projectLanes.map((lane, i) => {
                     const topPos = rowPaddingTop + i * (zp.barH + laneGap);
                     return `
-                        <div class="lane-legend-item absolute flex items-center gap-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors group/lane" data-project-id="${lane.project.id}" data-lane-index="${i}" style="top: ${topPos}px; height: ${zp.barH}px; left: 2px; right: 2px; padding: 0 2px;">
+                        <div class="lane-legend-item project-legend-item absolute flex items-center gap-0.5 overflow-hidden cursor-pointer hover:bg-white/5 transition-colors group/lane" data-project-id="${lane.project.id}" data-lane-index="${i}" style="top: ${topPos}px; height: ${zp.barH}px; left: 2px; right: 2px; padding: 0 2px;">
                             <span class="text-[8px] text-dim opacity-20 group-hover/lane:opacity-60 transition-opacity shrink-0 leading-none select-none pointer-events-none" style="letter-spacing: -1px;">⠿</span>
                             <span class="${isYearRelaxed ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'} rounded-sm shrink-0 pointer-events-none" style="background-color: ${lane.project.color}"></span>
                             <span class="${isYearRelaxed ? 'text-[16px]' : 'text-[11px]'} font-bold text-dim opacity-50 truncate leading-none whitespace-nowrap pointer-events-none">${lane.project.name}</span>

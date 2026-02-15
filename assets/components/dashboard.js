@@ -1,7 +1,7 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { buildRecentOptions, populateSelectWithRecent } from '../utils/select-helpers.js';
-import { PlannerModal } from './planner/planner-modal.js';
+import { TaskModal } from './task-modal.js';
 import { PlannerState } from './planner/planner-state.js';
 import { PlannerList } from './planner/planner-view-list.js';
 import { syncSpanToProject } from '../utils/project-span-sync.js';
@@ -15,8 +15,6 @@ import { TimeEntryModal } from './time-entry-modal.js';
  */
 
 export async function renderDashboard() {
-  // Modal & State Initialization for Unified Planner interaction
-  PlannerModal.render('modal-portal');
   if (!store.get().tasks) await PlannerState.init();
 
   const state = store.get();
@@ -529,24 +527,25 @@ export async function renderDashboard() {
       </div>
     `;
 
-    // Click handler: open span task in PlannerModal for editing
+    // Click handler: open span task in TaskModal for editing
     chartEl.addEventListener('click', (e) => {
       const el = e.target.closest('[data-span-project-id]');
       if (!el) return;
       const projectId = el.dataset.spanProjectId;
       const spanTask = allTasks.find(t => t.task_type === 'project_span' && String(t.project_id) === String(projectId));
       if (spanTask) {
-        PlannerModal.onSave = async () => {
-          // Trigger sync after span task save
-          const tasks = await api.get('planner.php');
-          const updatedSpan = tasks.find(t => String(t.id) === String(spanTask.id));
-          if (updatedSpan) {
-            await syncSpanToProject(updatedSpan);
+        TaskModal.open(spanTask, {
+          onSave: async () => {
+            // Trigger sync after span task save
+            const tasks = await api.get('planner.php');
+            const updatedSpan = tasks.find(t => String(t.id) === String(spanTask.id));
+            if (updatedSpan) {
+              await syncSpanToProject(updatedSpan);
+            }
+            store.update({ tasks });
+            renderDashboardTasks();
           }
-          store.update({ tasks });
-          renderDashboardTasks();
-        };
-        PlannerModal.open(spanTask);
+        });
       }
     });
   };
@@ -680,17 +679,18 @@ export async function renderDashboard() {
         return;
       }
 
-      // Click task item → open PlannerModal for editing
+      // Click task item → open TaskModal for editing
       const taskItem = e.target.closest('.task-item');
       if (taskItem) {
         const taskId = taskItem.dataset.taskId;
         const task = (store.get().tasks || []).find(t => String(t.id) === String(taskId));
         if (task) {
-          PlannerModal.onSave = async () => {
-            await PlannerState.init();
-            refreshView();
-          };
-          PlannerModal.open(task);
+          TaskModal.open(task, {
+            onSave: async () => {
+              await PlannerState.init();
+              refreshView();
+            }
+          });
         }
         return;
       }
