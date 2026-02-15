@@ -54,7 +54,7 @@ export const TaskItem = {
                     <div class="flex items-center gap-2.5 mt-1 opacity-40">
                         <div class="flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${proj.color}"></span>
-                            <span class="text-xs font-black text-dim uppercase tracking-wider">${proj.name}</span>
+                            <span class="text-sm font-medium text-muted">${proj.name}</span>
                         </div>
                         ${timeStr ? `<div class="flex items-center gap-1 text-dim">
                             <span class="w-px h-2 bg-white/5"></span>
@@ -97,7 +97,7 @@ export const TaskItem = {
         }
 
         return `
-            <div class="task-item group/task px-2 py-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[20px_1fr_120px_55px] gap-1 items-center min-h-[30px]" data-task-id="${t.id}">
+            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[20px_1fr_180px_60px] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
                 ${isSpan
                 ? `<div class="shrink-0 w-4 h-4 rounded-sm bg-primary flex items-center justify-center">
                             <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -106,8 +106,8 @@ export const TaskItem = {
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
                        </button>`
             }
-                <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
-                <span class="text-[9px] font-bold text-left leading-[1.1] break-words" style="color: ${proj.color}">${proj.name}</span>
+                <span class="text-base font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
+                <span class="text-sm font-medium truncate" style="color: ${proj.color}">${proj.name}</span>
                 <div class="flex flex-col text-[9px] font-bold text-dim/50 text-left leading-[1.1] break-words">
                     <span>${startStr}</span>
                     ${endStr ? `<span class="opacity-60">${endStr}</span>` : ''}

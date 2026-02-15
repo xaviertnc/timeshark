@@ -1,9 +1,10 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { buildRecentOptions, populateSelectWithRecent } from '../utils/select-helpers.js';
 import { TaskModal } from './task-modal.js';
 import { PlannerState } from './planner/planner-state.js';
 import { TaskList } from './task-list.js';
+import { TaskQuickAdd } from './task-quick-add.js';
+import { SearchableSelect } from './searchable-select.js';
 import { syncSpanToProject } from '../utils/project-span-sync.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 
@@ -105,28 +106,13 @@ export async function renderDashboard() {
               <div class="grid grid-cols-3 gap-3">
                 <div class="space-y-1">
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Project</label>
-                  <div class="relative">
-                    <select name="project_id" required class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] appearance-none cursor-pointer focus:ring-1 focus:ring-primary/20 uppercase tracking-wider">
-                      ${buildRecentOptions(projects, entries, 'project_id', {
-    selectedId: entries.length > 0 ? [...entries].sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0)).find(e => e.project_id)?.project_id : '',
-    allLabel: 'All Projects'
-  })}
-                    </select>
-                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
+                  <div id="timer-project-select-container"></div>
+                  <input type="hidden" name="project_id">
                 </div>
                 <div class="space-y-1">
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Link Todo</label>
-                  <div class="relative">
-                    <select name="task_id" id="link-todo-select" class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] appearance-none cursor-pointer focus:ring-1 focus:ring-primary/20 uppercase tracking-wider">
-                      <option value="">None</option>
-                    </select>
-                    <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-dim opacity-30">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
+                  <div id="timer-todo-select-container"></div>
+                  <input type="hidden" name="task_id" id="link-todo-input">
                 </div>
                 <div class="space-y-1">
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Notes</label>
@@ -157,13 +143,8 @@ export async function renderDashboard() {
         </div>
       </div>
 
-      <!-- Quick Add -->
-      <div class="flex items-center gap-3 border border-soft rounded-lg px-5 py-2 transition-all focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/10">
-        <span class="text-dim/30 text-base font-bold">+</span>
-        <input type="text" id="dashboard-quick-add" placeholder="Add a task..."
-               class="flex-1 border-none rounded-none text-base font-bold text-main outline-none min-w-0 placeholder:text-dim/15 placeholder:font-normal"
-               style="background: transparent; padding: 0; box-shadow: none;">
-      </div>
+      <!-- Quick Add Container -->
+      <div id="dashboard-quick-add-container"></div>
 
       <!-- Task List Container -->
       <div id="dashboard-task-list">
@@ -241,30 +222,56 @@ export async function renderDashboard() {
     </div>
   `;
 
-  // Link Todo dropdown — update when project changes
+  // Link Todo logic with SearchableSelect
   if (!activeTimer) {
-    const projectSelect = container.querySelector('select[name="project_id"]');
-    const todoSelect = container.querySelector('#link-todo-select');
+    const projectContainer = container.querySelector('#timer-project-select-container');
+    const todoContainer = container.querySelector('#timer-todo-select-container');
+    const projectInput = container.querySelector('input[name="project_id"]');
+    const todoInput = container.querySelector('#link-todo-input');
     const descInput = container.querySelector('input[name="description"]');
-    const updateTodoOptions = () => {
-      const pid = projectSelect.value;
+
+    const recentProjectIds = [...new Set(entries
+      .filter(e => e.project_id)
+      .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
+      .map(e => String(e.project_id))
+    )].slice(0, 5);
+
+    const initialProjectId = recentProjectIds[0] || '';
+    projectInput.value = initialProjectId;
+
+    const renderTodoSelect = (pid) => {
       const tasks = (state.tasks || []).filter(t =>
         String(t.project_id) === String(pid) && t.status !== 'done'
       ).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
-      todoSelect.innerHTML = `<option value="">None</option>` +
-        tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
-    };
-    projectSelect.addEventListener('change', updateTodoOptions);
-    updateTodoOptions();
 
-    // Auto-fill description when a todo is selected
-    todoSelect.addEventListener('change', () => {
-      if (!todoSelect.value) return;
-      const task = (state.tasks || []).find(t => String(t.id) === String(todoSelect.value));
-      if (task && !descInput.value.trim()) {
-        descInput.value = task.title;
+      SearchableSelect.render(todoContainer, tasks, {
+        value: todoInput.value,
+        placeholder: tasks.length > 0 ? 'Link a task...' : 'No active tasks',
+        allLabel: 'Available Tasks',
+        nameField: 'title',
+        onChange: (tid) => {
+          todoInput.value = tid;
+          const task = tasks.find(t => String(t.id) === String(tid));
+          if (task && !descInput.value.trim()) {
+            descInput.value = task.title;
+          }
+        }
+      });
+    };
+
+    SearchableSelect.render(projectContainer, projects, {
+      value: initialProjectId,
+      placeholder: 'Select Project...',
+      recentIds: recentProjectIds,
+      allLabel: 'All Projects',
+      onChange: (pid) => {
+        projectInput.value = pid;
+        todoInput.value = '';
+        renderTodoSelect(pid);
       }
     });
+
+    renderTodoSelect(initialProjectId);
   }
 
   // --- ACTIONS ---
@@ -283,25 +290,57 @@ export async function renderDashboard() {
   };
 
   // ─── TASK PANEL LOGIC ───
-  const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{"today":true,"planned":false,"spans":false,"completed":false}');
+  let isCompact = localStorage.getItem('planner_sidebar_compact') === 'true';
+
+  const handleCompactChange = (e) => {
+    isCompact = e.detail.isCompact;
+    renderDashboardTasks();
+  };
+  window.addEventListener('compact-mode-change', handleCompactChange);
+
+  const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{"today":true,"completed":false,"planned":false,"spans":false,"backlog":false}');
   const allTasks = state.tasks || [];
 
   const filterDefs = [
     { key: 'today', label: 'Today', icon: '☀' },
     { key: 'completed', label: 'Completed', icon: '✓' },
     { key: 'planned', label: 'Planned', icon: '📅' },
-    { key: 'spans', label: 'Projects', icon: '▓' }
+    { key: 'spans', label: 'Projects', icon: '▓' },
+    { key: 'backlog', label: 'Backlog', icon: '📋' }
   ];
 
   const renderTaskToggles = () => {
     const toggleContainer = container.querySelector('#task-filter-toggles');
     if (!toggleContainer) return;
+
+    const quickAddContainer = container.querySelector('#dashboard-quick-add-container');
+    if (quickAddContainer) {
+      TaskQuickAdd.render(quickAddContainer, projects, {
+        onAdd: refreshView,
+        placeholder: 'Add a task to current workspace...',
+        onToggleCompact: (val) => {
+          isCompact = val;
+          renderDashboardTasks();
+        }
+      });
+    }
+
     toggleContainer.innerHTML = filterDefs.map(f => `
       <button class="task-filter-btn inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide leading-none transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
       }" data-filter="${f.key}">
         <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
       </button>
     `).join('');
+
+    toggleContainer.querySelectorAll('.task-filter-btn').forEach(btn => {
+      btn.onclick = () => {
+        const key = btn.dataset.filter;
+        taskFilters[key] = !taskFilters[key];
+        localStorage.setItem('dashboard_task_filters', JSON.stringify(taskFilters));
+        renderTaskToggles();
+        renderDashboardTasks();
+      };
+    });
   };
 
   const renderDashboardTasks = () => {
@@ -309,81 +348,50 @@ export async function renderDashboard() {
     if (!taskListEl) return;
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    const tomMid = new Date(today); tomMid.setDate(today.getDate() + 1);
 
     const intersectsToday = (t) => {
       if (!t.start_date) return false;
-      const startDay = new Date(t.start_date); startDay.setHours(0, 0, 0, 0);
-      const endDay = t.end_date ? new Date(t.end_date) : new Date(startDay);
-      endDay.setHours(23, 59, 59, 999);
-      return startDay <= tomorrow && endDay >= today;
+      const s = new Date(t.start_date); s.setHours(0, 0, 0, 0);
+      const e = t.end_date ? new Date(t.end_date) : s; e.setHours(23, 59, 59, 999);
+      return s < tomMid && e >= today;
     };
 
-    const isCompletedToday = (t) => {
-      if (t.status !== 'done') return false;
-      const completedDate = t.completed_at || t.start_date;
-      if (!completedDate) return false;
-      const d = new Date(completedDate); d.setHours(0, 0, 0, 0);
-      return d.getTime() >= today.getTime() && d.getTime() < tomorrow.getTime();
-    };
-
-    let filtered = [];
+    const filtered = [];
+    const seen = new Set();
+    const add = (list) => list.forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); filtered.push(t); } });
 
     if (taskFilters.today) {
-      filtered.push(...allTasks.filter(t =>
-        t.task_type !== 'project_span' &&
-        t.status !== 'done' &&
-        (intersectsToday(t) || !t.start_date)
-      ));
+      add(allTasks.filter(t => (t.status === 'todo' || t.status === 'in-progress') && t.task_type !== 'project_span' && intersectsToday(t)));
     }
     if (taskFilters.planned) {
-      filtered.push(...allTasks.filter(t =>
-        t.task_type !== 'project_span' &&
-        t.status !== 'done' &&
-        !filtered.some(f => f.id === t.id) &&
-        (t.start_date && !intersectsToday(t) || !t.start_date)
-      ));
+      add(allTasks.filter(t => (t.status === 'todo' || t.status === 'in-progress') && t.task_type !== 'project_span' && t.start_date && !intersectsToday(t)));
+    }
+    if (taskFilters.backlog) {
+      add(allTasks.filter(t => t.status === 'backlog' || (!t.start_date && t.status !== 'done' && t.task_type !== 'project_span')));
     }
     if (taskFilters.completed) {
-      filtered.push(...allTasks.filter(t =>
-        t.task_type !== 'project_span' &&
-        t.status === 'done' &&
-        !filtered.some(f => f.id === t.id)
-      ));
+      add(allTasks.filter(t => t.status === 'done'));
     }
-    if (taskFilters.spans) {
-      // Separate spans from other tasks for special rendering
-      const spanTasks = allTasks.filter(t => t.task_type === 'project_span');
-      const nonSpanFiltered = filtered.filter(t => t.task_type !== 'project_span');
-      filtered = nonSpanFiltered;
 
-      // Render mini Gantt for spans
+    if (taskFilters.spans) {
+      const spanTasks = allTasks.filter(t => t.task_type === 'project_span');
       renderSpansChart(spanTasks);
     } else {
-      // Clear spans chart when not active
       const spansChartEl = container.querySelector('#dashboard-spans-chart');
       if (spansChartEl) spansChartEl.innerHTML = '';
     }
 
-    // Deduplicate
-    const seen = new Set();
-    filtered = filtered.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+    // Only render task list if there are filtered tasks or at least one relevant filter (excluding projects) is on
+    const relevantFilterOn = taskFilters.today || taskFilters.planned || taskFilters.backlog || taskFilters.completed;
 
-    // Only render task list if there are non-span tasks to show
-    if (filtered.length > 0 || !taskFilters.spans) {
+    if (relevantFilterOn || filtered.length > 0) {
       TaskList.render(taskListEl, filtered, projects, {
-        mode: 'full',
+        mode: isCompact ? 'compact' : 'full',
         showDone: taskFilters.completed
       });
-    } else if (taskFilters.spans && filtered.length === 0) {
+    } else {
       taskListEl.innerHTML = '';
-    }
-
-    // If no filters active, just clear the list
-    if (!taskFilters.today && !taskFilters.planned && !taskFilters.spans && !taskFilters.completed) {
-      taskListEl.innerHTML = '';
-      const spansChartEl = container.querySelector('#dashboard-spans-chart');
-      if (spansChartEl) spansChartEl.innerHTML = '';
     }
   };
 

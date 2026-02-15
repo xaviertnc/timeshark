@@ -1,6 +1,6 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { buildRecentOptions } from '../utils/select-helpers.js';
+import { SearchableSelect } from './searchable-select.js';
 
 /**
  * assets/components/time-entry-modal.js
@@ -56,17 +56,15 @@ export class TimeEntryModal {
 
                         <!-- Project + Linked Todo -->
                         <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-2">
+                            <div class="space-y-2 text-left">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Project</label>
-                                <select name="project_id" id="modal-project-select" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
-                                    ${buildRecentOptions(projects, entries, 'project_id', { selectedId: currentPid, placeholder: 'Unassigned', allLabel: 'All Projects' })}
-                                </select>
+                                <div id="modal-project-select-container"></div>
+                                <input type="hidden" name="project_id" value="${entry.project_id || ''}">
                             </div>
-                            <div class="space-y-2">
+                            <div class="space-y-2 text-left">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Linked Todo</label>
-                                <select name="task_id" id="modal-task-select" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
-                                    <option value="">No Linked Todo</option>
-                                </select>
+                                <div id="modal-task-select-container"></div>
+                                <input type="hidden" name="task_id" value="${entry.task_id || ''}">
                             </div>
                         </div>
 
@@ -116,20 +114,43 @@ export class TimeEntryModal {
 
         overlay.querySelector('#close-modal-x').onclick = closeModal;
         overlay.querySelector('#cancel-modal').onclick = closeModal;
+        const projectContainer = overlay.querySelector('#modal-project-select-container');
+        const taskContainer = overlay.querySelector('#modal-task-select-container');
+        const projectInput = overlay.querySelector('input[name="project_id"]');
+        const taskInput = overlay.querySelector('input[name="task_id"]');
 
-        const projectSelect = overlay.querySelector('#modal-project-select');
-        const taskSelect = overlay.querySelector('#modal-task-select');
+        const recentProjectIds = [...new Set(entries
+            .filter(e => e.project_id)
+            .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
+            .map(e => String(e.project_id))
+        )].slice(0, 5);
 
-        const updateTasks = () => {
-            const pid = projectSelect.value;
+        const renderTaskSelect = (pid) => {
             const tasks = (state.tasks || []).filter(t => String(t.project_id) === String(pid))
                 .sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
-            taskSelect.innerHTML = `<option value="">No Linked Todo</option>` +
-                tasks.map(t => `<option value="${t.id}" ${String(t.id) === String(entry.task_id) ? 'selected' : ''}>${t.title}</option>`).join('');
+
+            SearchableSelect.render(taskContainer, tasks, {
+                value: taskInput.value,
+                placeholder: 'No Linked Todo',
+                allLabel: 'Available Tasks',
+                nameField: 'title',
+                onChange: (tid) => { taskInput.value = tid; }
+            });
         };
 
-        projectSelect.onchange = updateTasks;
-        updateTasks();
+        SearchableSelect.render(projectContainer, projects, {
+            value: projectInput.value,
+            placeholder: 'Unassigned',
+            recentIds: recentProjectIds,
+            allLabel: 'All Projects',
+            onChange: (pid) => {
+                projectInput.value = pid;
+                taskInput.value = '';
+                renderTaskSelect(pid);
+            }
+        });
+
+        renderTaskSelect(projectInput.value);
 
         overlay.querySelector('#edit-time-entry-form').onsubmit = async (e) => {
             e.preventDefault();

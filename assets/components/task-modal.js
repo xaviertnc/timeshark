@@ -7,7 +7,7 @@
 
 import { api } from '../utils/api.js';
 import { store } from '../utils/store.js';
-import { populateSelectWithRecent } from '../utils/select-helpers.js';
+import { SearchableSelect } from './searchable-select.js';
 import { syncSpanToProject } from '../utils/project-span-sync.js';
 
 export class TaskModal {
@@ -43,28 +43,37 @@ export class TaskModal {
                             <input type="text" name="title" required placeholder="What needs to be done?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all" value="${task?.title || ''}">
                         </div>
 
-                        <!-- Row: Member, Project, Status -->
-                        <div class="flex gap-3">
-                            <div class="space-y-2 w-[130px] shrink-0">
+                        <!-- Row: Member, Project -->
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="space-y-2 w-full sm:w-[130px] shrink-0">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Member</label>
-                                <div class="flex gap-1">
-                                    <select name="resource_id" id="modal-resource" class="flex-1 bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none min-w-0"></select>
-                                    <button type="button" id="unassign-member-btn" class="px-2 bg-white/5 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 rounded-xl text-dim hover:text-red-500 transition-all" title="Unassign member">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    </button>
-                                </div>
+                                <div id="modal-member-select-container"></div>
+                                <input type="hidden" name="resource_id" id="modal-resource-input">
                             </div>
-                            <div class="space-y-2 flex-1 min-w-0">
+                            <div class="space-y-2 flex-grow min-w-0">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Project</label>
-                                <select name="project_id" id="modal-project" required class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none"></select>
+                                <div id="modal-project-select-container"></div>
+                                <input type="hidden" name="project_id" id="modal-project-input">
                             </div>
-                            <div class="space-y-2 w-[130px] shrink-0">
+                        </div>
+                        
+                        <!-- Row: Status -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Status</label>
                                 <select name="status" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
                                     <option value="todo" ${task?.status === 'todo' ? 'selected' : ''}>Todo</option>
                                     <option value="in-progress" ${task?.status === 'in-progress' ? 'selected' : ''}>In-Progress</option>
                                     <option value="done" ${task?.status === 'done' ? 'selected' : ''}>Done</option>
                                     <option value="backlog" ${task?.status === 'backlog' ? 'selected' : ''}>Backlog</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Priority</label>
+                                <select name="priority" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
+                                    <option value="low" ${task?.priority === 'low' ? 'selected' : ''}>🟢 Low</option>
+                                    <option value="medium" ${task?.priority === 'medium' ? 'selected' : ''}>🟡 Medium</option>
+                                    <option value="high" ${task?.priority === 'high' ? 'selected' : ''}>🔴 High</option>
                                 </select>
                             </div>
                         </div>
@@ -241,19 +250,41 @@ export class TaskModal {
 
         // Populate Selects
         const state = store.get();
-        const resources = state.team ? state.team.map(m => m.name) : ['General'];
-        if (!resources.includes('General')) resources.push('General');
+        const resources = (state.team || []).map(m => ({ id: m.name, name: m.name }));
+        if (!resources.some(r => r.id === 'General')) resources.push({ id: 'General', name: 'General' });
+        resources.unshift({ id: 'me', name: 'Unassigned' });
 
-        const rSelect = form.querySelector('#modal-resource');
-        rSelect.innerHTML = '<option value="me"></option>' + resources.map(r => `<option value="${r}">${r}</option>`).join('');
-        rSelect.value = task?.resource_id || defaults.resource_id || 'me';
+        const memberContainer = form.querySelector('#modal-member-select-container');
+        const memberInput = form.querySelector('#modal-resource-input');
+        const initialMember = task?.resource_id || defaults.resource_id || 'me';
+        memberInput.value = initialMember;
 
-        const pSelect = form.querySelector('#modal-project');
-        populateSelectWithRecent(pSelect, state.projects || [], state.timeEntries || [], 'project_id', {
-            placeholder: 'Select Project...',
-            allLabel: 'All Projects'
+        SearchableSelect.render(memberContainer, resources, {
+            value: initialMember,
+            placeholder: 'Member...',
+            allLabel: 'Team Members',
+            onChange: (val) => { memberInput.value = val; }
         });
-        pSelect.value = task?.project_id || defaults.project_id || '';
+
+        const projectContainer = form.querySelector('#modal-project-select-container');
+        const projectInput = form.querySelector('#modal-project-input');
+        const initialProject = task?.project_id || defaults.project_id || '';
+        projectInput.value = initialProject;
+
+        const entries = state.timeEntries || [];
+        const recentProjectIds = [...new Set(entries
+            .filter(e => e.project_id)
+            .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
+            .map(e => String(e.project_id))
+        )].slice(0, 5);
+
+        SearchableSelect.render(projectContainer, state.projects || [], {
+            value: initialProject,
+            placeholder: 'Select Project...',
+            recentIds: recentProjectIds,
+            allLabel: 'All Projects',
+            onChange: (val) => { projectInput.value = val; }
+        });
 
         // Priority
         if (!task && defaults.priority) form.priority.value = defaults.priority;
@@ -290,8 +321,6 @@ export class TaskModal {
                 }
             };
         }
-
-        container.querySelector('#unassign-member-btn').onclick = () => { rSelect.value = 'me'; };
 
         dateToggle.onchange = (e) => {
             if (e.target.checked) {

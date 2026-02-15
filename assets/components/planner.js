@@ -10,6 +10,7 @@ import { PlannerState } from './planner/planner-state.js';
 import { PlannerUtils } from './planner/planner-utils.js';
 import { PlannerTimeline } from './planner/planner-view-timeline.js';
 import { TaskList } from './task-list.js';
+import { TaskQuickAdd } from './task-quick-add.js';
 import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { ProjectModal } from './project-modal.js';
@@ -25,6 +26,13 @@ let sidebarCompactMode = localStorage.getItem('planner_sidebar_compact') === 'tr
 
 export async function renderPlanner() {
     await PlannerState.init();
+
+    // Listen for compact mode changes from other components
+    const handleCompactChange = (e) => {
+        sidebarCompactMode = e.detail.isCompact;
+        updateUI();
+    };
+    window.addEventListener('compact-mode-change', handleCompactChange);
 
     const container = document.createElement('div');
     container.className = 'planner-main h-full flex flex-col gap-6';
@@ -86,11 +94,6 @@ export async function renderPlanner() {
                         <h3 class="px-2 text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap">Todo</h3>
                         
                         <div class="flex items-center gap-1">
-                            <!-- Compact Mode Toggle (Only visible when expanded) -->
-                            <button id="toggle-compact-mode-btn" class="p-1 px-2 rounded-md hover:bg-white/5 transition-colors text-dim hover:text-primary transition-all duration-300">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                            </button>
-
                             <div class="toggle-arrows flex items-center gap-1 text-dim group-hover/sidebar-bar:text-primary transition-colors">
                                 <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
                             </div>
@@ -103,11 +106,12 @@ export async function renderPlanner() {
 
                 <div id="sidebar-nav" class="flex-grow overflow-y-auto custom-scrollbar transition-all duration-500">
                     <div class="px-3 pt-3 pb-2">
-                        <div class="flex items-center gap-1.5 bg-white/3 border border-white/5 rounded-lg px-2.5 py-1.5 transition-all focus-within:bg-white/5">
-                            <input type="text" id="sidebar-quick-add" placeholder="Add a task..." class="flex-1 bg-transparent border-none text-[13px] font-bold text-main outline-none placeholder:text-dim/15">
-                        </div>
+                        <div id="sidebar-filter-tabs" class="w-full flex items-center justify-between p-1 bg-app/30 rounded-xl border border-white/5"></div>
                     </div>
-                    <div class="px-3 pb-2"><div id="sidebar-filter-tabs" class="flex items-center gap-1 flex-wrap"></div></div>
+                    
+                    <!-- Quick Add -->
+                    <div id="sidebar-quick-add-container" class="w-full px-3 pb-2"></div>
+
                     <div class="px-1 border-t border-white/5"><div id="planner-list-container" class="p-1 pb-10"></div></div>
                 </div>
             </div>
@@ -152,13 +156,6 @@ export async function renderPlanner() {
         titleEl.classList.toggle('hidden', sidebarCollapsed);
         arrowSvg.classList.toggle('rotate-180', !sidebarCollapsed);
 
-        const compactModeBtn = sidebarHeader.querySelector('#toggle-compact-mode-btn');
-        if (compactModeBtn) {
-            compactModeBtn.classList.toggle('hidden', sidebarCollapsed);
-            compactModeBtn.classList.toggle('bg-primary/20', sidebarCompactMode);
-            compactModeBtn.classList.toggle('text-primary', sidebarCompactMode);
-            compactModeBtn.classList.toggle('text-dim', !sidebarCompactMode);
-        }
 
         // Sidebar filters
         const filterTabDefs = [
@@ -171,10 +168,31 @@ export async function renderPlanner() {
         const filterTabsEl = container.querySelector('#sidebar-filter-tabs');
         if (filterTabsEl) {
             filterTabsEl.innerHTML = filterTabDefs.map(f => `
-                <button class="nav-cat inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wide leading-none transition-all ${sidebarFilters[f.key] ? 'bg-primary/20 text-primary' : 'text-dim/50'}" data-cat="${f.key}">
+                <button class="sidebar-filter-btn inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wide leading-none transition-all ${sidebarFilters[f.key] ? 'bg-primary/20 text-primary' : 'text-dim/50'}" data-filter="${f.key}">
                     <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
                 </button>
             `).join('');
+
+            filterTabsEl.querySelectorAll('.sidebar-filter-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const key = btn.dataset.filter;
+                    sidebarFilters[key] = !sidebarFilters[key];
+                    updateUI();
+                };
+            });
+        }
+
+        // Sidebar Quick Add
+        const quickAddContainer = container.querySelector('#sidebar-quick-add-container');
+        if (quickAddContainer) {
+            TaskQuickAdd.render(quickAddContainer, state.projects || [], {
+                onAdd: refresh,
+                placeholder: 'Quick add...',
+                onToggleCompact: (val) => {
+                    sidebarCompactMode = val;
+                    updateUI();
+                }
+            });
         }
 
         // Render Views
@@ -255,13 +273,6 @@ export async function renderPlanner() {
 
     // Interactions
     container.querySelector('#sidebar-header-toggle').onclick = (e) => {
-        if (e.target.closest('#toggle-compact-mode-btn')) {
-            e.stopPropagation();
-            sidebarCompactMode = !sidebarCompactMode;
-            localStorage.setItem('planner_sidebar_compact', String(sidebarCompactMode));
-            updateUI();
-            return;
-        }
         handleToggleSidebar();
     };
 
