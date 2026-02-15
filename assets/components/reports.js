@@ -1,6 +1,6 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { buildRecentOptions } from '../utils/select-helpers.js';
+import { TimeEntryModal } from './time-entry-modal.js';
 
 /**
  * assets/components/reports.js
@@ -259,7 +259,7 @@ export async function renderReports() {
     const editBtn = e.target.closest('.edit-btn');
     if (editBtn) {
       const entry = entries.find(ent => String(ent.id) === String(editBtn.dataset.id));
-      if (entry) openModal(entry);
+      if (entry) TimeEntryModal.open(entry, { onSave: refreshView });
     }
   });
 
@@ -272,80 +272,6 @@ export async function renderReports() {
     app.appendChild(await renderReports());
   }
 
-  const openModal = (entry) => {
-    const modalPortal = document.getElementById('modal-portal');
-    const currentPid = entry.project_id ? String(entry.project_id) : '';
-    const projExists = projects.some(p => String(p.id) === currentPid);
-
-    const closeModal = () => {
-      const content = modalPortal.querySelector('#modal-content');
-      if (content) content.classList.remove('scale-100', 'opacity-100');
-      setTimeout(() => { modalPortal.innerHTML = ''; }, 300);
-    };
-
-    modalPortal.innerHTML = `
-      <div class="fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
-        <div id="modal-content" class="bg-card rounded-2xl p-10 w-full max-w-lg shadow-2xl border border-soft transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main text-main">
-          <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-          <div class="text-center mb-8">
-            <h3 class="text-2xl font-bold">Edit Entry</h3>
-            <p class="text-[9px] font-black text-dim uppercase tracking-widest mt-2">Log Adjustment</p>
-          </div>
-          <form id="edit-form" class="space-y-6">
-            <input type="hidden" name="id" value="${entry.id}">
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Project</label>
-              <select name="project_id" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer">
-                ${buildRecentOptions(projects, entries, 'project_id', { selectedId: currentPid, placeholder: 'Unassigned', allLabel: 'All Projects' })}
-              </select>
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Description</label>
-              <input type="text" name="description" value="${entry.description || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Notes (Internal)</label>
-              <input type="text" name="notes" value="${entry.notes || ''}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">Start Time</label>
-                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
-              </div>
-              <div class="space-y-2">
-                <label class="text-[10px] font-black text-dim uppercase tracking-widest ml-1">End Time</label>
-                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full bg-app border-none rounded-xl px-4 py-3 font-bold">
-              </div>
-            </div>
-            <div class="flex gap-4 pt-6">
-              <button type="button" id="cancel-modal" class="flex-1 py-4 text-[10px] font-black uppercase text-dim tracking-widest hover:text-main">Cancel</button>
-              <button type="submit" class="flex-[2] py-4 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-dark">Save Changes</button>
-            </div>
-          </form>
-        </div>
-      </div>`;
-    setTimeout(() => {
-      const content = modalPortal.querySelector('#modal-content');
-      if (content) content.classList.add('scale-100', 'opacity-100');
-    }, 10);
-    modalPortal.querySelector('#close-modal-x').onclick = closeModal;
-    modalPortal.querySelector('#cancel-modal').onclick = closeModal;
-    modalPortal.querySelector('#edit-form').onsubmit = async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(e.target).entries());
-      data.start_time = new Date(data.start_time).toISOString();
-      data.end_time = new Date(data.end_time).toISOString();
-      data.project_name = projects.find(p => String(p.id) === String(data.project_id))?.name || 'Unassigned';
-      try {
-        await api.post('time-entries.php', data);
-        store.update('timeEntries', await api.get('time-entries.php'));
-        closeModal();
-        setTimeout(refreshView, 350);
-      } catch (err) { alert('Update failed'); }
-    };
-  };
 
   return container;
 }

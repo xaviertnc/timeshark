@@ -11,6 +11,7 @@ import { PlannerUtils } from './planner/planner-utils.js';
 import { PlannerTimeline } from './planner/planner-view-timeline.js';
 import { PlannerList } from './planner/planner-view-list.js';
 import { PlannerModal } from './planner/planner-modal.js';
+import { TimeEntryModal } from './time-entry-modal.js';
 
 
 let currentScale = 'week';     // 'day', 'week', 'month'
@@ -494,6 +495,18 @@ export async function renderPlanner() {
             const tasks = [...state.backlog, ...state.rows.flatMap(r => r.tasks)];
             const task = tasks.find(t => t.id == taskId);
             if (task) PlannerModal.open(task);
+            return;
+        }
+
+        // Time Entry Click (Open Modal) — .time-entry (timeline)
+        const entryEl = e.target.closest('.time-entry');
+        if (entryEl) {
+            const entryId = entryEl.dataset.entryId;
+            const entries = store.get().timeEntries || [];
+            const entry = entries.find(en => String(en.id) === String(entryId));
+            if (entry) {
+                TimeEntryModal.open(entry, { onSave: () => refresh() });
+            }
             return;
         }
 

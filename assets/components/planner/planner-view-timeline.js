@@ -490,16 +490,25 @@ export const PlannerTimeline = {
                         const proj = data.projects.find(p => p.id == entry.project_id);
                         const entryColor = proj ? proj.color : null;
 
+                        const duration = Math.round((e - s) / 1000);
+                        const durationStr = PlannerUtils.formatDuration(duration);
+                        const timeStr = `${PlannerUtils.formatTime(s)} - ${isActive ? 'Present' : PlannerUtils.formatTime(e)}`;
+                        const entryTitle = `${entry.description || 'No description'} • ${proj ? proj.name : 'Unassigned'} • ${timeStr} (${durationStr})`;
+
                         if (isActive) {
                             html += `
-                                <div class="absolute h-2.5 rounded-full animate-pulse border border-white/10 backdrop-blur-sm pointer-events-none"
-                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; background-color: ${entryColor || 'rgba(var(--color-primary), 0.8)'}; opacity: 0.8;">
+                                <div class="time-entry absolute h-2.5 rounded-full animate-pulse border border-white/10 backdrop-blur-sm cursor-pointer hover:z-30 transition-all"
+                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; background-color: ${entryColor || 'rgba(var(--color-primary), 0.8)'}; opacity: 0.8;"
+                                     data-entry-id="${entry.id}"
+                                     title="${entryTitle}">
                                 </div>
                             `;
                         } else {
                             html += `
-                                <div class="absolute h-2 rounded-full border border-white/5 backdrop-blur-sm pointer-events-none"
-                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; ${entryColor ? `background-color: ${entryColor}; opacity: 0.45;` : 'background-color: rgba(255,255,255,0.12);'}">
+                                <div class="time-entry absolute h-2 rounded-full border border-white/5 backdrop-blur-sm cursor-pointer hover:z-30 transition-all hover:opacity-100"
+                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; ${entryColor ? `background-color: ${entryColor}; opacity: 0.45;` : 'background-color: rgba(255,255,255,0.12);'}"
+                                     data-entry-id="${entry.id}"
+                                     title="${entryTitle}">
                                 </div>
                             `;
                         }
