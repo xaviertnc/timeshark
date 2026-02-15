@@ -3,7 +3,7 @@ import { api } from '../utils/api.js';
 import { buildRecentOptions, populateSelectWithRecent } from '../utils/select-helpers.js';
 import { TaskModal } from './task-modal.js';
 import { PlannerState } from './planner/planner-state.js';
-import { PlannerList } from './planner/planner-view-list.js';
+import { TaskList } from './task-list.js';
 import { syncSpanToProject } from '../utils/project-span-sync.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 
@@ -167,7 +167,7 @@ export async function renderDashboard() {
 
       <!-- Task List Container -->
       <div id="dashboard-task-list">
-        <!-- Tasks rendered here by PlannerList.render() -->
+        <!-- Tasks rendered here by TaskList.render() -->
       </div>
 
       <!-- Spans Timeline Chart -->
@@ -371,11 +371,9 @@ export async function renderDashboard() {
 
     // Only render task list if there are non-span tasks to show
     if (filtered.length > 0 || !taskFilters.spans) {
-      PlannerList.render(taskListEl, filtered, projects, {
-        fullWidth: true,
-        showDone: taskFilters.completed,
-        category: taskFilters.today && !taskFilters.planned ? 'today' : null,
-        hideQuickAdd: true
+      TaskList.render(taskListEl, filtered, projects, {
+        mode: 'full',
+        showDone: taskFilters.completed
       });
     } else if (taskFilters.spans && filtered.length === 0) {
       taskListEl.innerHTML = '';
@@ -794,17 +792,77 @@ export async function renderDashboard() {
     };
   });
 
-  // Edit History Entry — click anywhere on the row (except action buttons)
-  container.addEventListener('click', (e) => {
+  // Main Click Handler for Tasks and History Entries
+  container.addEventListener('click', async (e) => {
+    // 1. Task Item Click (Open Modal)
+    const taskEl = e.target.closest('.task-item');
+    if (taskEl && !e.target.closest('button') && !e.target.closest('.inline-progress-bar')) {
+      const taskId = taskEl.dataset.taskId;
+      const task = (state.tasks || []).find(t => t.id == taskId);
+      if (task) TaskModal.open(task, { onSave: refreshView });
+      return;
+    }
+
+    // 2. Status Toggle Click
+    const statusBtn = e.target.closest('.toggle-status-btn');
+    if (statusBtn) {
+      e.stopPropagation();
+      const taskId = statusBtn.dataset.taskId;
+      const task = (state.tasks || []).find(t => t.id == taskId);
+      if (task) {
+        task.status = (task.status === 'done' ? 'todo' : 'done');
+        task.progress = (task.status === 'done' ? 100 : 0);
+        refreshView();
+        await api.post('planner.php?action=update_task', { id: taskId, status: task.status, progress: task.progress });
+      }
+      return;
+    }
+
+    // 3. Inline Progress Bar Click (Increment by 15%)
+    const progressBar = e.target.closest('.inline-progress-bar');
+    if (progressBar) {
+      e.stopPropagation();
+      const taskId = progressBar.dataset.taskId;
+      const currentProgress = parseInt(progressBar.dataset.progress) || 0;
+      const newProgress = Math.min(100, currentProgress + 15);
+      const task = (state.tasks || []).find(t => t.id == taskId);
+      if (task) {
+        task.progress = newProgress;
+        if (newProgress >= 100) task.status = 'done';
+        else if (task.status === 'done') task.status = 'todo';
+        refreshView();
+        await api.post('planner.php?action=update_task', { id: taskId, progress: newProgress, status: task.status });
+      }
+      return;
+    }
+
+    // 4. Track Button Click
+    const trackBtn = e.target.closest('.track-btn');
+    if (trackBtn) {
+      e.stopPropagation();
+      const taskId = trackBtn.dataset.taskId;
+      const task = (state.tasks || []).find(t => t.id == taskId);
+      if (task) {
+        const startData = {
+          task_id: task.id,
+          project_id: task.project_id,
+          description: task.title,
+          project_name: projects.find(p => p.id == task.project_id)?.name || 'Unassigned',
+          resource_id: state.team?.[0]?.name || 'Main'
+        };
+        const result = await api.post('time-entries.php?action=start', startData);
+        store.update('activeTimer', result);
+        refreshView();
+      }
+      return;
+    }
+
+    // 5. History Entry Row Click (Edit)
     const row = e.target.closest('[data-entry-id]');
-    if (!row) return;
-    // Don't trigger edit if clicking action buttons
-    if (e.target.closest('.resume-btn') || e.target.closest('.delete-history-btn')) return;
-
-    const entry = entries.find(en => String(en.id) === String(row.dataset.entryId));
-    if (!entry) return;
-
-    TimeEntryModal.open(entry, { onSave: refreshView });
+    if (row && !e.target.closest('button')) {
+      const entry = (state.timeEntries || []).find(en => String(en.id) === String(row.dataset.entryId));
+      if (entry) TimeEntryModal.open(entry, { onSave: refreshView });
+    }
   });
 
   // Delete History Entry
