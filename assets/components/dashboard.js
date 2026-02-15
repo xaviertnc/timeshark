@@ -157,6 +157,16 @@ export async function renderDashboard() {
       </div>
     </div>
 
+    <!-- Decorative Divider between Todo and History -->
+    <div class="flex flex-col items-center justify-center relative py-4">
+      <div class="absolute w-64 h-24 bg-[${pColor}] opacity-[0.05] blur-[60px] rounded-full pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col items-center gap-2 group cursor-default">
+        <div class="w-32 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-30"></div>
+        <div class="w-16 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-20"></div>
+        <div class="w-6 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-20"></div>
+      </div>
+    </div>
+
     <!-- History Section -->
     <div class="space-y-4">
       <div class="flex items-center justify-between">
@@ -294,6 +304,7 @@ export async function renderDashboard() {
 
   const handleCompactChange = (e) => {
     isCompact = e.detail.isCompact;
+    renderTaskToggles();
     renderDashboardTasks();
   };
   window.addEventListener('compact-mode-change', handleCompactChange);
@@ -317,20 +328,26 @@ export async function renderDashboard() {
     if (quickAddContainer) {
       TaskQuickAdd.render(quickAddContainer, projects, {
         onAdd: refreshView,
-        placeholder: 'Add a task to current workspace...',
-        onToggleCompact: (val) => {
-          isCompact = val;
-          renderDashboardTasks();
-        }
+        placeholder: 'Add a task...'
       });
     }
 
-    toggleContainer.innerHTML = filterDefs.map(f => `
+    let toggleHtml = filterDefs.map(f => `
       <button class="task-filter-btn inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide leading-none transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
       }" data-filter="${f.key}">
         <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
       </button>
     `).join('');
+
+    // Add Separator and Compact Toggle
+    toggleHtml += `
+      <div class="w-px h-4 bg-white/10 mx-1"></div>
+      <button id="dashboard-compact-toggle" title="Toggle Compact Mode" class="p-1.5 rounded-md transition-all ${isCompact ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-white/5'}">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+    `;
+
+    toggleContainer.innerHTML = toggleHtml;
 
     toggleContainer.querySelectorAll('.task-filter-btn').forEach(btn => {
       btn.onclick = () => {
@@ -341,6 +358,17 @@ export async function renderDashboard() {
         renderDashboardTasks();
       };
     });
+
+    const compactBtn = toggleContainer.querySelector('#dashboard-compact-toggle');
+    if (compactBtn) {
+      compactBtn.onclick = () => {
+        isCompact = !isCompact;
+        localStorage.setItem('planner_sidebar_compact', String(isCompact));
+        window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact } }));
+        renderTaskToggles();
+        renderDashboardTasks();
+      };
+    }
   };
 
   const renderDashboardTasks = () => {
@@ -559,51 +587,9 @@ export async function renderDashboard() {
   renderTaskToggles();
   renderDashboardTasks();
 
-  // Toggle filter clicks
-  container.querySelector('#task-filter-toggles')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('.task-filter-btn');
-    if (!btn) return;
-    const key = btn.dataset.filter;
-    taskFilters[key] = !taskFilters[key];
-    localStorage.setItem('dashboard_task_filters', JSON.stringify(taskFilters));
-    renderTaskToggles();
-    renderDashboardTasks();
-  });
+  // Toggle filter clicks (Redundant listener removed to prevent double-toggle bug)
 
-  // Quick Add
-  const quickAddInput = container.querySelector('#dashboard-quick-add');
-  if (quickAddInput) {
-    quickAddInput.addEventListener('keydown', async (e) => {
-      if (e.key !== 'Enter') return;
-      const title = quickAddInput.value.trim();
-      if (!title) return;
-
-      // Default to most recent project
-      const sorted = [...entries].sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
-      const recentPid = sorted.find(en => en.project_id)?.project_id || (projects[0]?.id || '');
-
-      const today = new Date();
-      const isoDate = today.toISOString().split('T')[0] + 'T00:00:00';
-
-      const taskData = {
-        title,
-        project_id: recentPid,
-        resource_id: state.team?.[0]?.name || 'me',
-        priority: 'low',
-        start_date: isoDate,
-        end_date: isoDate.replace('T00:00:00', 'T23:59:00'),
-        status: 'todo',
-        progress: 0
-      };
-
-      try {
-        await api.post('planner.php', taskData);
-        await PlannerState.init();
-        quickAddInput.value = '';
-        refreshView();
-      } catch (err) { console.error('Quick add failed:', err); }
-    });
-  }
+  // No-op (dead code removed)
 
   // Task interaction handlers (delegated)
   const dashboardTaskList = container.querySelector('#dashboard-task-list');
@@ -703,13 +689,6 @@ export async function renderDashboard() {
     });
   }
 
-  const closeModal = () => {
-    const overlay = modalPortal.querySelector('.dashboard-modal-overlay');
-    if (!overlay) return;
-    const content = overlay.querySelector('#modal-content');
-    if (content) content.classList.remove('scale-100', 'opacity-100');
-    setTimeout(() => { overlay.remove(); }, 300);
-  };
 
   // Timer Ticker
   if (activeTimer) {
@@ -800,72 +779,9 @@ export async function renderDashboard() {
     };
   });
 
-  // Main Click Handler for Tasks and History Entries
-  container.addEventListener('click', async (e) => {
-    // 1. Task Item Click (Open Modal)
-    const taskEl = e.target.closest('.task-item');
-    if (taskEl && !e.target.closest('button') && !e.target.closest('.inline-progress-bar')) {
-      const taskId = taskEl.dataset.taskId;
-      const task = (state.tasks || []).find(t => t.id == taskId);
-      if (task) TaskModal.open(task, { onSave: refreshView });
-      return;
-    }
-
-    // 2. Status Toggle Click
-    const statusBtn = e.target.closest('.toggle-status-btn');
-    if (statusBtn) {
-      e.stopPropagation();
-      const taskId = statusBtn.dataset.taskId;
-      const task = (state.tasks || []).find(t => t.id == taskId);
-      if (task) {
-        task.status = (task.status === 'done' ? 'todo' : 'done');
-        task.progress = (task.status === 'done' ? 100 : 0);
-        refreshView();
-        await api.post('planner.php?action=update_task', { id: taskId, status: task.status, progress: task.progress });
-      }
-      return;
-    }
-
-    // 3. Inline Progress Bar Click (Increment by 15%)
-    const progressBar = e.target.closest('.inline-progress-bar');
-    if (progressBar) {
-      e.stopPropagation();
-      const taskId = progressBar.dataset.taskId;
-      const currentProgress = parseInt(progressBar.dataset.progress) || 0;
-      const newProgress = Math.min(100, currentProgress + 15);
-      const task = (state.tasks || []).find(t => t.id == taskId);
-      if (task) {
-        task.progress = newProgress;
-        if (newProgress >= 100) task.status = 'done';
-        else if (task.status === 'done') task.status = 'todo';
-        refreshView();
-        await api.post('planner.php?action=update_task', { id: taskId, progress: newProgress, status: task.status });
-      }
-      return;
-    }
-
-    // 4. Track Button Click
-    const trackBtn = e.target.closest('.track-btn');
-    if (trackBtn) {
-      e.stopPropagation();
-      const taskId = trackBtn.dataset.taskId;
-      const task = (state.tasks || []).find(t => t.id == taskId);
-      if (task) {
-        const startData = {
-          task_id: task.id,
-          project_id: task.project_id,
-          description: task.title,
-          project_name: projects.find(p => p.id == task.project_id)?.name || 'Unassigned',
-          resource_id: state.team?.[0]?.name || 'Main'
-        };
-        const result = await api.post('time-entries.php?action=start', startData);
-        store.update('activeTimer', result);
-        refreshView();
-      }
-      return;
-    }
-
-    // 5. History Entry Row Click (Edit)
+  // Main Click Handler for History Entries
+  container.addEventListener('click', (e) => {
+    // History Entry Row Click (Edit)
     const row = e.target.closest('[data-entry-id]');
     if (row && !e.target.closest('button')) {
       const entry = (state.timeEntries || []).find(en => String(en.id) === String(row.dataset.entryId));

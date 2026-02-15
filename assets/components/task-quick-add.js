@@ -17,7 +17,7 @@ export const TaskQuickAdd = {
      */
     render(container, projects, options = {}) {
         if (!container) return;
-        const placeholder = 'Add a task...';
+        const placeholder = options.placeholder || 'Add a task...';
 
         container.innerHTML = `
             <div class="flex flex-col sm:flex-row items-stretch gap-2">
@@ -32,36 +32,11 @@ export const TaskQuickAdd = {
 
                 <!-- Project Selector Container -->
                 <div id="quick-add-project-container" class="shrink-0 w-full sm:w-48"></div>
-
-                <!-- Compact Mode Toggle -->
-                <button id="quick-add-compact-toggle" class="shrink-0 p-2 rounded-md border border-white/5 bg-app/40 hover:bg-primary/10 text-dim hover:text-primary transition-all active:scale-95 flex items-center justify-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </button>
             </div>
         `;
 
         const input = container.querySelector('#quick-add-input');
         const projectContainer = container.querySelector('#quick-add-project-container');
-        const compactToggle = container.querySelector('#quick-add-compact-toggle');
-
-        // Compact mode state
-        let isCompact = localStorage.getItem('planner_sidebar_compact') === 'true';
-        const updateCompactUI = () => {
-            compactToggle.classList.toggle('bg-primary/20', isCompact);
-            compactToggle.classList.toggle('text-primary', isCompact);
-            compactToggle.classList.toggle('text-dim', !isCompact);
-            compactToggle.classList.toggle('border-primary/20', isCompact);
-        };
-        updateCompactUI();
-
-        compactToggle.onclick = () => {
-            isCompact = !isCompact;
-            localStorage.setItem('planner_sidebar_compact', String(isCompact));
-            updateCompactUI();
-            if (options.onToggleCompact) options.onToggleCompact(isCompact);
-            // Also notify any other listeners if needed
-            window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact } }));
-        };
 
         let selectedProjectId = '';
 
