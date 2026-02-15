@@ -51,17 +51,16 @@ export const TaskItem = {
 
                 <div class="flex-grow min-w-0">
                     <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
-                    <div class="flex items-center gap-2.5 mt-1 opacity-40">
-                        <div class="flex items-center gap-1">
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 opacity-40">
+                        <div class="flex items-center gap-1 shrink-0">
                             <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${proj.color}"></span>
                             <span class="text-sm font-medium text-muted">${proj.name}</span>
                         </div>
-                        ${timeStr ? `<div class="flex items-center gap-1 text-dim">
-                            <span class="w-px h-2 bg-white/5"></span>
+                        ${timeStr ? `<div class="flex items-center gap-1 text-dim shrink-0">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             <span class="text-xs font-bold tracking-tight">${timeStr}</span>
                         </div>` : ''}
-                        ${t.priority && t.priority !== 'low' ? `<span class="${prio.bg} ${prio.color} text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none">${prio.label}</span>` : ''}
+                        ${t.priority && t.priority !== 'low' ? `<span class="${prio.bg} ${prio.color} text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none shrink-0">${prio.label}</span>` : ''}
                     </div>
                 </div>
 

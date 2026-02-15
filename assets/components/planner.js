@@ -22,7 +22,7 @@ let sidebarCollapsed = window.innerWidth < 1440;
 let projectFilter = 'all';
 let sidebarFilters = { today: true, completed: false, planned: false, projects: false, backlog: false };
 let showSpans = true;
-let sidebarCompactMode = localStorage.getItem('planner_sidebar_compact') === 'true';
+let sidebarCompactMode = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
 
 export async function renderPlanner() {
     await PlannerState.init();
@@ -171,7 +171,12 @@ export async function renderPlanner() {
                 <button class="sidebar-filter-btn inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wide leading-none transition-all ${sidebarFilters[f.key] ? 'bg-primary/20 text-primary' : 'text-dim/50'}" data-filter="${f.key}">
                     <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
                 </button>
-            `).join('');
+            `).join('') + `
+                <div class="w-px h-3 bg-white/10 mx-0.5"></div>
+                <button id="sidebar-compact-toggle" title="Toggle Compact Mode" class="p-1 rounded-md transition-all ${sidebarCompactMode ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-white/5'}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            `;
 
             filterTabsEl.querySelectorAll('.sidebar-filter-btn').forEach(btn => {
                 btn.onclick = () => {
@@ -180,6 +185,16 @@ export async function renderPlanner() {
                     updateUI();
                 };
             });
+
+            const compactBtn = filterTabsEl.querySelector('#sidebar-compact-toggle');
+            if (compactBtn) {
+                compactBtn.onclick = () => {
+                    sidebarCompactMode = !sidebarCompactMode;
+                    localStorage.setItem('planner_sidebar_compact', String(sidebarCompactMode));
+                    window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact: sidebarCompactMode } }));
+                    updateUI();
+                };
+            }
         }
 
         // Sidebar Quick Add
@@ -368,17 +383,6 @@ export async function renderPlanner() {
         if (zoomBtn) { currentZoom = zoomBtn.dataset.zoom; updateUI(); return; }
     });
 
-    container.querySelector('#sidebar-quick-add').onkeydown = async (e) => {
-        if (e.key !== 'Enter') return;
-        const title = e.target.value.trim();
-        if (!title) return;
-        e.target.value = '';
-        try {
-            const defProj = (store.get().projects || [])[0];
-            await api.post('planner.php', { action: 'add_task', title, project_id: defProj ? defProj.id : null, start_date: new Date().toISOString().split('T')[0], priority: 'low' });
-            refresh();
-        } catch (err) { console.error(err); }
-    };
 
     container.querySelector('#project-filter').onchange = (e) => { projectFilter = e.target.value; updateUI(); };
 

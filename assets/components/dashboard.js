@@ -15,8 +15,10 @@ import { TimeEntryModal } from './time-entry-modal.js';
  * Fixed modals, pointer events and strict project selection logic.
  */
 
-export async function renderDashboard() {
-  if (!store.get().tasks) await PlannerState.init();
+export async function renderDashboard(forceRefresh = false) {
+  if (forceRefresh || !store.get().tasks || store.get().tasks.length === 0) {
+    await PlannerState.init();
+  }
 
   const state = store.get();
   const projects = state.projects || [];
@@ -294,13 +296,15 @@ export async function renderDashboard() {
   }
 
   const refreshView = async () => {
+    // Explicitly fetch fresh data before re-rendering
+    await PlannerState.init();
     const app = document.getElementById('app');
     app.innerHTML = '';
     app.appendChild(await renderDashboard());
   };
 
   // ─── TASK PANEL LOGIC ───
-  let isCompact = localStorage.getItem('planner_sidebar_compact') === 'true';
+  let isCompact = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
 
   const handleCompactChange = (e) => {
     isCompact = e.detail.isCompact;

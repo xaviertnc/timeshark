@@ -1,10 +1,5 @@
-import { store } from './utils/store.js';
 import { api } from './utils/api.js';
-
-// Components
-import { renderSidebar } from './components/sidebar.js';
-import { renderDashboard } from './components/dashboard.js';
-import { renderOrganizations } from './components/organizations.js';
+import { store } from './utils/store.js';
 
 /**
  * assets/app.js
@@ -21,6 +16,11 @@ import { renderOrganizations } from './components/organizations.js';
  * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
  * @version 1.1 - UPD - 28 Jan 2026 - Rename Customers to Organizations and Clients
  */
+
+// Components
+import { renderSidebar } from './components/sidebar.js';
+import { renderDashboard } from './components/dashboard.js';
+import { renderOrganizations } from './components/organizations.js';
 import { renderProjects } from './components/projects.js';
 import { renderPlanner } from './components/planner.js';
 import { renderReports } from './components/reports.js';

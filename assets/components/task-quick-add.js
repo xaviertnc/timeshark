@@ -20,18 +20,18 @@ export const TaskQuickAdd = {
         const placeholder = options.placeholder || 'Add a task...';
 
         container.innerHTML = `
-            <div class="flex flex-col sm:flex-row items-stretch gap-2">
-                <!-- Input Area -->
-                <div class="flex-[3] relative">
+            <div class="flex items-center gap-2 w-full">
+                <!-- Input Area: Flex-1 forces it to take all remaining space -->
+                <div class="flex-1 min-w-[100px] relative">
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none select-none">
                         <span class="text-dim/30 text-base font-black">+</span>
                     </div>
                     <input type="text" id="quick-add-input" placeholder="${placeholder}"
-                           class="w-full bg-white/[0.03] border border-white/10 rounded-md pl-10 pr-4 py-2.5 text-[13px] font-bold text-main outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-dim/15 placeholder:font-normal">
+                           class="w-full bg-white/[0.03] border border-white/10 rounded-md pl-10 pr-4 py-2.5 text-base font-bold text-main outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-dim/15 placeholder:font-normal">
                 </div>
 
-                <!-- Project Selector Container -->
-                <div id="quick-add-project-container" class="shrink-0 w-full sm:w-48"></div>
+                <!-- Project Selector: Fixed max-width, shrinks if needed but preserves min-width -->
+                <div id="quick-add-project-container" class="shrink-0 w-full min-w-[120px] max-w-[240px]"></div>
             </div>
         `;
 
