@@ -267,6 +267,7 @@ export async function renderPlanner() {
 
         TaskList.render(listContainer, sidebarTasks, data.projects, {
             mode: sidebarCompactMode ? 'compact' : 'full',
+            showDone: sidebarFilters.completed
         });
     };
 

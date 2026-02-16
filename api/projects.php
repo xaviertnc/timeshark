@@ -10,9 +10,93 @@ $method = $_SERVER['REQUEST_METHOD'];
 try {
     switch ($method) {
         case 'GET':
-            $projects = $store->get($file);
-            debug_log('projects', 'GET', ['count' => count($projects)]);
-            echo json_encode($projects);
+            $action = $_GET['action'] ?? null;
+            $id = $_GET['id'] ?? null;
+
+            if ($action === 'archive' && $id) {
+                // ARCHIVE PROJECT
+                $activeProjects = $store->get($file);
+                $project = null;
+                $activeProjects = array_filter($activeProjects, function($p) use ($id, &$project) {
+                    if ($p['id'] == $id) {
+                        $project = $p;
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (!$project) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Project not found in active list']);
+                    exit;
+                }
+
+                $project['archived_at'] = date('c');
+                $project['status'] = 'Archived';
+                $year = date('Y');
+                $shardFile = 'archive_projects_' . $year;
+
+                $store->insert($shardFile, $project);
+                $store->save($file, array_values($activeProjects));
+
+                debug_log('projects', 'Archived project', ['id' => $id, 'shard' => $shardFile]);
+                echo json_encode(['success' => true]);
+            } elseif ($action === 'restore' && $id) {
+                // RESTORE PROJECT
+                $dataDir = __DIR__ . '/../data/';
+                $shards = glob($dataDir . 'archive_projects_*.json');
+                $project = null;
+                $sourceShard = null;
+
+                foreach ($shards as $shardPath) {
+                    $shardName = basename($shardPath, '.json');
+                    $archive = $store->get($shardName);
+                    $found = false;
+                    $archive = array_filter($archive, function($p) use ($id, &$project, &$found) {
+                        if ($p['id'] == $id) {
+                            $project = $p;
+                            $found = true;
+                            return false;
+                        }
+                        return true;
+                    });
+
+                    if ($found) {
+                        $store->save($shardName, array_values($archive));
+                        $sourceShard = $shardName;
+                        break;
+                    }
+                }
+
+                if (!$project) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Project not found in any archive shard']);
+                    exit;
+                }
+
+                $project['status'] = 'Active';
+                $project['restored_at'] = date('c');
+                $store->insert($file, $project);
+
+                debug_log('projects', 'Restored project', ['id' => $id, 'from' => $sourceShard]);
+                echo json_encode(['success' => true]);
+            } elseif ($action === 'archives') {
+                // GET ALL ARCHIVED PROJECTS
+                $dataDir = __DIR__ . '/../data/';
+                $shards = glob($dataDir . 'archive_projects_*.json');
+                $allArchives = [];
+                foreach ($shards as $shardPath) {
+                    $shardName = basename($shardPath, '.json');
+                    $shardData = $store->get($shardName);
+                    $allArchives = array_merge($allArchives, $shardData);
+                }
+                echo json_encode($allArchives);
+            } else {
+                // DEFAULT: GET ACTIVE PROJECTS
+                $projects = $store->get($file);
+                debug_log('projects', 'GET', ['count' => count($projects)]);
+                echo json_encode($projects);
+            }
             break;
 
         case 'POST':

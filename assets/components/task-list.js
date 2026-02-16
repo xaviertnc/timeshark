@@ -107,16 +107,19 @@ export const TaskList = {
                 // Apply Limit/Today Logic
                 if (limit === 'today') {
                     const now = new Date();
-                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
                     groupTasks = groupTasks.filter(t => {
-                        const dateSrc = t.end_date || t.start_date || t.completed_at;
-                        if (!dateSrc) return false;
-                        const d = new Date(dateSrc);
-                        const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                        return dStr === todayStr;
+                        const d = this._getCompletedDisplayDate(t);
+                        if (!d) return false;
+                        const taskDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+                        return taskDay === today;
                     });
-                    const padding = mode === 'compact' ? 'py-1 px-2' : 'py-2 px-4';
-                    emptyLabel = `<div class="${padding} text-center text-dim/10 text-[9px] font-black italic uppercase tracking-[0.3em] bg-white/[0.01] rounded-lg border border-white/[0.02]">No items for today</div>`;
+
+                    if (groupTasks.length === 0) {
+                        const padding = mode === 'compact' ? 'py-1 px-2' : 'py-2 px-4';
+                        emptyLabel = `<div class="${padding} text-center text-dim/10 text-[9px] font-black italic uppercase tracking-[0.3em] bg-white/[0.01] rounded-lg border border-white/[0.02]">No items for today</div>`;
+                    }
                 } else if (limit !== 'all') {
                     const n = parseInt(limit);
                     groupTasks = groupTasks.slice(0, n);
@@ -199,6 +202,35 @@ export const TaskList = {
         }
     },
 
+    /**
+     * COMPLETED TASK DATE LOGIC (DO NOT CHANGE):
+     * Determines the effective "Display & Sort" date for a finished task.
+     * 
+     * RULE: 
+     * - We MUST use the Date (day/month/year) from the scheduled 'end_date' if it exists.
+     * - We MUST use the Time (hours/mins/secs) from the 'completed_at' timestamp.
+     * - If no 'end_date' exists, we default to the full 'completed_at' timestamp.
+     * 
+     * IMPLEMENTATION NOTE:
+     * - We construct the date using Year/Month/Day integers from the string to ensure
+     *   it matches the LOCAL calendar day exactly, avoiding timezone shifts.
+     */
+    _getCompletedDisplayDate(t) {
+        if (!t.completed_at) return null;
+        const comp = new Date(t.completed_at);
+
+        if (t.end_date) {
+            // Force strict local date construction from the string
+            // Formats are typically "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss"
+            const datePart = t.end_date.split('T')[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+
+            // Note: Month is 0-indexed in JS Date
+            return new Date(y, m - 1, d, comp.getHours(), comp.getMinutes(), comp.getSeconds());
+        }
+        return comp;
+    },
+
     getGroupedTasks(tasks) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const groups = {
@@ -244,10 +276,10 @@ export const TaskList = {
             else groups.planned.tasks.push(t);
         });
 
-        // Special Sort for Completed (Newest completion first)
+        // Special Sort for Completed (Newest display date first)
         groups.completed.tasks.sort((a, b) => {
-            const da = a.completed_at ? new Date(a.completed_at).getTime() : 0;
-            const db = b.completed_at ? new Date(b.completed_at).getTime() : 0;
+            const da = this._getCompletedDisplayDate(a)?.getTime() || 0;
+            const db = this._getCompletedDisplayDate(b)?.getTime() || 0;
             return db - da;
         });
 
