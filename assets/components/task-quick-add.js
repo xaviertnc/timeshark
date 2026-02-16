@@ -70,7 +70,7 @@ export const TaskQuickAdd = {
                     project_id: selectedProjectId,
                     project_name: project?.name || 'Unassigned',
                     status: 'todo',
-                    priority: 'medium',
+                    priority: 'low',
                     progress: 0
                 };
 

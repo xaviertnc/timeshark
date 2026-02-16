@@ -78,23 +78,13 @@ export class TaskModal {
                             </div>
                         </div>
 
-                        <!-- Row: Type, Priority -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Type</label>
-                                <select name="task_type" id="modal-task-type" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
-                                    <option value="task" ${task?.task_type === 'task' ? 'selected' : ''}>📋 Task</option>
-                                    <option value="project_span" ${task?.task_type === 'project_span' ? 'selected' : ''}>🎯 Project Span</option>
-                                </select>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Priority</label>
-                                <select name="priority" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
-                                    <option value="low" ${task?.priority === 'low' ? 'selected' : ''}>🟢 Low</option>
-                                    <option value="medium" ${task?.priority === 'medium' ? 'selected' : ''}>🟡 Medium</option>
-                                    <option value="high" ${task?.priority === 'high' ? 'selected' : ''}>🔴 High</option>
-                                </select>
-                            </div>
+                        <!-- Row: Type -->
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Type</label>
+                            <select name="task_type" id="modal-task-type" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
+                                <option value="task" ${task?.task_type === 'task' ? 'selected' : ''}>📋 Task</option>
+                                <option value="project_span" ${task?.task_type === 'project_span' ? 'selected' : ''}>🎯 Project Span</option>
+                            </select>
                         </div>
 
                         <!-- Notes -->
@@ -287,13 +277,17 @@ export class TaskModal {
         });
 
         // Priority
-        if (!task && defaults.priority) form.priority.value = defaults.priority;
+        if (!task) {
+            form.priority.value = defaults.priority || 'low';
+        }
 
         // Date Defaults for New Tasks
         if (!task) {
             const now = new Date();
             const end = new Date(now.getTime() + 60 * 60 * 1000);
-            const dateVal = defaults.date || now.toISOString().split('T')[0];
+
+            // Default to today and now
+            const dateVal = now.toISOString().split('T')[0];
             form.start_date.value = dateVal;
             form.end_date.value = dateVal;
             form.start_time.value = now.toTimeString().substring(0, 5);
