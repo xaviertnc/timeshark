@@ -105,7 +105,7 @@ export const TaskItem = {
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
                        </button>`
             }
-                <span class="text-base font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
+                <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
                 <span class="text-sm font-medium truncate" style="color: ${proj.color}">${proj.name}</span>
                 <div class="flex flex-col text-[9px] font-bold text-dim/50 text-left leading-[1.1] break-words">
                     <span>${startStr}</span>

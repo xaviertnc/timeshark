@@ -9,26 +9,78 @@
 
 import { PlannerUtils } from './planner-utils.js';
 
+/**
+ * ZOOM — Master layout configuration for every scale × density combination.
+ *
+ * Structure:  ZOOM[scale][density] → preset object
+ *   Scales:    'day' | 'week' | 'month' | 'year'
+ *   Densities: 'compact' | 'regular' | 'relaxed'
+ *
+ * Preset properties:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * @property {number}  colWidth      — Minimum pixels-per-day for week/month.
+ *                                     In week/month views, each day column is
+ *                                     at least this wide (px). Ignored in day
+ *                                     view (uses hoursToShow) and year view
+ *                                     (fits to viewport). If colsInView is set,
+ *                                     colWidth acts as a floor only.
+ *
+ * @property {number}  colsInView    — (week/month only, optional) Target number
+ *                                     of date columns visible in the viewport
+ *                                     at once. When set, pxPerDay is computed as
+ *                                     availableWidth / colsInView. The resulting
+ *                                     value is still clamped to colWidth minimum.
+ *                                     Omit or set to 0 to use the default
+ *                                     colWidth-based calculation.
+ *
+ * @property {number}  hoursToShow   — (day view only) How many hours fit in the
+ *                                     visible viewport width. Lower = more zoomed
+ *                                     in, higher = more compressed.
+ *
+ * @property {number}  rowH          — Base row height (px) for each resource.
+ *                                     Rows dynamically grow taller when a resource
+ *                                     has many project lanes, so this is a minimum.
+ *
+ * @property {number}  barH          — Height of each task bar (px).
+ *
+ * @property {number}  laneGap       — Vertical gap (px) between project lanes
+ *                                     inside a resource row. Smaller = lanes sit
+ *                                     closer together. Controls row density.
+ *
+ * @property {number}  rowPadTop     — Top padding (px) inside each resource row,
+ *                                     above the first lane.
+ *
+ * @property {number}  rowPadBottom  — Bottom padding (px) inside each resource
+ *                                     row, below the time-entry strip.
+ *
+ * @property {number}  timeEntryH    — Height (px) of the time-entry strip at the
+ *                                     bottom of each resource row.
+ *
+ * @property {number}  fontSize      — Font size (px) for task bar titles.
+ *
+ * @property {number}  spanFontSize  — Font size (px) for project-span bar titles.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 const ZOOM = {
     day: {
-        compact: { colWidth: 30, rowH: 36, barH: 14, barTop: 9, hoursToShow: 24, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 60, rowH: 95, barH: 28, barTop: 14, hoursToShow: 10, fontSize: 10, spanFontSize: 10 },
-        relaxed: { colWidth: 240, rowH: 95, barH: 28, barTop: 14, hoursToShow: 6, fontSize: 12, spanFontSize: 12 },
+        compact: { colWidth: 20, rowH: 36, barH: 14, hoursToShow: 24, laneGap: 3, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 20, rowH: 42, barH: 27, hoursToShow: 24, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 16, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 120, rowH: 48, barH: 30, hoursToShow: 12, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 18, fontSize: 10, spanFontSize: 11 },
     },
     week: {
-        compact: { colWidth: 40, rowH: 50, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 100, rowH: 50, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 160, rowH: 50, barH: 42, barTop: 14, fontSize: 10, spanFontSize: 11 },
+        compact: { colWidth: 30, rowH: 36, barH: 14, colsInView: 9, laneGap: 3, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 80, rowH: 42, barH: 27, colsInView: 7, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 60, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 120, rowH: 48, barH: 30, colsInView: 5, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 18, fontSize: 10, spanFontSize: 11 },
     },
     month: {
-        compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 40, rowH: 95, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 80, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 11 },
+        compact: { colWidth: 20, rowH: 36, barH: 14, colsInView: 31, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 40, rowH: 42, barH: 27, colsInView: 0, laneGap: 2, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 16, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 80, rowH: 48, barH: 30, colsInView: 0, laneGap: 2, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 18, fontSize: 10, spanFontSize: 11 },
     },
     year: {
-        compact: { colWidth: 6, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 8, rowH: 95, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 5, rowH: 96, barH: 42, barTop: 20, fontSize: 15, spanFontSize: 14 },
+        compact: { colWidth: 6, rowH: 36, barH: 14, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 12, rowH: 42, barH: 27, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 16, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 24, rowH: 48, barH: 30, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 18, fontSize: 15, spanFontSize: 11 },
     }
 };
 
@@ -73,7 +125,12 @@ export const PlannerTimeline = {
                 }
             } else {
                 const minPxPerDay = zp.colWidth || 100;
-                pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / totalDays));
+                if (zp.colsInView && zp.colsInView > 0) {
+                    // colsInView: compute px/day so exactly N columns fit in view
+                    pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / zp.colsInView));
+                } else {
+                    pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / totalDays));
+                }
             }
             totalWidth = totalDays * pxPerDay;
         }
@@ -305,12 +362,15 @@ export const PlannerTimeline = {
                 })).filter(lane => lane.tasks.length > 0);
             }
 
-            const laneCount = Math.max(1, projectLanes.length);
-            const laneGap = zoom === 'regular' ? 10 : zoom === 'relaxed' ? 12 : 3;
+            // Skip resource rows that have no lanes (no tasks in this timeframe)
+            if (projectLanes.length === 0) return;
+
+            const laneCount = projectLanes.length;
+            const laneGap = zp.laneGap ?? 10;
             const totalBarArea = laneCount * zp.barH + (laneCount - 1) * laneGap;
-            const timeEntryRowH = 14;
-            const rowPaddingTop = 6;
-            const rowPaddingBottom = 4;
+            const timeEntryRowH = zp.timeEntryH ?? 14;
+            const rowPaddingTop = zp.rowPadTop ?? 6;
+            const rowPaddingBottom = zp.rowPadBottom ?? 4;
             const dynamicRowH = Math.max(zp.rowH, rowPaddingTop + totalBarArea + timeEntryRowH + rowPaddingBottom);
 
             const rowEl = document.createElement('div');
@@ -455,9 +515,6 @@ export const PlannerTimeline = {
                                 `;
                             } else {
                                 // Normal task bar
-                                const titleHtml = showText && renderW > 30
-                                    ? `<span class="block text-[${zp.fontSize}px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden">${task.title}</span>`
-                                    : '';
 
                                 // Progress overlay (skip for continuous projects)
                                 const taskProgress = task.progress || 0;
@@ -467,9 +524,9 @@ export const PlannerTimeline = {
 
                                 const isDone = status === 'done';
 
-                                // Hatched overlay for done tasks
+                                // Hatched overlay for done tasks — rendered behind text via z-index
                                 const doneOverlay = isDone ? `
-                                    <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.25) 3px, rgba(0,0,0,0.25) 5px);"></div>
+                                    <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 5px); z-index: 0;"></div>
                                 ` : '';
 
                                 html += `
@@ -479,7 +536,7 @@ export const PlannerTimeline = {
                                          title="${tooltipText}">
                                          ${progressHtml}
                                          ${doneOverlay}
-                                         ${titleHtml}
+                                         <span class="block relative text-[${zp.fontSize}px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}</span>
                                     </div>
                                 `;
                             }

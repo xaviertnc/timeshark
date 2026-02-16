@@ -27,7 +27,7 @@ export const TaskQuickAdd = {
                         <span class="text-dim/30 text-base font-black">+</span>
                     </div>
                     <input type="text" id="quick-add-input" placeholder="${placeholder}"
-                           class="w-full bg-white/[0.03] border border-white/10 rounded-md pl-10 pr-4 py-2.5 text-base font-bold text-main outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-dim/15 placeholder:font-normal">
+                           class="w-full bg-white/[0.03] border border-white/10 rounded-md pl-10 pr-4 py-2.5 text-sm font-bold text-main outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-dim/15 placeholder:font-normal">
                 </div>
 
                 <!-- Project Selector: Fixed max-width, shrinks if needed but preserves min-width -->

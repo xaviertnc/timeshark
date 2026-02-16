@@ -7,6 +7,7 @@ import { TaskQuickAdd } from './task-quick-add.js';
 import { SearchableSelect } from './searchable-select.js';
 import { syncSpanToProject } from '../utils/project-span-sync.js';
 import { TimeEntryModal } from './time-entry-modal.js';
+import { TaskFilterBar } from './task-filter-bar.js';
 
 /**
  * assets/components/dashboard.js
@@ -313,16 +314,8 @@ export async function renderDashboard(forceRefresh = false) {
   };
   window.addEventListener('compact-mode-change', handleCompactChange);
 
-  const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{"today":true,"completed":false,"planned":false,"spans":false,"backlog":false}');
+  const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{"today":true,"completed":false,"planned":false,"projects":false,"backlog":false}');
   const allTasks = state.tasks || [];
-
-  const filterDefs = [
-    { key: 'today', label: 'Today', icon: '☀' },
-    { key: 'completed', label: 'Completed', icon: '✓' },
-    { key: 'planned', label: 'Planned', icon: '📅' },
-    { key: 'spans', label: 'Projects', icon: '▓' },
-    { key: 'backlog', label: 'Backlog', icon: '📋' }
-  ];
 
   const renderTaskToggles = () => {
     const toggleContainer = container.querySelector('#task-filter-toggles');
@@ -336,43 +329,22 @@ export async function renderDashboard(forceRefresh = false) {
       });
     }
 
-    let toggleHtml = filterDefs.map(f => `
-      <button class="task-filter-btn inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide leading-none transition-all ${taskFilters[f.key] ? 'bg-primary/20 text-primary shadow-sm' : 'text-dim/50 hover:text-dim hover:bg-white/5'
-      }" data-filter="${f.key}">
-        <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
-      </button>
-    `).join('');
-
-    // Add Separator and Compact Toggle
-    toggleHtml += `
-      <div class="w-px h-4 bg-white/10 mx-1"></div>
-      <button id="dashboard-compact-toggle" title="Toggle Compact Mode" class="p-1.5 rounded-md transition-all ${isCompact ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-white/5'}">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-      </button>
-    `;
-
-    toggleContainer.innerHTML = toggleHtml;
-
-    toggleContainer.querySelectorAll('.task-filter-btn').forEach(btn => {
-      btn.onclick = () => {
-        const key = btn.dataset.filter;
+    TaskFilterBar.render(toggleContainer, taskFilters, {
+      onFilterChange: (key) => {
         taskFilters[key] = !taskFilters[key];
         localStorage.setItem('dashboard_task_filters', JSON.stringify(taskFilters));
         renderTaskToggles();
         renderDashboardTasks();
-      };
-    });
-
-    const compactBtn = toggleContainer.querySelector('#dashboard-compact-toggle');
-    if (compactBtn) {
-      compactBtn.onclick = () => {
-        isCompact = !isCompact;
-        localStorage.setItem('planner_sidebar_compact', String(isCompact));
-        window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact } }));
+      },
+      isCompact,
+      onToggleCompact: (val) => {
+        isCompact = val;
+        localStorage.setItem('planner_sidebar_compact', String(val));
+        window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact: val } }));
         renderTaskToggles();
         renderDashboardTasks();
-      };
-    }
+      }
+    });
   };
 
   const renderDashboardTasks = () => {
@@ -406,7 +378,7 @@ export async function renderDashboard(forceRefresh = false) {
       add(allTasks.filter(t => t.status === 'done'));
     }
 
-    if (taskFilters.spans) {
+    if (taskFilters.projects) {
       const spanTasks = allTasks.filter(t => t.task_type === 'project_span');
       renderSpansChart(spanTasks);
     } else {

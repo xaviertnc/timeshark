@@ -154,7 +154,7 @@ export const TaskList = {
                     ${headerAnchor}
                 </div>
                 ${emptyLabel ? emptyLabel : `
-                    <div class="${mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-1'}">
+                    <div class="${mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-0'}">
                         ${groupTasks.map(t => TaskItem.render(t, projects, { mode })).join('')}
                     </div>
                 `}

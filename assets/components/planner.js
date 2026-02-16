@@ -11,6 +11,7 @@ import { PlannerUtils } from './planner/planner-utils.js';
 import { PlannerTimeline } from './planner/planner-view-timeline.js';
 import { TaskList } from './task-list.js';
 import { TaskQuickAdd } from './task-quick-add.js';
+import { TaskFilterBar } from './task-filter-bar.js';
 import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { ProjectModal } from './project-modal.js';
@@ -172,43 +173,21 @@ export async function renderPlanner() {
 
 
         // Sidebar filters
-        const filterTabDefs = [
-            { key: 'today', label: 'Today', icon: '☀' },
-            { key: 'completed', label: 'Completed', icon: '✓' },
-            { key: 'planned', label: 'Planned', icon: '📅' },
-            { key: 'projects', label: 'Projects', icon: '▓' },
-            { key: 'backlog', label: 'Backlog', icon: '📋' }
-        ];
         const filterTabsEl = container.querySelector('#sidebar-filter-tabs');
         if (filterTabsEl) {
-            filterTabsEl.innerHTML = filterTabDefs.map(f => `
-                <button class="sidebar-filter-btn inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wide leading-none transition-all ${sidebarFilters[f.key] ? 'bg-primary/20 text-primary' : 'text-dim/50'}" data-filter="${f.key}">
-                    <span class="text-[9px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
-                </button>
-            `).join('') + `
-                <div class="w-px h-3 bg-white/10 mx-0.5"></div>
-                <button id="sidebar-compact-toggle" title="Toggle Compact Mode" class="p-1 rounded-md transition-all ${sidebarCompactMode ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-white/5'}">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </button>
-            `;
-
-            filterTabsEl.querySelectorAll('.sidebar-filter-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const key = btn.dataset.filter;
+            TaskFilterBar.render(filterTabsEl, sidebarFilters, {
+                onFilterChange: (key) => {
                     sidebarFilters[key] = !sidebarFilters[key];
                     updateUI();
-                };
-            });
-
-            const compactBtn = filterTabsEl.querySelector('#sidebar-compact-toggle');
-            if (compactBtn) {
-                compactBtn.onclick = () => {
-                    sidebarCompactMode = !sidebarCompactMode;
-                    localStorage.setItem('planner_sidebar_compact', String(sidebarCompactMode));
-                    window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact: sidebarCompactMode } }));
+                },
+                isCompact: sidebarCompactMode,
+                onToggleCompact: (val) => {
+                    sidebarCompactMode = val;
+                    localStorage.setItem('planner_sidebar_compact', String(val));
+                    window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact: val } }));
                     updateUI();
-                };
-            }
+                }
+            });
         }
 
         // Sidebar Quick Add
