@@ -12,13 +12,13 @@ import { PlannerUtils } from './planner-utils.js';
 const ZOOM = {
     day: {
         compact: { colWidth: 30, rowH: 36, barH: 14, barTop: 9, hoursToShow: 24, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 60, rowH: 95, barH: 27, barTop: 10, hoursToShow: 12, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 120, rowH: 64, barH: 28, barTop: 14, hoursToShow: 10, fontSize: 10, spanFontSize: 11 },
+        regular: { colWidth: 60, rowH: 95, barH: 28, barTop: 14, hoursToShow: 10, fontSize: 10, spanFontSize: 10 },
+        relaxed: { colWidth: 240, rowH: 95, barH: 28, barTop: 14, hoursToShow: 6, fontSize: 12, spanFontSize: 12 },
     },
     week: {
-        compact: { colWidth: 40, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 80, rowH: 95, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 160, rowH: 64, barH: 28, barTop: 14, fontSize: 10, spanFontSize: 11 },
+        compact: { colWidth: 40, rowH: 50, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
+        regular: { colWidth: 100, rowH: 50, barH: 27, barTop: 10, fontSize: 8, spanFontSize: 10 },
+        relaxed: { colWidth: 160, rowH: 50, barH: 42, barTop: 14, fontSize: 10, spanFontSize: 11 },
     },
     month: {
         compact: { colWidth: 20, rowH: 36, barH: 14, barTop: 9, fontSize: 7, spanFontSize: 8 },
@@ -121,12 +121,30 @@ export const PlannerTimeline = {
                 lanesByProject.get(projId).tasks.push(task);
             });
 
-            // Sort lanes by project lane_order (lower = higher in timeline)
-            return Array.from(lanesByProject.values()).sort((a, b) => {
-                const orderA = a.project.lane_order ?? 999;
-                const orderB = b.project.lane_order ?? 999;
-                return orderA - orderB;
+            // ── Two-tier lane sort (see .notes/timeline_lane_sorting.md) ──
+            // 1. Span lanes FIRST — these use lane_order from drag-and-drop reordering.
+            //    The drag-and-drop system in the lane legend exists specifically for this.
+            //    Do NOT override lane_order for span lanes with date-based sorting.
+            // 2. Regular lanes AFTER — sorted by earliest task start_date (chronological).
+            //    This prevents a scattered layout for non-span tasks.
+            const allLanes = Array.from(lanesByProject.values());
+            const spanLanes = allLanes.filter(l => l.tasks.some(t => t.task_type === 'project_span'));
+            const regularLanes = allLanes.filter(l => !l.tasks.some(t => t.task_type === 'project_span'));
+
+            spanLanes.sort((a, b) => (a.project.lane_order ?? 999) - (b.project.lane_order ?? 999));
+            regularLanes.sort((a, b) => {
+                const earliestA = a.tasks.reduce((min, t) => {
+                    const d = new Date(t.start_date).getTime();
+                    return d < min ? d : min;
+                }, Infinity);
+                const earliestB = b.tasks.reduce((min, t) => {
+                    const d = new Date(t.start_date).getTime();
+                    return d < min ? d : min;
+                }, Infinity);
+                return earliestA - earliestB;
             });
+
+            return [...spanLanes, ...regularLanes];
         };
 
         // ───── Compute project-level progress for span tasks ─────

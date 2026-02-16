@@ -276,6 +276,13 @@ export const TaskList = {
             else groups.planned.tasks.push(t);
         });
 
+        // Sort Today group: earliest start_date first
+        groups.today.tasks.sort((a, b) => {
+            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
+            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
+            return da - db;
+        });
+
         // Special Sort for Completed (Newest display date first)
         groups.completed.tasks.sort((a, b) => {
             const da = this._getCompletedDisplayDate(a)?.getTime() || 0;

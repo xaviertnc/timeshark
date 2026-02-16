@@ -143,8 +143,22 @@ export async function renderPlanner() {
         }
 
         // Toggles classes
-        container.querySelectorAll('.scale-toggle').forEach(btn => btn.classList.toggle('bg-card', btn.dataset.scale === currentScale));
-        container.querySelectorAll('.zoom-toggle').forEach(btn => btn.classList.toggle('bg-card', btn.dataset.zoom === currentZoom));
+        container.querySelectorAll('.scale-toggle').forEach(btn => {
+            const active = btn.dataset.scale === currentScale;
+            btn.classList.toggle('bg-card', active);
+            btn.classList.toggle('text-primary', active);
+            btn.classList.toggle('shadow-sm', active);
+            btn.classList.toggle('text-dim', !active);
+            btn.classList.toggle('opacity-40', !active);
+        });
+        container.querySelectorAll('.zoom-toggle').forEach(btn => {
+            const active = btn.dataset.zoom === currentZoom;
+            btn.classList.toggle('bg-card', active);
+            btn.classList.toggle('text-primary', active);
+            btn.classList.toggle('shadow-sm', active);
+            btn.classList.toggle('text-dim', !active);
+            btn.classList.toggle('opacity-40', !active);
+        });
 
         // Sidebar Dynamics
         sidebar.className = `${sidebarCollapsed ? 'w-10' : 'w-72 lg:w-[28rem] xl:w-[32rem]'} flex flex-col bg-sidebar/20 rounded-xl border border-white/5 overflow-y-auto overflow-x-hidden backdrop-blur-sm transition-all duration-500 relative shrink-0 min-w-0`;
