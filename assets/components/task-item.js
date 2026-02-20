@@ -96,7 +96,7 @@ export const TaskItem = {
         }
 
         return `
-            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[20px_1fr_180px_60px] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
+            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[20px_1fr_180px_60px_min-content] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
                 ${isSpan
                 ? `<div class="shrink-0 w-4 h-4 rounded-sm bg-primary flex items-center justify-center">
                             <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -110,6 +110,11 @@ export const TaskItem = {
                 <div class="flex flex-col text-[9px] font-bold text-dim/50 text-left leading-[1.1] break-words">
                     <span>${startStr}</span>
                     ${endStr ? `<span class="opacity-60">${endStr}</span>` : ''}
+                </div>
+                <div class="flex items-center opacity-0 group-hover/task:opacity-100 transition-opacity gap-1 shrink-0">
+                    <button class="track-btn h-6 px-[0.34rem] flex items-center justify-center rounded-lg text-dim/50 hover:text-primary hover:bg-primary/10 transition-all" title="Track Time" data-task-id="${t.id}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
                 </div>
             </div>
         `;
