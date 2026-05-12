@@ -12,7 +12,7 @@ Let me dig into the backend API and data model for TODOs/tasks.
 
 *Viewed [tasks.json](file:///c:/laragon/www/timeshark/data/tasks.json)*
 
-*Viewed [planner-modal.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js)*
+*Viewed [planner-modal.js](file:///c:/laragon/www/timeshark/components/planner/planner-modal.js)*
 
 ### Planner Response
 
@@ -38,13 +38,13 @@ Every task is a flat JSON object. Here's the full schema derived from real data:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| [id](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:87:8-92:10) | `string` | Auto-generated | `uniqid()` e.g. `"697874627caf2"` |
+| [id](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:87:8-92:10) | `string` | Auto-generated | `uniqid()` e.g. `"697874627caf2"` |
 | `title` | `string` | ✅ Yes | The task description |
 | `project_id` | `string` | Yes | Foreign key to [projects.json](cci:7://file:///c:/laragon/www/timeshark/data/projects.json:0:0-0:0) |
 | `project_name` | `string` | No | Denormalized project name (convenience, not always present) |
 | `resource_id` | `string` | Defaults to `"me"` | Team member assigned (e.g. `"Neels"`, `"General"`) |
 | `status` | `string` | Defaults to `"todo"` | `"todo"` / `"in-progress"` / `"done"` |
-| [progress](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:126:8-126:134) | [int](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:39:8-46:10) | Defaults to `0` | 0–100 percentage |
+| [progress](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js:126:8-126:134) | [int](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js:39:8-46:10) | Defaults to `0` | 0–100 percentage |
 | `priority` | `string` | Defaults to `"low"` | `"low"` / `"medium"` / `"high"` |
 | `task_type` | `string` | Defaults to `"task"` | `"task"` (normal) or `"project_span"` (milestone/epic bar) |
 | `start_date` | `string\|null` | Defaults to today | ISO datetime, e.g. `"2026-02-14T09:00:00"` |
@@ -70,8 +70,8 @@ Simple REST-ish PHP endpoint backed by [JsonStore](cci:2://file:///c:/laragon/ww
 | Method | Action | Details |
 |---|---|---|
 | **GET** | List all tasks | Returns entire [tasks.json](cci:7://file:///c:/laragon/www/timeshark/data/tasks.json:0:0-0:0) array |
-| **POST** (no [id](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:87:8-92:10)) | Create task | Title required, defaults `resource_id` to `"me"`, dates to today |
-| **POST** (with [id](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:87:8-92:10)) | Update task | Merges fields via `array_merge`. Rejects blank titles |
+| **POST** (no [id](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:87:8-92:10)) | Create task | Title required, defaults `resource_id` to `"me"`, dates to today |
+| **POST** (with [id](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:87:8-92:10)) | Update task | Merges fields via `array_merge`. Rejects blank titles |
 | **DELETE** `?id=` | Delete task | Removes by ID |
 
 **Validation rules:**
@@ -205,8 +205,8 @@ The `PlannerModal` singleton manages all task CRUD UI:
 2. Combines date + time into ISO strings (or nulls if schedule is off)
 3. Ensures numeric progress
 4. Sets `completed_at` appropriately
-5. POSTs to [planner.php](cci:7://file:///c:/laragon/www/timeshark/api/planner.php:0:0-0:0) (backend differentiates create/update by presence of [id](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:87:8-92:10))
-6. Calls [onSave()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js:499:4-500:21) callback → triggers [refresh()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner.js:365:4-377:5) in the planner controller
+5. POSTs to [planner.php](cci:7://file:///c:/laragon/www/timeshark/api/planner.php:0:0-0:0) (backend differentiates create/update by presence of [id](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:87:8-92:10))
+6. Calls [onSave()](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-modal.js:499:4-500:21) callback → triggers [refresh()](cci:1://file:///c:/laragon/www/timeshark/components/planner.js:365:4-377:5) in the planner controller
 
 ---
 
@@ -217,3 +217,4 @@ Tasks live in [data/tasks.json](cci:7://file:///c:/laragon/www/timeshark/data/ta
 - Atomic writes with file locking (`flock`)
 - Auto-generated IDs via PHP's `uniqid()`
 - No indexing, no relations — everything is scanned linearly
+

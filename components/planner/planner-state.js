@@ -1,5 +1,5 @@
 /**
- * assets/components/planner/planner-state.js
+ * components/planner/planner-state.js
  * 
  * Manages the data state for the unified planner.
  * Merges Tasks and Time Entries.
@@ -99,3 +99,4 @@ export const PlannerState = {
         };
     }
 };
+

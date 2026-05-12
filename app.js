@@ -2,7 +2,7 @@ import { api } from './utils/api.js';
 import { store } from './utils/store.js';
 
 /**
- * assets/app.js
+ * app.js
  *
  * Main Application Entry - 28 Jun 2025
  *
@@ -183,3 +183,4 @@ store.subscribe(state => {
 });
 
 init();
+

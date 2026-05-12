@@ -1,5 +1,5 @@
 /**
- * assets/components/planner/planner-view-timeline.js
+ * components/planner/planner-view-timeline.js
  * 
  * Renders the Gantt-style timeline view with 3 zoom levels.
  * Tasks are grouped into per-project lanes within each resource row.
@@ -740,3 +740,4 @@ export const PlannerTimeline = {
         }
     }
 };
+

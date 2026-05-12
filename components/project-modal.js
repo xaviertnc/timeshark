@@ -3,7 +3,7 @@ import { api } from '../utils/api.js';
 import { syncProjectToSpan } from '../utils/project-span-sync.js';
 
 /**
- * assets/components/project-modal.js
+ * components/project-modal.js
  * 
  * Centralized Project Editor
  */
@@ -252,3 +252,4 @@ export class ProjectModal {
         };
     }
 }
+

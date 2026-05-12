@@ -3,7 +3,7 @@ import { api } from '../utils/api.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 
 /**
- * assets/components/reports.js
+ * components/reports.js
  *
  * Reports - 08 Feb 2026
  * Fixed modals, project selection logic and interactive pointer events.
@@ -275,3 +275,4 @@ export async function renderReports() {
 
   return container;
 }
+

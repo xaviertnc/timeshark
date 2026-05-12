@@ -1,5 +1,5 @@
 /**
- * assets/components/task-quick-add.js
+ * components/task-quick-add.js
  * 
  * Reusable component for quick-adding tasks with project selection.
  */
@@ -106,3 +106,4 @@ export const TaskQuickAdd = {
         };
     }
 };
+

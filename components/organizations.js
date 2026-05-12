@@ -1,5 +1,5 @@
 /**
- * assets/components/organizations.js
+ * components/organizations.js
  *
  * Organizations & Clients Management - 28 Jan 2026
  *
@@ -330,3 +330,4 @@ export async function renderOrganizations() {
 
   return container;
 }
+

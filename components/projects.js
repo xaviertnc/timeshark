@@ -1,5 +1,5 @@
 /**
- * assets/components/projects.js
+ * components/projects.js
  *
  * Project Management - 28 Jan 2026
  *
@@ -408,3 +408,4 @@ export async function renderProjects() {
 
   return container;
 }
+

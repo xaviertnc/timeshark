@@ -1,5 +1,5 @@
 /**
- * assets/components/task-filter-bar.js
+ * components/task-filter-bar.js
  *
  * Reusable filter toggle bar for task lists.
  * Renders a row of filter buttons (Today, Completed, Planned, Projects, Backlog)
@@ -71,3 +71,4 @@ export const TaskFilterBar = {
         }
     }
 };
+

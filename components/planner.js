@@ -1,5 +1,5 @@
 /**
- * assets/components/planner.js
+ * components/planner.js
  * 
  * Main Planner Controller (Refactored for Unified Task Model & Stable UI)
  */
@@ -396,3 +396,4 @@ export async function renderPlanner() {
     updateUI();
     return container;
 }
+

@@ -1,5 +1,5 @@
 /**
- * assets/components/planner/planner-utils.js
+ * components/planner/planner-utils.js
  * 
  * Utility functions for the Planner component.
  */
@@ -185,3 +185,4 @@ export const PlannerUtils = {
         return this.getTimelineConfig('week', offset, today);
     }
 };
+

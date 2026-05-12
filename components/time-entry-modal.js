@@ -3,7 +3,7 @@ import { api } from '../utils/api.js';
 import { SearchableSelect } from './searchable-select.js';
 
 /**
- * assets/components/time-entry-modal.js
+ * components/time-entry-modal.js
  * 
  * Centralized Time Entry Editor
  */
@@ -184,3 +184,4 @@ export class TimeEntryModal {
         };
     }
 }
+

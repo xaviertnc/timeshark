@@ -1,5 +1,5 @@
 /**
- * assets/components/searchable-select.js
+ * components/searchable-select.js
  * 
  * Premium, searchable dropdown component using Portal for z-index safety.
  */
@@ -217,3 +217,4 @@ export const SearchableSelect = {
         document.addEventListener('click', outsideClick);
     }
 };
+

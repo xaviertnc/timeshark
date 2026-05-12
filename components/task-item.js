@@ -1,5 +1,5 @@
 /**
- * assets/components/task-item.js
+ * components/task-item.js
  * 
  * Reusable component for rendering a single task card.
  * Supports 'full' (ref dashboard) and 'compact' (ref sidebar) modes.
@@ -134,3 +134,4 @@ export const TaskItem = {
         return `${dateStr}, ${sTime}`;
     }
 };
+

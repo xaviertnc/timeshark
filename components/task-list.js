@@ -1,5 +1,5 @@
 /**
- * assets/components/task-list.js
+ * components/task-list.js
  * 
  * Reusable component for rendering lists of tasks.
  * Handles grouping, sorting, and delegates row rendering to TaskItem.
@@ -293,3 +293,4 @@ export const TaskList = {
         return groups;
     }
 };
+

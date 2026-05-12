@@ -1,5 +1,5 @@
 /**
- * assets/utils/project-span-sync.js
+ * utils/project-span-sync.js
  * 
  * Bidirectional sync between project span tasks and their parent projects.
  * Ensures dates and progress stay synchronized at all times.
@@ -136,3 +136,4 @@ async function createSpanTask(project) {
 
     return tasks.find(t => t.id === created.id) || created;
 }
+

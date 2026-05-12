@@ -6,25 +6,25 @@ Dig into the planning page and how it works.
 
 Let me read through all the planner files — it's the largest feature in the app, split across 6 files.
 
-*Analyzed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
+*Analyzed [planner.js](file:///c:/laragon/www/timeshark/components/planner.js)*
 
-*Analyzed [planner-state.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-state.js)*
+*Analyzed [planner-state.js](file:///c:/laragon/www/timeshark/components/planner/planner-state.js)*
 
-*Analyzed [planner-utils.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js)*
+*Analyzed [planner-utils.js](file:///c:/laragon/www/timeshark/components/planner/planner-utils.js)*
 
-*Analyzed [planner-modal.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js)*
+*Analyzed [planner-modal.js](file:///c:/laragon/www/timeshark/components/planner/planner-modal.js)*
 
-*Analyzed [planner-view-list.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js)*
+*Analyzed [planner-view-list.js](file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js)*
 
-*Analyzed [planner-view-timeline.js](file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js)*
+*Analyzed [planner-view-timeline.js](file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js)*
 
 ### Planner Response
 
 Now let me read the key sections of the main controller and the views in more detail:
 
-*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
+*Viewed [planner.js](file:///c:/laragon/www/timeshark/components/planner.js)*
 
-*Viewed [planner.js](file:///c:/laragon/www/timeshark/assets/components/planner.js)*
+*Viewed [planner.js](file:///c:/laragon/www/timeshark/components/planner.js)*
 
 ### Planner Response
 
@@ -56,7 +56,7 @@ graph TD
 
 ---
 
-### 1. Main Controller — [planner.js](cci:7://file:///c:/laragon/www/timeshark/assets/components/planner.js:0:0-0:0)
+### 1. Main Controller — [planner.js](cci:7://file:///c:/laragon/www/timeshark/components/planner.js:0:0-0:0)
 
 The controller manages **all state** and **all event handling** via module-level variables:
 
@@ -71,7 +71,7 @@ The controller manages **all state** and **all event handling** via module-level
 | `sidebarCategory` | `'today'`, `'planned'`, `'completed'` | `'today'` |
 | `listViewMode` | `'list'` or `'grid'` (persisted in localStorage) | `'list'` |
 
-The core render loop is a single [updateUI()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner.js:184:4-327:6) function that:
+The core render loop is a single [updateUI()](cci:1://file:///c:/laragon/www/timeshark/components/planner.js:184:4-327:6) function that:
 
 1. Gets combined data from `PlannerState.getCombinedData(projectFilter)`
 2. Generates a timeline config from `PlannerUtils.getTimelineConfig()`
@@ -106,13 +106,13 @@ The sidebar is **hidden in list view** and **collapsible** (to 40px) in timeline
 
 ---
 
-### 2. Data Layer — [planner-state.js](cci:7://file:///c:/laragon/www/timeshark/assets/components/planner/planner-state.js:0:0-0:0)
+### 2. Data Layer — [planner-state.js](cci:7://file:///c:/laragon/www/timeshark/components/planner/planner-state.js:0:0-0:0)
 
 Small but critical. Two methods:
 
-**[init()](cci:1://file:///c:/laragon/www/timeshark/assets/app.js:92:0-129:1)** — Fetches latest tasks + time entries from the API and updates the store.
+**[init()](cci:1://file:///c:/laragon/www/timeshark/app.js:92:0-129:1)** — Fetches latest tasks + time entries from the API and updates the store.
 
-**[getCombinedData(filterProjectId)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-state.js:26:4-97:5)** — The core data transform:
+**[getCombinedData(filterProjectId)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-state.js:26:4-97:5)** — The core data transform:
 
 1. **Filters tasks** by project (or shows all)
 2. **Splits tasks** into **Scheduled** (has `start_date`) vs **Backlog** (no start date)
@@ -124,7 +124,7 @@ Small but critical. Two methods:
 
 ---
 
-### 3. Timeline View — [planner-view-timeline.js](cci:7://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:0:0-0:0)
+### 3. Timeline View — [planner-view-timeline.js](cci:7://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:0:0-0:0)
 
 The **Gantt chart**. This is the most complex renderer.
 
@@ -142,11 +142,11 @@ The **Gantt chart**. This is the most complex renderer.
 
 **Key rendering functions:**
 
-- **[getX(date)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:80:8-85:10)** — Converts a date to an X pixel position on the timeline
-- **[getWidth(start, end)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:87:8-92:10)** — Calculates a task bar's pixel width from its date range
-- **[getProjectLanes(tasks)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-timeline.js:107:8-129:10)** — Groups tasks by project into **lanes** (swim lanes within a resource row). Each project gets its own horizontal lane, so tasks from different projects don't overlap visually.
-- **[getProjectProgress(projectId)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:102:8-117:10)** — Computes aggregate progress across all tasks in a project (for "span" task bars that show project-level progress)
-- **[isCompletedToday(t)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:26:8-35:10)** — Determines if a task was completed today (keeps it visible with 100% progress)
+- **[getX(date)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:80:8-85:10)** — Converts a date to an X pixel position on the timeline
+- **[getWidth(start, end)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:87:8-92:10)** — Calculates a task bar's pixel width from its date range
+- **[getProjectLanes(tasks)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js:107:8-129:10)** — Groups tasks by project into **lanes** (swim lanes within a resource row). Each project gets its own horizontal lane, so tasks from different projects don't overlap visually.
+- **[getProjectProgress(projectId)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js:102:8-117:10)** — Computes aggregate progress across all tasks in a project (for "span" task bars that show project-level progress)
+- **[isCompletedToday(t)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js:26:8-35:10)** — Determines if a task was completed today (keeps it visible with 100% progress)
 
 The timeline renders:
 
@@ -157,7 +157,7 @@ The timeline renders:
 
 ---
 
-### 4. List View — [planner-view-list.js](cci:7://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:0:0-0:0)
+### 4. List View — [planner-view-list.js](cci:7://file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js:0:0-0:0)
 
 Renders tasks as cards in two modes: **list** (vertical) and **grid** (CSS grid). Used in both the **sidebar** (compact cards) and the **full list view** (full cards).
 
@@ -188,7 +188,7 @@ Each card shows:
 
 ---
 
-### 5. Task Modal — [planner-modal.js](cci:7://file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js:0:0-0:0)
+### 5. Task Modal — [planner-modal.js](cci:7://file:///c:/laragon/www/timeshark/components/planner/planner-modal.js:0:0-0:0)
 
 A comprehensive task create/edit modal rendered into `#modal-portal`.
 
@@ -206,31 +206,31 @@ A comprehensive task create/edit modal rendered into `#modal-portal`.
 - Notes (textarea)
 - Delete button (with confirmation)
 
-**[open(task, defaults)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js:331:4-484:5)** — Opens in edit mode if `task` is provided, or create mode with optional `defaults`.
+**[open(task, defaults)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-modal.js:331:4-484:5)** — Opens in edit mode if `task` is provided, or create mode with optional `defaults`.
 
-**[attachEvents()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-modal.js:154:4-329:5)** — Wires up all form interactions:
+**[attachEvents()](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-modal.js:154:4-329:5)** — Wires up all form interactions:
 
 - Progress quick-buttons update the slider and vice versa
 - Date toggle shows/hides time pickers
 - Form submit creates (`POST planner.php`) or updates (`POST planner.php?action=update_task`)
 - Delete triggers `DELETE planner.php?id=...`
-- Calls `PlannerModal.onSave()` callback after save → triggers [refresh()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner.js:365:4-377:5) in the controller
+- Calls `PlannerModal.onSave()` callback after save → triggers [refresh()](cci:1://file:///c:/laragon/www/timeshark/components/planner.js:365:4-377:5) in the controller
 
 ---
 
-### 6. Utilities — [planner-utils.js](cci:7://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:0:0-0:0)
+### 6. Utilities — [planner-utils.js](cci:7://file:///c:/laragon/www/timeshark/components/planner/planner-utils.js:0:0-0:0)
 
 | Function | Purpose |
 |---|---|
-| [getContrastColor(hex)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:7:4-15:5) | Returns `'text-white'` or `'text-slate-900'` for readability on colored backgrounds |
-| [formatDuration(sec)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:17:4-23:5) | `→ "2h 15m"` or `"45m"` |
-| [shiftColor(color, percent)](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:47:2-55:4) | Lighten/darken hex colors |
-| [toISODate(date)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:36:4-39:5) | `→ "2026-02-14"` |
-| [formatTime(date)](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:31:2-35:4) | `→ "14:30"` |
-| [getWeekNum(d)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:47:4-57:5) | ISO week number calculation |
-| [getTimelineConfig(scale, offset, today)](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:59:4-185:5) | **Core** — generates the date grid, column widths, and total width for the timeline based on scale |
+| [getContrastColor(hex)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-utils.js:7:4-15:5) | Returns `'text-white'` or `'text-slate-900'` for readability on colored backgrounds |
+| [formatDuration(sec)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-utils.js:17:4-23:5) | `→ "2h 15m"` or `"45m"` |
+| [shiftColor(color, percent)](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:47:2-55:4) | Lighten/darken hex colors |
+| [toISODate(date)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-utils.js:36:4-39:5) | `→ "2026-02-14"` |
+| [formatTime(date)](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:31:2-35:4) | `→ "14:30"` |
+| [getWeekNum(d)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-utils.js:47:4-57:5) | ISO week number calculation |
+| [getTimelineConfig(scale, offset, today)](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-utils.js:59:4-185:5) | **Core** — generates the date grid, column widths, and total width for the timeline based on scale |
 
-[getTimelineConfig](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-utils.js:59:4-185:5) returns different configurations per scale:
+[getTimelineConfig](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-utils.js:59:4-185:5) returns different configurations per scale:
 
 - **Day**: 24 columns × 120px = 2880px total (one column per hour)
 - **Week**: 14 columns × 80px = 1120px (2 weeks of days)
@@ -241,7 +241,7 @@ A comprehensive task create/edit modal rendered into `#modal-portal`.
 
 ### Event Handling Pattern
 
-The controller uses **event delegation** — a single [click](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner/planner-view-list.js:475:24-475:109) listener on the container handles *everything* via `e.target.closest()`:
+The controller uses **event delegation** — a single [click](cci:1://file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js:475:24-475:109) listener on the container handles *everything* via `e.target.closest()`:
 
 ```
 Click Event → closest('.toggle-status-btn')  → Toggle done/todo
@@ -257,7 +257,7 @@ Click Event → closest('.toggle-status-btn')  → Toggle done/todo
            → closest('#sidebar-add-task')    → Open create modal
 ```
 
-All actions use **optimistic updates** — the UI updates immediately, then the API call follows. On API failure, a full [refresh()](cci:1://file:///c:/laragon/www/timeshark/assets/components/planner.js:365:4-377:5) rolls back to server state.
+All actions use **optimistic updates** — the UI updates immediately, then the API call follows. On API failure, a full [refresh()](cci:1://file:///c:/laragon/www/timeshark/components/planner.js:365:4-377:5) rolls back to server state.
 
 ---
 
@@ -267,3 +267,4 @@ The planner is referenced from the dashboard in two ways:
 
 1. The dashboard imports `PlannerModal` to let you click linked todos on active timer entries
 2. The planner's "Track" button on tasks starts a timer and navigates to `#dashboard`
+

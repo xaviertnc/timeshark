@@ -6,8 +6,8 @@
     <title>Time Shark</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="assets/vendor/chart.min.js"></script>
-    <link rel="stylesheet" href="assets/style.css?v=<?=time()?>">
+    <script src="vendor/chart.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=<?=time()?>">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -50,7 +50,7 @@
     <aside class="w-20 lg:w-24 bg-sidebar border-r border-soft flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
         <div class="h-16 flex items-center justify-center shrink-0">
             <a href="#" class="w-11 h-11 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500 block">
-                 <img src="assets/images/time-shark-logo.jpg" class="w-full h-full object-cover">
+                 <img src="images/time-shark-logo.jpg" class="w-full h-full object-cover">
             </a>
         </div>
 
@@ -90,6 +90,6 @@
     </main>
 
     <div id="modal-portal" class="fixed inset-0 z-[100] pointer-events-none"></div>
-    <script type="module" src="assets/app.js?v=<?=time()?>"></script>
+    <script type="module" src="app.js?v=<?=time()?>"></script>
 </body>
 </html>

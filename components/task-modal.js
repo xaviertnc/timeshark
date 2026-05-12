@@ -1,5 +1,5 @@
 /**
- * assets/components/task-modal.js
+ * components/task-modal.js
  * 
  * Centralized Task/Todo Editor.
  * Replaces legacy PlannerModal with a dynamic, self-cleaning static interface.
@@ -423,3 +423,4 @@ export class TaskModal {
         };
     }
 }
+

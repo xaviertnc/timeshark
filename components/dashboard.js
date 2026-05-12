@@ -10,7 +10,7 @@ import { TimeEntryModal } from './time-entry-modal.js';
 import { TaskFilterBar } from './task-filter-bar.js';
 
 /**
- * assets/components/dashboard.js
+ * components/dashboard.js
  *
  * Dashboard - 08 Feb 2026
  * Fixed modals, pointer events and strict project selection logic.
@@ -779,3 +779,4 @@ export async function renderDashboard(forceRefresh = false) {
 
   return container;
 }
+

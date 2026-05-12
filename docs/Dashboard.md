@@ -6,13 +6,13 @@ Dig into the dashboard and how it works
 
 Let me read through the full dashboard component to give you a detailed breakdown.
 
-*Analyzed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js)*
+*Analyzed [dashboard.js](file:///c:/laragon/www/timeshark/components/dashboard.js)*
 
-*Viewed [dashboard.js](file:///c:/laragon/www/timeshark/assets/components/dashboard.js)*
+*Viewed [dashboard.js](file:///c:/laragon/www/timeshark/components/dashboard.js)*
 
 ### Planner Response
 
-Here's a deep dive into how [dashboard.js](cci:7://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:0:0-0:0) works:
+Here's a deep dive into how [dashboard.js](cci:7://file:///c:/laragon/www/timeshark/components/dashboard.js:0:0-0:0) works:
 
 ---
 
@@ -49,7 +49,7 @@ When idle, the dashboard shows a **two-row form**:
 **Smart behaviors:**
 
 - **Project dropdown** groups projects into "Recent" (top 5 from recent time entries) and "All Projects"
-- **Link Todo** dropdown dynamically populates with active (non-`done`) tasks for the selected project — updates on project change via [updateTodoOptions()](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:239:4-246:6) (line 239)
+- **Link Todo** dropdown dynamically populates with active (non-`done`) tasks for the selected project — updates on project change via [updateTodoOptions()](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:239:4-246:6) (line 239)
 - **Auto-fill**: Selecting a todo auto-fills the description if it's empty (line 251-257)
 - **Silent match**: On submit, if no todo is explicitly linked but the description exactly matches a task title (case-insensitive), it silently links it (lines 733-740)
 
@@ -201,7 +201,7 @@ sequenceDiagram
 1. API call
 2. Update store
 3. Re-fetch time entries from backend
-4. Full re-render via [refreshView()](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:270:2-274:4)
+4. Full re-render via [refreshView()](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:270:2-274:4)
 
 ---
 
@@ -209,10 +209,10 @@ sequenceDiagram
 
 | Function | Purpose |
 |---|---|
-| [formatDuration(secs)](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:27:2-32:4) | `→ "1h 23m 45s"` or `"23m 45s"` |
-| [formatTime(dateStr)](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:34:2-38:4) | `→ "14:30"` (24h format) |
-| [formatDateForInput(dateStr)](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:40:2-45:4) | `→ "2026-02-14T14:30"` for `datetime-local` inputs |
-| [shiftColor(color, percent)](cci:1://file:///c:/laragon/www/timeshark/assets/components/dashboard.js:50:2-58:4) | Lightens/darkens a hex color — used for task accent bars |
+| [formatDuration(secs)](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:27:2-32:4) | `→ "1h 23m 45s"` or `"23m 45s"` |
+| [formatTime(dateStr)](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:34:2-38:4) | `→ "14:30"` (24h format) |
+| [formatDateForInput(dateStr)](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:40:2-45:4) | `→ "2026-02-14T14:30"` for `datetime-local` inputs |
+| [shiftColor(color, percent)](cci:1://file:///c:/laragon/www/timeshark/components/dashboard.js:50:2-58:4) | Lightens/darkens a hex color — used for task accent bars |
 
 ---
 
@@ -225,3 +225,4 @@ The dashboard imports from the **Planner** subsystem:
 - `PlannerList` — renders the filtered task list in the TODO section
 
 This means the dashboard is coupled to the planner for todo-linking functionality.
+
