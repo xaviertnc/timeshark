@@ -20,7 +20,6 @@ import { api } from '../utils/api.js';
 import { syncProjectToSpan } from '../utils/project-span-sync.js';
 import { ProjectModal } from './project-modal.js';
 
-
 const applyAlpha = (color, alpha) => {
   if (!color) return 'transparent';
   if (color.startsWith('#')) {
@@ -32,8 +31,6 @@ const applyAlpha = (color, alpha) => {
   }
   return color;
 };
-
-
 
 // Persistent UI State
 let searchTerm = '';
@@ -69,7 +66,7 @@ export async function renderProjects() {
   // Filter Logic
   let filtered = projects.filter(p => {
     if (tagFilter && (!p.tags || !p.tags.includes(tagFilter))) return false;
-    
+
     const searchTermLower = searchTerm.toLowerCase();
     const matchesTag = p.tags && p.tags.some(t => t.toLowerCase().includes(searchTermLower));
     const searchMatch = !searchTerm ||
@@ -259,41 +256,41 @@ export async function renderProjects() {
       // Group by Epic hierarchically
       const epics = items.filter(p => p.type === 'epic');
       const standalone = items.filter(p => p.type !== 'epic' && !p.parent_id);
-      
+
       let rowsHtml = '';
-      
+
       epics.forEach(epic => {
-          rowsHtml += renderProjectRow(epic, customers, false);
-          const children = items.filter(p => p.parent_id == epic.id);
-          children.forEach(child => {
-              rowsHtml += renderProjectRow(child, customers, true);
-          });
+        rowsHtml += renderProjectRow(epic, customers, false);
+        const children = items.filter(p => p.parent_id == epic.id);
+        children.forEach(child => {
+          rowsHtml += renderProjectRow(child, customers, true);
+        });
       });
-      
+
       standalone.forEach(p => {
-          rowsHtml += renderProjectRow(p, customers, false);
+        rowsHtml += renderProjectRow(p, customers, false);
       });
-      
+
       // Orphaned children (parent filtered out or missing)
       const orphaned = items.filter(p => p.type !== 'epic' && p.parent_id && !epics.find(e => e.id == p.parent_id));
       orphaned.forEach(p => {
-          rowsHtml += renderProjectRow(p, customers, false);
+        rowsHtml += renderProjectRow(p, customers, false);
       });
 
       return rowsHtml;
     }
 
     if (groupByTag) {
-        const groups = {};
-        items.forEach(p => {
-            const pTags = p.tags && p.tags.length > 0 ? p.tags : ['Untagged'];
-            pTags.forEach(t => {
-                if (!groups[t]) groups[t] = [];
-                groups[t].push(p);
-            });
+      const groups = {};
+      items.forEach(p => {
+        const pTags = p.tags && p.tags.length > 0 ? p.tags : ['Untagged'];
+        pTags.forEach(t => {
+          if (!groups[t]) groups[t] = [];
+          groups[t].push(p);
         });
-        
-        return Object.entries(groups).sort(([a], [b]) => a === 'Untagged' ? 1 : b === 'Untagged' ? -1 : a.localeCompare(b)).map(([tag, groupProjects]) => `
+      });
+
+      return Object.entries(groups).sort(([a], [b]) => a === 'Untagged' ? 1 : b === 'Untagged' ? -1 : a.localeCompare(b)).map(([tag, groupProjects]) => `
             <tr class="bg-app/40">
                 <td colspan="7" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
                     <span class="opacity-50 mr-2">#</span> ${tag} 
@@ -327,16 +324,16 @@ export async function renderProjects() {
     const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
     const progress = p._progress;
     const pColor = p.color || '#338a81';
-    
+
     // Tag rendering
-    const tagsHtml = p.tags && p.tags.length > 0 
-        ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`
-        : '';
-        
+    const tagsHtml = p.tags && p.tags.length > 0
+      ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`
+      : '';
+
     // Epic formatting
-    const epicBadge = p.type === 'epic' 
-        ? '<span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>' 
-        : '';
+    const epicBadge = p.type === 'epic'
+      ? '<span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>'
+      : '';
 
     return `
     <tr draggable="true" class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
@@ -435,10 +432,10 @@ export async function renderProjects() {
   // Tag filter
   const tagSelect = container.querySelector('#tag-filter');
   if (tagSelect) {
-      tagSelect.onchange = (e) => {
-          tagFilter = e.target.value;
-          refreshView();
-      };
+    tagSelect.onchange = (e) => {
+      tagFilter = e.target.value;
+      refreshView();
+    };
   }
 
   // Collapse Epics Toggle
@@ -466,105 +463,105 @@ export async function renderProjects() {
   // Table Interactions
   container.addEventListener('change', (e) => {
     if (e.target.id === 'select-all-projects') {
-        const isChecked = e.target.checked;
-        const boxes = container.querySelectorAll('.project-checkbox');
-        boxes.forEach(b => {
-             b.checked = isChecked;
-             if (isChecked) selectedProjectIds.add(String(b.value));
-             else selectedProjectIds.delete(String(b.value));
-        });
-        refreshView();
+      const isChecked = e.target.checked;
+      const boxes = container.querySelectorAll('.project-checkbox');
+      boxes.forEach(b => {
+        b.checked = isChecked;
+        if (isChecked) selectedProjectIds.add(String(b.value));
+        else selectedProjectIds.delete(String(b.value));
+      });
+      refreshView();
     }
   });
 
   container.addEventListener('click', async (e) => {
     // Project Checkbox (Shift + Click Range Selection)
     if (e.target.classList.contains('project-checkbox')) {
-        const id = e.target.value;
-        const isChecked = e.target.checked;
-        
-        if (e.shiftKey && lastCheckedProjectValue) {
-            const boxes = Array.from(container.querySelectorAll('.project-checkbox'));
-            const startIdx = boxes.findIndex(b => b.value === lastCheckedProjectValue);
-            const endIdx = boxes.findIndex(b => b === e.target);
-            
-            if (startIdx !== -1 && endIdx !== -1) {
-                const start = Math.min(startIdx, endIdx);
-                const end = Math.max(startIdx, endIdx);
-                
-                for (let i = start; i <= end; i++) {
-                    boxes[i].checked = isChecked;
-                    if (isChecked) selectedProjectIds.add(String(boxes[i].value));
-                    else selectedProjectIds.delete(String(boxes[i].value));
-                }
-            }
-        } else {
-            if (isChecked) selectedProjectIds.add(String(id));
-            else selectedProjectIds.delete(String(id));
+      const id = e.target.value;
+      const isChecked = e.target.checked;
+
+      if (e.shiftKey && lastCheckedProjectValue) {
+        const boxes = Array.from(container.querySelectorAll('.project-checkbox'));
+        const startIdx = boxes.findIndex(b => b.value === lastCheckedProjectValue);
+        const endIdx = boxes.findIndex(b => b === e.target);
+
+        if (startIdx !== -1 && endIdx !== -1) {
+          const start = Math.min(startIdx, endIdx);
+          const end = Math.max(startIdx, endIdx);
+
+          for (let i = start; i <= end; i++) {
+            boxes[i].checked = isChecked;
+            if (isChecked) selectedProjectIds.add(String(boxes[i].value));
+            else selectedProjectIds.delete(String(boxes[i].value));
+          }
         }
-        
-        lastCheckedProjectValue = id;
-        
-        // Defer refresh to allow click handlers to resolve native checkbox state fully
-        setTimeout(refreshView, 10);
-        return;
+      } else {
+        if (isChecked) selectedProjectIds.add(String(id));
+        else selectedProjectIds.delete(String(id));
+      }
+
+      lastCheckedProjectValue = id;
+
+      // Defer refresh to allow click handlers to resolve native checkbox state fully
+      setTimeout(refreshView, 10);
+      return;
     }
 
     // Bulk Clear
     if (e.target.id === 'bulk-clear') {
-        selectedProjectIds.clear();
-        refreshView();
-        return;
+      selectedProjectIds.clear();
+      refreshView();
+      return;
     }
 
     // Bulk Delete
     if (e.target.id === 'bulk-delete') {
-        if (confirm(`CRITICAL: Permanently delete ${selectedProjectIds.size} projects? This cannot be undone.`)) {
-            const arr = Array.from(selectedProjectIds);
-            for (const id of arr) {
-                await api.delete(`projects.php?id=${id}`);
-            }
-            
-            const [newProjects, newTasks, newTimeEntries] = await Promise.all([
-                api.get('projects.php'),
-                api.get('planner.php'),
-                api.get('time-entries.php')
-            ]);
-            store.update('projects', newProjects);
-            store.update('tasks', newTasks);
-            store.update('timeEntries', newTimeEntries);
-            selectedProjectIds.clear();
-            refreshView();
+      if (confirm(`CRITICAL: Permanently delete ${selectedProjectIds.size} projects? This cannot be undone.`)) {
+        const arr = Array.from(selectedProjectIds);
+        for (const id of arr) {
+          await api.delete(`projects.php?id=${id}`);
         }
-        return;
+
+        const [newProjects, newTasks, newTimeEntries] = await Promise.all([
+          api.get('projects.php'),
+          api.get('planner.php'),
+          api.get('time-entries.php')
+        ]);
+        store.update('projects', newProjects);
+        store.update('tasks', newTasks);
+        store.update('timeEntries', newTimeEntries);
+        selectedProjectIds.clear();
+        refreshView();
+      }
+      return;
     }
 
     // Bulk Archive
     if (e.target.id === 'bulk-archive') {
-        if (confirm(`Archive ${selectedProjectIds.size} selected projects?`)) {
-            const arr = Array.from(selectedProjectIds);
-            for (const id of arr) {
-                await api.get(`projects.php?action=archive&id=${id}`);
-            }
-            store.update('projects', await api.get('projects.php'));
-            selectedProjectIds.clear();
-            refreshView();
+      if (confirm(`Archive ${selectedProjectIds.size} selected projects?`)) {
+        const arr = Array.from(selectedProjectIds);
+        for (const id of arr) {
+          await api.get(`projects.php?action=archive&id=${id}`);
         }
-        return;
+        store.update('projects', await api.get('projects.php'));
+        selectedProjectIds.clear();
+        refreshView();
+      }
+      return;
     }
 
     // Bulk Restore
     if (e.target.id === 'bulk-restore') {
-        if (confirm(`Restore ${selectedProjectIds.size} archived projects?`)) {
-            const arr = Array.from(selectedProjectIds);
-            for (const id of arr) {
-                await api.get(`projects.php?action=restore&id=${id}`);
-            }
-            store.update('projects', await api.get('projects.php'));
-            selectedProjectIds.clear();
-            refreshView();
+      if (confirm(`Restore ${selectedProjectIds.size} archived projects?`)) {
+        const arr = Array.from(selectedProjectIds);
+        for (const id of arr) {
+          await api.get(`projects.php?action=restore&id=${id}`);
         }
-        return;
+        store.update('projects', await api.get('projects.php'));
+        selectedProjectIds.clear();
+        refreshView();
+      }
+      return;
     }
 
     // Archive
@@ -676,18 +673,18 @@ export async function renderProjects() {
       const tbody = container.querySelector('#projects-table-body');
       const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
       const reorderPayload = rows.map((r, index) => ({ id: r.dataset.id, list_order: index }));
-      
+
       try {
         await api.post('projects.php', { reorder: reorderPayload });
         const updatedProjects = await api.get('projects.php');
         store.update('projects', updatedProjects);
-        
+
         // Ensure sort is by list_order if dropped so the change persists visually
         if (sortConfig.key !== 'list_order') {
-            sortConfig.key = 'list_order';
-            sortConfig.direction = 'asc';
+          sortConfig.key = 'list_order';
+          sortConfig.direction = 'asc';
         }
-        
+
         // Refresh view to update the table sort state headers
         refreshView();
       } catch (err) {
@@ -695,7 +692,6 @@ export async function renderProjects() {
       }
     }
   });
-
 
   async function refreshView() {
     const app = document.getElementById('app');
@@ -713,4 +709,3 @@ export async function renderProjects() {
 
   return container;
 }
-

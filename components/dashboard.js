@@ -256,9 +256,13 @@ export async function renderDashboard(forceRefresh = false) {
               <div class="min-w-0">
                 <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors">${escapeHTML(e.description) || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${escapeHTML(e.notes)}</span>` : ''}</span>
               </div>
-              <div class="flex items-center gap-1.5 truncate">
-                <span class="text-[11px] font-bold" style="color: ${proj.color}">${escapeHTML(proj.name)}</span>
-                ${org ? `<span class="text-[10px] text-dim/30 font-medium"> @ ${escapeHTML(org.name)}</span>` : ''}
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="text-[11px] font-bold truncate shrink-0 max-w-[120px]" style="color: ${proj.color}">${escapeHTML(proj.name)}</span>
+                ${proj.tags && proj.tags.length > 0 ? `
+                    <div class="flex items-center gap-1 overflow-hidden shrink">
+                        ${proj.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                    </div>
+                ` : (org ? `<span class="text-[10px] text-dim/30 font-medium truncate shrink"> @ ${escapeHTML(org.name)}</span>` : '')}
               </div>
               <div class="text-[10px] font-black text-dim/40 uppercase tracking-widest whitespace-nowrap">
                 ${formatTime(e.start_time)} – ${formatTime(e.end_time)}
@@ -291,7 +295,15 @@ export async function renderDashboard(forceRefresh = false) {
                     <h4 class="text-base font-bold tracking-tight">${escapeHTML(e.description) || 'No description'}</h4>
                     <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${escapeHTML(e.resource_id) || 'Main'}</span>
                   </div>
-                  <p class="text-sm font-medium text-muted truncate">${escapeHTML(proj.name)} ${org ? `<span class="opacity-40 mx-1">•</span> ${escapeHTML(org.name)}` : ''}</p>
+                  <div class="flex items-center gap-2 mb-0.5 min-w-0">
+                    <span class="text-sm font-medium text-muted truncate shrink-0 max-w-[50%]">${escapeHTML(proj.name)}</span>
+                    ${org ? `<span class="text-xs text-dim/40 truncate shrink-0">@ ${escapeHTML(org.name)}</span>` : ''}
+                    ${proj.tags && proj.tags.length > 0 ? `
+                        <div class="flex items-center gap-1 overflow-hidden shrink ml-1">
+                            ${proj.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                  </div>
                   ${(() => {
         if (e.task_id) {
           const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
@@ -1009,16 +1021,16 @@ export async function renderDashboard(forceRefresh = false) {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(startForm).entries());
       const proj = projects.find(p => String(p.id) === String(data.project_id));
-      if (!proj) return;
 
-      data.project_name = proj.name;
+      data.project_name = proj ? proj.name : 'Unassigned';
+      data.project_id = proj ? proj.id : '';
       data.resource_id = state.team?.[0]?.name || 'Main';
 
       // Use explicitly linked todo if selected, otherwise try silent match
       if (!data.task_id && data.description.trim()) {
         const allTasks = state.tasks || [];
         const match = allTasks.find(t =>
-          String(t.project_id) === String(data.project_id) &&
+          String(t.project_id || '') === String(data.project_id || '') &&
           t.title.toLowerCase().trim() === data.description.toLowerCase().trim()
         );
         if (match) data.task_id = match.id;

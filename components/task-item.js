@@ -20,6 +20,10 @@ export const TaskItem = {
         const isDone = task.status === 'done';
         const isSpan = task.task_type === 'project_span';
         const progress = task.progress || 0;
+        
+        const taskTags = task.tags || [];
+        const projTags = proj.tags || [];
+        const displayTags = [...new Set([...taskTags, ...projTags])];
 
         // Priority config
         const prioConf = {
@@ -32,12 +36,12 @@ export const TaskItem = {
         const timeStr = this.formatTime(task);
 
         if (mode === 'compact') {
-            return this.renderCompact(task, proj, isDone, isSpan, progress, prio, timeStr, options);
+            return this.renderCompact(task, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options);
         }
-        return this.renderFull(task, proj, isDone, isSpan, progress, prio, timeStr, options);
+        return this.renderFull(task, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options);
     },
 
-    renderFull(t, proj, isDone, isSpan, progress, prio, timeStr, options = {}) {
+    renderFull(t, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options = {}) {
         const isSelectionMode = !!options.selectionMode;
         return `
             <div class="task-item group/task relative flex items-center gap-3 p-4 rounded-xl bg-card border border-white/5 shadow-sm hover:border-primary/20 transition-all cursor-pointer" data-task-id="${t.id}">
@@ -58,10 +62,15 @@ export const TaskItem = {
                 <div class="flex-grow min-w-0">
                     <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 opacity-40">
-                        <div class="flex items-center gap-1 shrink-0">
-                            <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${proj.color}"></span>
-                            <span class="text-sm font-medium text-muted">${proj.name}</span>
+                        <div class="flex items-center gap-1 shrink-0 min-w-0 max-w-[200px]">
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${proj.color}"></span>
+                            <span class="text-sm font-medium text-muted truncate">${proj.name}</span>
                         </div>
+                        ${displayTags.length > 0 ? `
+                            <div class="flex items-center gap-1 shrink-0">
+                                ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate max-w-[60px]">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
                         ${timeStr ? `<div class="flex items-center gap-1 text-dim shrink-0">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             <span class="text-xs font-bold tracking-tight">${timeStr}</span>
@@ -85,7 +94,7 @@ export const TaskItem = {
         `;
     },
 
-    renderCompact(t, proj, isDone, isSpan, progress, prio, timeStr, options = {}) {
+    renderCompact(t, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options = {}) {
         const isSelectionMode = !!options.selectionMode;
         // High-density grid layout (the "perfect" original compact view)
         let startStr = '';
@@ -119,7 +128,14 @@ export const TaskItem = {
                        </button>`
             }
                 <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
-                <span class="text-sm font-medium truncate" style="color: ${proj.color}">${proj.name}</span>
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="text-sm font-medium truncate shrink-0 max-w-[100px]" style="color: ${proj.color}">${proj.name}</span>
+                    ${displayTags.length > 0 ? `
+                        <div class="flex items-center gap-1 overflow-hidden shrink">
+                            ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
                 <div class="flex flex-col text-[9px] font-bold text-dim/50 text-left leading-[1.1] break-words">
                     <span>${startStr}</span>
                     ${endStr ? `<span class="opacity-60">${endStr}</span>` : ''}
