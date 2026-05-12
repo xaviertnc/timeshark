@@ -28,6 +28,9 @@ export async function renderDashboard(forceRefresh = false) {
   const customers = state.customers || [];
   const modalPortal = document.getElementById('modal-portal');
 
+  let isCompact = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
+  let isHistoryCompact = localStorage.getItem('dashboard_history_compact') === 'true'; // Default to false
+
   const formatDuration = (secs) => {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
@@ -139,7 +142,7 @@ export async function renderDashboard(forceRefresh = false) {
     </div>
 
     <!-- Todo Section -->
-    <div class="space-y-4">
+    <div class="space-y-3">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Todo</h3>
         <div id="task-filter-toggles" class="flex items-center gap-1 bg-app/30 p-1  rounded-lg border border-white/5">
@@ -161,7 +164,7 @@ export async function renderDashboard(forceRefresh = false) {
     </div>
 
     <!-- Decorative Divider between Todo and History -->
-    <div class="flex flex-col items-center justify-center relative py-4">
+    <div class="flex flex-col items-center justify-center relative py-3">
       <div class="absolute w-64 h-24 bg-[${pColor}] opacity-[0.05] blur-[60px] rounded-full pointer-events-none"></div>
       <div class="relative z-10 flex flex-col items-center gap-2 group cursor-default">
         <div class="w-32 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-30"></div>
@@ -171,17 +174,53 @@ export async function renderDashboard(forceRefresh = false) {
     </div>
 
     <!-- History Section -->
-    <div class="space-y-4">
+    <div class="space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Recent History</h3>
+        <button id="history-compact-toggle" class="p-1 rounded-md transition-all ${isHistoryCompact ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-white/5'}" title="Toggle Compact Mode">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
       </div>
 
-      <div class="space-y-3">
+      <div class="${isHistoryCompact ? 'space-y-0' : 'space-y-3'}">
         ${entries.filter(e => e.end_time).slice(0, 10).map(e => {
     const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
     const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
     const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
     const taskColor = shiftColor(proj.color, -10);
+
+    if (isHistoryCompact) {
+      return `
+            <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-white/5" data-entry-id="${e.id}">
+              <div class="w-1 h-4 rounded-full" style="background-color: ${taskColor}"></div>
+              <div class="min-w-0">
+                <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors">${e.description || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${e.notes}</span>` : ''}</span>
+              </div>
+              <div class="flex items-center gap-1.5 truncate">
+                <span class="text-[11px] font-bold" style="color: ${proj.color}">${proj.name}</span>
+                ${org ? `<span class="text-[10px] text-dim/30 font-medium"> @ ${org.name}</span>` : ''}
+              </div>
+              <div class="text-[10px] font-black text-dim/40 uppercase tracking-widest whitespace-nowrap">
+                ${formatTime(e.start_time)} – ${formatTime(e.end_time)}
+              </div>
+              <div class="text-xs font-black text-main tabular-nums tracking-tighter text-right">
+                ${formatDuration(duration)}
+              </div>
+              <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity whitespace-nowrap">
+                <button class="resume-btn h-6 px-1.5 flex items-center justify-center rounded-md text-dim/50 hover:text-primary hover:bg-primary/10 transition-all"
+                        data-project-id="${e.project_id}"
+                        data-description="${e.description || ''}"
+                        data-notes="${e.notes || ''}">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
+                </button>
+                <button class="delete-history-btn h-6 px-1.5 flex items-center justify-center rounded-md text-dim/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                        data-id="${e.id}">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+              </div>
+            </div>
+          `;
+    }
 
     return `
             <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main cursor-pointer" data-entry-id="${e.id}">
@@ -229,6 +268,7 @@ export async function renderDashboard(forceRefresh = false) {
               </div>
             </div>
           `;
+
   }).join('')}
         ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-xs opacity-30">No history yet</p>' : ''}
       </div>
@@ -305,7 +345,6 @@ export async function renderDashboard(forceRefresh = false) {
   };
 
   // ─── TASK PANEL LOGIC ───
-  let isCompact = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
 
   const handleCompactChange = (e) => {
     isCompact = e.detail.isCompact;
@@ -776,6 +815,16 @@ export async function renderDashboard(forceRefresh = false) {
       } catch (err) { alert('Delete failed'); }
     };
   });
+
+  // History Compact Toggle
+  const historyToggle = container.querySelector('#history-compact-toggle');
+  if (historyToggle) {
+    historyToggle.onclick = () => {
+      isHistoryCompact = !isHistoryCompact;
+      localStorage.setItem('dashboard_history_compact', String(isHistoryCompact));
+      refreshView();
+    };
+  }
 
   return container;
 }

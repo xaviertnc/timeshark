@@ -225,4 +225,3 @@ The dashboard imports from the **Planner** subsystem:
 - `PlannerList` — renders the filtered task list in the TODO section
 
 This means the dashboard is coupled to the planner for todo-linking functionality.
-
