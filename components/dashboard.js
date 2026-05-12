@@ -393,10 +393,24 @@ export async function renderDashboard(forceRefresh = false) {
     const initialProjectId = recentProjectIds[0] || '';
     projectInput.value = initialProjectId;
 
+    const tagsInput = container.querySelector('input[name="tags"]');
+    if (tagsInput) {
+        tagsInput.addEventListener('input', () => renderTodoSelect(projectInput.value));
+    }
+
     const renderTodoSelect = (pid) => {
-      const tasks = (state.tasks || []).filter(t =>
-        String(t.project_id) === String(pid) && t.status !== 'done'
-      ).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
+      const activeTags = tagsInput ? tagsInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+      
+      const tasks = (state.tasks || []).filter(t => {
+        if (pid && String(t.project_id) !== String(pid)) return false;
+        
+        if (activeTags.length > 0) {
+            const taskTags = t.tags ? t.tags.map(x => x.toLowerCase()) : [];
+            if (!activeTags.some(tag => taskTags.includes(tag))) return false;
+        }
+        
+        return t.status !== 'done';
+      }).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
 
       SearchableSelect.render(todoContainer, tasks, {
         value: todoInput.value,

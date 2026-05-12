@@ -136,9 +136,29 @@ export class TimeEntryModal {
             .map(e => String(e.project_id))
         )].slice(0, 5);
 
+        // --- Tag Logic Initialization ---
+        const tagsContainer = overlay.querySelector('#modal-tags-container');
+        const tagInput = overlay.querySelector('#modal-tag-input');
+        const hiddenTagsInput = overlay.querySelector('#hidden-tags-input');
+        const suggestedContainer = overlay.querySelector('#suggested-tags-container');
+        
+        let currentTags = entry && entry.tags ? [...entry.tags].map(t => t.toLowerCase()) : [];
+        const existingTagsRaw = [...(state.projects || []).flatMap(p => p.tags || []), ...(state.tasks || []).flatMap(t => t.tags || []), ...(state.timeEntries || []).flatMap(en => en.tags || [])];
+        let uniqueGlobalTags = [...new Set(existingTagsRaw.map(t => t.toLowerCase()))];
+
         const renderTaskSelect = (pid) => {
-            const tasks = (state.tasks || []).filter(t => String(t.project_id) === String(pid))
-                .sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
+            const tasks = (state.tasks || []).filter(t => {
+                // If project is set, task must match it. If not set, show all projects' tasks.
+                if (pid && String(t.project_id) !== String(pid)) return false;
+                
+                // If tags are defined, task must have at least one of the tags.
+                if (currentTags && currentTags.length > 0) {
+                    const taskTags = t.tags ? t.tags.map(x => x.toLowerCase()) : [];
+                    if (!currentTags.some(tag => taskTags.includes(tag))) return false;
+                }
+                
+                return true;
+            }).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
 
             SearchableSelect.render(taskContainer, tasks, {
                 value: taskInput.value,
@@ -163,15 +183,7 @@ export class TimeEntryModal {
 
         renderTaskSelect(projectInput.value);
 
-        // --- Tag Logic ---
-        const tagsContainer = overlay.querySelector('#modal-tags-container');
-        const tagInput = overlay.querySelector('#modal-tag-input');
-        const hiddenTagsInput = overlay.querySelector('#hidden-tags-input');
-        const suggestedContainer = overlay.querySelector('#suggested-tags-container');
-        
-        let currentTags = entry && entry.tags ? [...entry.tags].map(t => t.toLowerCase()) : [];
-        const existingTagsRaw = [...(state.projects || []).flatMap(p => p.tags || []), ...(state.tasks || []).flatMap(t => t.tags || []), ...(state.timeEntries || []).flatMap(en => en.tags || [])];
-        let uniqueGlobalTags = [...new Set(existingTagsRaw.map(t => t.toLowerCase()))];
+        // Ensure tags render uses updated TaskSelect
         
         const renderTags = () => {
             const badges = currentTags.map(t => `<span class="bg-primary/20 text-primary border border-primary/20 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1.5">${t} <button type="button" class="remove-tag hover:text-white" data-tag="${t}">&times;</button></span>`).join('');
@@ -204,6 +216,8 @@ export class TimeEntryModal {
                     }
                 };
             });
+            
+            renderTaskSelect(projectInput.value);
         };
         
         if (tagsContainer) renderTags();
