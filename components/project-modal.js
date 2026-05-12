@@ -29,22 +29,22 @@ export class ProjectModal {
 
         const modalHtml = `
             <div class="project-modal-overlay fixed inset-0 bg-secondary/60 z-[100] backdrop-blur-xl pointer-events-auto overflow-y-auto">
-                <div class="w-full flex items-start justify-center py-6 px-4">
-                    <div id="project-modal-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-3xl p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative border border-soft mx-3 sm:mx-auto text-main text-center">
-                        <button id="close-project-modal" class="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5">
+                <div class="w-full flex items-start justify-center py-4 px-4">
+                    <div id="project-modal-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-3xl p-6 transform scale-95 opacity-0 transition-all duration-300 relative border border-soft mx-3 sm:mx-auto text-main text-center">
+                        <button id="close-project-modal" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
 
-                        <div class="mb-12">
+                        <div class="mb-6">
                             <h3 class="text-3xl font-black text-main tracking-tighter" id="modal-title">${project ? 'Edit Project' : 'New Project'}</h3>
-                            <p class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mt-3 opacity-60">Manage Project Configuration</p>
+                            <p class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mt-2 opacity-60">Manage Project Configuration</p>
                         </div>
 
-                        <form id="project-form" class="space-y-6 text-left">
+                        <form id="project-form" class="space-y-4 text-left">
                             <input type="hidden" name="id" value="${project ? project.id : ''}">
                             
                             <!-- Row 1: Name + Organization -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Project Name</label>
                                     <input type="text" name="name" required value="${project ? project.name : ''}" placeholder="Launch Campaign" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold placeholder:opacity-30 text-sm outline-none">
@@ -64,7 +64,7 @@ export class ProjectModal {
                             </div>
 
                             <!-- Row 2: Status + Lead Contact -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Status</label>
                                     <div class="relative group">
@@ -93,7 +93,7 @@ export class ProjectModal {
                             </div>
 
                             <!-- Row 3: Start Date + Deadline -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Start Date</label>
                                     <input type="date" name="started_at" value="${project && project.started_at ? project.started_at.split('T')[0] : ''}" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold text-sm outline-none">
@@ -119,7 +119,7 @@ export class ProjectModal {
                             </div>
 
                             <!-- Row 5: Project Type & Parent Epic -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Type</label>
                                     <div class="relative group">
@@ -160,17 +160,17 @@ export class ProjectModal {
                                 </div>
                             </div>
 
-                            <div class="space-y-6 pt-10 border-t-2 border-soft border-dashed">
+                            <div class="space-y-4 pt-6 border-t-2 border-soft border-dashed">
                                 <div class="flex items-center justify-between mb-4">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-[0.5em] opacity-60">Visual ID Palette</label>
                                     <button type="button" id="randomize-colors" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline px-4 py-2 bg-app rounded-lg border border-soft shadow-inner">Generate New Palette</button>
                                 </div>
-                                <div id="modal-palette-container" class="flex gap-5 justify-center flex-wrap max-w-lg mx-auto">
+                                <div id="modal-palette-container" class="flex gap-3 justify-center flex-wrap max-w-lg mx-auto">
                                     <!-- Palette items added by JS -->
                                 </div>
                             </div>
 
-                            <div class="pt-8">
+                            <div class="pt-4">
                                 <button type="submit" id="submit-btn" class="w-full bg-primary hover:bg-primary-dark text-white font-black text-[12px] uppercase tracking-[0.5em] rounded-3xl shadow-2xl shadow-primary/30 transition-all hover:-translate-y-2 active:scale-95 py-4 leading-none transform">
                                     Save Project
                                 </button>
