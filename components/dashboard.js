@@ -68,6 +68,15 @@ export async function renderDashboard(forceRefresh = false) {
   const activeProj = activeTimer ? projects.find(p => String(p.id) === String(activeTimer.project_id)) : null;
   const pColor = activeProj?.color || '#338a81';
 
+  let activeDisplayTags = [];
+  if (activeTimer) {
+     const activeTaskObj = activeTimer.task_id ? (state.tasks || []).find(t => String(t.id) === String(activeTimer.task_id)) : null;
+     const projTags = activeProj?.tags || [];
+     const taskTags = activeTaskObj?.tags || [];
+     const entryTags = activeTimer.tags || [];
+     activeDisplayTags = [...new Set([...projTags, ...taskTags, ...entryTags])];
+  }
+
   container.innerHTML = `
     <!-- Active Timer Widget -->
     <div class="relative overflow-hidden transition-all duration-300">
@@ -80,8 +89,13 @@ export async function renderDashboard(forceRefresh = false) {
                 Chomping
               </div>
               <h3 class="text-4xl font-bold text-main mb-1 tracking-tight transition-colors">${escapeHTML(activeTimer.description) || 'Focusing'}</h3>
-              <p class="text-muted font-medium text-lg leading-relaxed">
-                ${escapeHTML(activeProj?.name || activeTimer.project_name || 'Unassigned')}
+              <p class="text-muted font-medium text-lg leading-relaxed flex flex-wrap items-center gap-2">
+                ${activeProj?.name && activeProj.name !== 'Unassigned' ? escapeHTML(activeProj.name) : (activeTimer.project_name && activeTimer.project_name !== 'Unassigned' ? escapeHTML(activeTimer.project_name) : '')}
+                ${activeDisplayTags.length > 0 ? `
+                    <span class="flex items-center gap-1.5 ml-2 overflow-hidden">
+                        ${activeDisplayTags.map(t => `<span class="text-[9px] uppercase tracking-widest bg-white/5 text-dim/80 px-2 py-0.5 rounded-md leading-none border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                    </span>
+                ` : ''}
               </p>
               ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${escapeHTML(activeTimer.notes)}</p>` : ''}
               <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity bg-card shadow-soft rounded-full p-1.5 text-primary border border-soft">
@@ -103,14 +117,14 @@ export async function renderDashboard(forceRefresh = false) {
               <!-- Row 1: Spacious description + START -->
               <div class="flex items-center gap-3">
                 <div class="flex-1">
-                  <input type="text" name="description" placeholder="Task description..." class="w-full zen-input bg-highlight border border-soft text-main focus:ring-2 focus:ring-primary/20 focus:border-primary/40 placeholder:text-dim/20 placeholder:font-normal transition-all">
+                  <input type="text" name="description" placeholder="Task description..." class="w-full zen-input bg-highlight border border-soft text-main placeholder:text-dim/20 placeholder:font-normal transition-all">
                 </div>
                 <button type="submit" class="zen-btn px-10 bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-primary/20 whitespace-nowrap self-end">
                   Start
                 </button>
               </div>
               <!-- Row 2: Compact context bar -->
-              <div class="grid grid-cols-3 gap-3">
+              <div class="grid grid-cols-4 gap-3">
                 <div class="space-y-1">
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Project</label>
                   <div id="timer-project-select-container"></div>
@@ -122,8 +136,17 @@ export async function renderDashboard(forceRefresh = false) {
                   <input type="hidden" name="task_id" id="link-todo-input">
                 </div>
                 <div class="space-y-1">
+                  <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Tags</label>
+                  <div class="relative w-full overflow-hidden bg-highlight border border-subtle rounded-lg zen-focus-within transition-all flex items-center h-[42px] px-3 shadow-sm">
+                      <span class="text-dim/50 font-black text-[10px] uppercase tracking-widest mr-2 select-none shrink-0 opacity-40">#</span>
+                      <input type="text" name="tags" placeholder="Comma separated..." autocomplete="off" class="bg-transparent border-none outline-none text-main font-bold text-[11px] tracking-widest w-full h-full placeholder:text-dim/40 placeholder:font-bold transition-all" style="border:none !important; outline:none !important; box-shadow:none !important; padding:0; background:transparent !important;">
+                  </div>
+                </div>
+                <div class="space-y-1">
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Notes</label>
-                  <input type="text" name="notes" placeholder="Optional..." class="w-full zen-input bg-highlight border border-subtle text-main focus:ring-1 focus:ring-primary/20 focus:border-primary/30 placeholder:text-dim/30 transition-all">
+                  <div class="relative w-full overflow-hidden bg-highlight border border-subtle rounded-lg zen-focus-within transition-all flex items-center h-[42px] px-3 shadow-sm">
+                      <input type="text" name="notes" placeholder="Optional..." autocomplete="off" class="bg-transparent border-none outline-none text-main font-bold text-[11px] tracking-widest w-full h-full placeholder:text-dim/40 placeholder:font-bold transition-all" style="border:none !important; outline:none !important; box-shadow:none !important; padding:0; background:transparent !important;">
+                  </div>
                 </div>
               </div>
             </form>
@@ -263,7 +286,7 @@ export async function renderDashboard(forceRefresh = false) {
                 <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors">${escapeHTML(e.description) || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${escapeHTML(e.notes)}</span>` : ''}</span>
               </div>
               <div class="flex items-center gap-1.5 min-w-0">
-                <span class="text-[11px] font-bold truncate shrink-0 max-w-[120px]" style="color: ${proj.color}">${escapeHTML(proj.name)}</span>
+                ${proj.name !== 'Unassigned' ? `<span class="text-[11px] font-bold truncate shrink-0 max-w-[120px]" style="color: ${proj.color}">${escapeHTML(proj.name)}</span>` : ''}
                 ${displayTags.length > 0 ? `
                     <div class="flex items-center gap-1 overflow-hidden shrink">
                         ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
@@ -302,8 +325,8 @@ export async function renderDashboard(forceRefresh = false) {
                     <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${escapeHTML(e.resource_id) || 'Main'}</span>
                   </div>
                   <div class="flex items-center gap-2 mb-0.5 min-w-0">
-                    <span class="text-sm font-medium text-muted truncate shrink-0 max-w-[50%]">${escapeHTML(proj.name)}</span>
-                    ${org ? `<span class="text-xs text-dim/40 truncate shrink-0">@ ${escapeHTML(org.name)}</span>` : ''}
+                    ${proj.name !== 'Unassigned' ? `<span class="text-sm font-medium text-muted truncate shrink-0 max-w-[50%]">${escapeHTML(proj.name)}</span>` : ''}
+                    ${org && proj.name !== 'Unassigned' ? `<span class="text-xs text-dim/40 truncate shrink-0">@ ${escapeHTML(org.name)}</span>` : ''}
                     ${displayTags.length > 0 ? `
                         <div class="flex items-center gap-1 overflow-hidden shrink ml-1">
                             ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
@@ -952,7 +975,8 @@ export async function renderDashboard(forceRefresh = false) {
             project_id: task.project_id,
             project_name: proj?.name || 'Unassigned',
             task_id: task.id,
-            resource_id: state.team?.[0]?.name || 'Main'
+            resource_id: state.team?.[0]?.name || 'Main',
+            tags: task.tags || []
           });
           store.update('activeTimer', result);
           store.update('timeEntries', await api.get('time-entries.php'));
@@ -1043,6 +1067,16 @@ export async function renderDashboard(forceRefresh = false) {
       }
       // Clean up empty task_id
       if (!data.task_id) data.task_id = null;
+
+      const manualTags = data.tags ? data.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+      let taskTags = [];
+      if (data.task_id) {
+          const matchedTask = (state.tasks || []).find(t => String(t.id) === String(data.task_id));
+          if (matchedTask && matchedTask.tags) {
+              taskTags = matchedTask.tags;
+          }
+      }
+      data.tags = [...new Set([...manualTags, ...taskTags])];
 
       try {
         const result = await api.post('time-entries.php?action=start', data);

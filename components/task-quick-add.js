@@ -30,6 +30,15 @@ export const TaskQuickAdd = {
                            class="w-full zen-input bg-highlight border border-soft pl-10 pr-4 text-main outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-dim/20 placeholder:font-normal">
                 </div>
 
+                <!-- Tag Input -->
+                <div class="shrink-0 w-[140px] max-w-[220px]">
+                    <div class="relative w-full overflow-hidden bg-highlight border border-soft rounded-lg zen-focus-within transition-all flex items-center h-[42px] px-3 shadow-sm">
+                        <span class="text-dim/50 font-black text-[10px] uppercase tracking-widest mr-2 select-none shrink-0 opacity-40">#</span>
+                        <input type="text" id="quick-add-tags" placeholder="Tags..." autocomplete="off"
+                               class="bg-transparent border-none outline-none text-main font-bold text-[11px] tracking-widest w-full h-full placeholder:text-dim/40 placeholder:font-bold transition-all" style="border:none !important; outline:none !important; box-shadow:none !important; padding:0; background:transparent !important;">
+                    </div>
+                </div>
+
                 <!-- Project Selector: Fixed max-width, shrinks if needed but preserves min-width -->
                 <div id="quick-add-project-container" class="shrink-0 w-full min-w-[120px] max-w-[240px]"></div>
 
@@ -43,6 +52,7 @@ export const TaskQuickAdd = {
         `;
 
         const input = container.querySelector('#quick-add-input');
+        const tagInput = container.querySelector('#quick-add-tags');
         const projectContainer = container.querySelector('#quick-add-project-container');
         const submitBtn = container.querySelector('#quick-add-submit');
 
@@ -76,12 +86,14 @@ export const TaskQuickAdd = {
             }
 
             const project = projects.find(p => String(p.id) === String(selectedProjectId));
+            const tags = tagInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
 
             try {
                 const data = {
                     title,
                     project_id: selectedProjectId,
                     project_name: project?.name || 'Unassigned',
+                    tags,
                     status: 'todo',
                     priority: 'low',
                     progress: 0
@@ -89,6 +101,7 @@ export const TaskQuickAdd = {
 
                 await api.post('planner.php?action=add_task', data);
                 input.value = '';
+                tagInput.value = '';
                 if (options.onAdd) options.onAdd();
                 input.focus();
             } catch (err) {
@@ -99,6 +112,12 @@ export const TaskQuickAdd = {
         submitBtn.onclick = handleSubmit;
 
         input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        };
+
+        tagInput.onkeydown = (e) => {
             if (e.key === 'Enter') {
                 handleSubmit();
             }

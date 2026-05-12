@@ -190,10 +190,11 @@ select {
 }
 
 input:focus,
-select:focus {
-    background-color: var(--bg-card);
-    border-color: var(--primary); /* Highlight border on focus */
-    box-shadow: 0 0 0 4px rgba(51, 138, 129, 0.1);
+select:focus,
+.zen-focus-within:focus-within {
+    background-color: var(--bg-card) !important;
+    border-color: var(--primary) !important; /* Highlight border on focus */
+    box-shadow: 0 0 0 4px rgba(51, 138, 129, 0.1) !important;
     outline: none;
 }
 

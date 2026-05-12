@@ -62,10 +62,12 @@ export const TaskItem = {
                 <div class="flex-grow min-w-0">
                     <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 opacity-40">
+                        ${proj.name !== 'Unassigned' ? `
                         <div class="flex items-center gap-1 shrink-0 min-w-0 max-w-[200px]">
                             <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${proj.color}"></span>
                             <span class="text-sm font-medium text-muted truncate">${proj.name}</span>
                         </div>
+                        ` : ''}
                         ${displayTags.length > 0 ? `
                             <div class="flex items-center gap-1 shrink-0">
                                 ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate max-w-[60px]">${tag}</span>`).join('')}
@@ -129,7 +131,7 @@ export const TaskItem = {
             }
                 <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
                 <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="text-sm font-medium truncate shrink-0 max-w-[100px]" style="color: ${proj.color}">${proj.name}</span>
+                    ${proj.name !== 'Unassigned' ? `<span class="text-sm font-medium truncate shrink-0 max-w-[100px]" style="color: ${proj.color}">${proj.name}</span>` : ''}
                     ${displayTags.length > 0 ? `
                         <div class="flex items-center gap-1 overflow-hidden shrink">
                             ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${tag}</span>`).join('')}

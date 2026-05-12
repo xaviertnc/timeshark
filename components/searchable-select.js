@@ -54,7 +54,7 @@ export const SearchableSelect = {
         dropdown.className = "ss-dropdown hidden fixed mt-1 bg-card border border-soft rounded-lg shadow-soft z-[1000] overflow-hidden transform origin-top scale-95 opacity-0 transition-all duration-200 min-w-[260px] pointer-events-auto";
         dropdown.innerHTML = `
             <div class="p-2 border-b border-subtle">
-                <div class="relative flex items-center bg-highlight border border-subtle rounded-md focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+                <div class="relative flex items-center bg-highlight border border-subtle rounded-md zen-focus-within transition-all">
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg class="w-3.5 h-3.5 text-dim/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
