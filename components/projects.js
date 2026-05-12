@@ -44,6 +44,7 @@ let groupByTag = false;
 let collapseEpics = false;
 let tagFilter = '';
 let selectedProjectIds = new Set();
+let lastCheckedProjectValue = null;
 
 export async function renderProjects() {
   const state = store.get();
@@ -339,7 +340,7 @@ export async function renderProjects() {
 
     return `
     <tr draggable="true" class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
-        <td class="px-4 py-2 text-center border-r border-white/5" onclick="event.stopPropagation()">
+        <td class="px-4 py-2 text-center border-r border-white/5 project-checkbox-td">
             <input type="checkbox" class="project-checkbox cursor-pointer accent-primary w-3.5 h-3.5" value="${p.id}" ${selectedProjectIds.has(String(p.id)) ? 'checked' : ''}>
         </td>
         <td class="px-4 py-2 text-center">
@@ -464,13 +465,6 @@ export async function renderProjects() {
 
   // Table Interactions
   container.addEventListener('change', (e) => {
-    if (e.target.classList.contains('project-checkbox')) {
-        const id = e.target.value;
-        if (e.target.checked) selectedProjectIds.add(String(id));
-        else selectedProjectIds.delete(String(id));
-        refreshView();
-    }
-    
     if (e.target.id === 'select-all-projects') {
         const isChecked = e.target.checked;
         const boxes = container.querySelectorAll('.project-checkbox');
@@ -484,6 +478,38 @@ export async function renderProjects() {
   });
 
   container.addEventListener('click', async (e) => {
+    // Project Checkbox (Shift + Click Range Selection)
+    if (e.target.classList.contains('project-checkbox')) {
+        const id = e.target.value;
+        const isChecked = e.target.checked;
+        
+        if (e.shiftKey && lastCheckedProjectValue) {
+            const boxes = Array.from(container.querySelectorAll('.project-checkbox'));
+            const startIdx = boxes.findIndex(b => b.value === lastCheckedProjectValue);
+            const endIdx = boxes.findIndex(b => b === e.target);
+            
+            if (startIdx !== -1 && endIdx !== -1) {
+                const start = Math.min(startIdx, endIdx);
+                const end = Math.max(startIdx, endIdx);
+                
+                for (let i = start; i <= end; i++) {
+                    boxes[i].checked = isChecked;
+                    if (isChecked) selectedProjectIds.add(String(boxes[i].value));
+                    else selectedProjectIds.delete(String(boxes[i].value));
+                }
+            }
+        } else {
+            if (isChecked) selectedProjectIds.add(String(id));
+            else selectedProjectIds.delete(String(id));
+        }
+        
+        lastCheckedProjectValue = id;
+        
+        // Defer refresh to allow click handlers to resolve native checkbox state fully
+        setTimeout(refreshView, 10);
+        return;
+    }
+
     // Bulk Clear
     if (e.target.id === 'bulk-clear') {
         selectedProjectIds.clear();
@@ -495,7 +521,9 @@ export async function renderProjects() {
     if (e.target.id === 'bulk-delete') {
         if (confirm(`CRITICAL: Permanently delete ${selectedProjectIds.size} projects? This cannot be undone.`)) {
             const arr = Array.from(selectedProjectIds);
-            await Promise.all(arr.map(id => api.delete(`projects.php?id=${id}`)));
+            for (const id of arr) {
+                await api.delete(`projects.php?id=${id}`);
+            }
             
             const [newProjects, newTasks, newTimeEntries] = await Promise.all([
                 api.get('projects.php'),
@@ -515,7 +543,9 @@ export async function renderProjects() {
     if (e.target.id === 'bulk-archive') {
         if (confirm(`Archive ${selectedProjectIds.size} selected projects?`)) {
             const arr = Array.from(selectedProjectIds);
-            await Promise.all(arr.map(id => api.get(`projects.php?action=archive&id=${id}`)));
+            for (const id of arr) {
+                await api.get(`projects.php?action=archive&id=${id}`);
+            }
             store.update('projects', await api.get('projects.php'));
             selectedProjectIds.clear();
             refreshView();
@@ -527,7 +557,9 @@ export async function renderProjects() {
     if (e.target.id === 'bulk-restore') {
         if (confirm(`Restore ${selectedProjectIds.size} archived projects?`)) {
             const arr = Array.from(selectedProjectIds);
-            await Promise.all(arr.map(id => api.get(`projects.php?action=restore&id=${id}`)));
+            for (const id of arr) {
+                await api.get(`projects.php?action=restore&id=${id}`);
+            }
             store.update('projects', await api.get('projects.php'));
             selectedProjectIds.clear();
             refreshView();
@@ -584,7 +616,7 @@ export async function renderProjects() {
 
     // Edit (Row click)
     const row = e.target.closest('tr[data-id]');
-    if (row && !e.target.closest('button')) {
+    if (row && !e.target.closest('button') && !e.target.closest('.project-checkbox-td') && !e.target.closest('input[type="checkbox"]')) {
       const id = row.dataset.id;
       // We need the project object. For archives, it's not in the main store.
       let project;
