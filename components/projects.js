@@ -40,7 +40,9 @@ let searchTerm = '';
 let statusFilter = 'active'; // 'active' or 'archived'
 let sortConfig = { key: 'list_order', direction: 'asc' };
 let groupByOrg = false;
+let groupByTag = false;
 let collapseEpics = false;
+let tagFilter = '';
 
 export async function renderProjects() {
   const state = store.get();
@@ -59,8 +61,13 @@ export async function renderProjects() {
     projects = state.projects || [];
   }
 
+  // Get all unique tags
+  const allTags = [...new Set(projects.flatMap(p => p.tags || []))].sort();
+
   // Filter Logic
   let filtered = projects.filter(p => {
+    if (tagFilter && (!p.tags || !p.tags.includes(tagFilter))) return false;
+    
     const searchTermLower = searchTerm.toLowerCase();
     const matchesTag = p.tags && p.tags.some(t => t.toLowerCase().includes(searchTermLower));
     const searchMatch = !searchTerm ||
@@ -141,6 +148,16 @@ export async function renderProjects() {
                        value="${searchTerm}">
             </div>
 
+            <div class="relative group hidden sm:block">
+                <select id="tag-filter" class="bg-card/50 border border-white/5 rounded-xl pl-4 pr-10 py-2.5 text-[10px] uppercase tracking-widest font-bold text-main outline-none focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all appearance-none cursor-pointer group-hover:bg-card/80">
+                    <option value="">All Tags</option>
+                    ${allTags.map(t => `<option value="${t}" ${tagFilter === t ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+
             <div class="flex items-center gap-1.5 p-1 bg-card/30 rounded-xl border border-white/5">
                 <button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'active' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim'}" data-status="active">Active</button>
                 <button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'archived' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim'}" data-status="archived">Archived</button>
@@ -149,10 +166,10 @@ export async function renderProjects() {
 
         <div class="flex flex-wrap items-center gap-4">
             <label class="flex items-center gap-3 cursor-pointer group">
-                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Tag</span>
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
-                    <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''}>
-                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                    <input type="checkbox" id="group-by-tag" class="sr-only" ${groupByTag ? 'checked' : ''}>
+                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByTag ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
             <div class="w-px h-4 bg-white/10 hidden sm:block"></div>
@@ -161,6 +178,14 @@ export async function renderProjects() {
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
                     <input type="checkbox" id="group-by-org" class="sr-only" ${groupByOrg ? 'checked' : ''}>
                     <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByOrg ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                </div>
+            </label>
+            <div class="w-px h-4 bg-white/10 hidden sm:block"></div>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
+                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                    <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''}>
+                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
         </div>
@@ -207,7 +232,7 @@ export async function renderProjects() {
       return `<tr><td colspan="6" class="py-20 text-center opacity-20"><p class="text-xs font-black uppercase tracking-[0.3em]">No projects found</p></td></tr>`;
     }
 
-    if (!groupByOrg) {
+    if (!groupByOrg && !groupByTag) {
       // Group by Epic hierarchically
       const epics = items.filter(p => p.type === 'epic');
       const standalone = items.filter(p => p.type !== 'epic' && !p.parent_id);
@@ -233,6 +258,27 @@ export async function renderProjects() {
       });
 
       return rowsHtml;
+    }
+
+    if (groupByTag) {
+        const groups = {};
+        items.forEach(p => {
+            const pTags = p.tags && p.tags.length > 0 ? p.tags : ['Untagged'];
+            pTags.forEach(t => {
+                if (!groups[t]) groups[t] = [];
+                groups[t].push(p);
+            });
+        });
+        
+        return Object.entries(groups).sort(([a], [b]) => a === 'Untagged' ? 1 : b === 'Untagged' ? -1 : a.localeCompare(b)).map(([tag, groupProjects]) => `
+            <tr class="bg-app/40">
+                <td colspan="6" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
+                    <span class="opacity-50 mr-2">#</span> ${tag} 
+                    <span class="text-dim/40 ml-2 font-black tabular-nums">[${groupProjects.length}]</span>
+                </td>
+            </tr>
+            ${groupProjects.map(p => renderProjectRow(p, customers, false)).join('')}
+        `).join('');
     }
 
     const groups = items.reduce((acc, p) => {
@@ -348,8 +394,26 @@ export async function renderProjects() {
   // Group by Organization Toggle
   container.querySelector('#group-by-org').onchange = (e) => {
     groupByOrg = e.target.checked;
+    if (groupByOrg) groupByTag = false;
     refreshView();
   };
+
+  if (container.querySelector('#group-by-tag')) {
+    container.querySelector('#group-by-tag').onchange = (e) => {
+      groupByTag = e.target.checked;
+      if (groupByTag) groupByOrg = false;
+      refreshView();
+    };
+  }
+
+  // Tag filter
+  const tagSelect = container.querySelector('#tag-filter');
+  if (tagSelect) {
+      tagSelect.onchange = (e) => {
+          tagFilter = e.target.value;
+          refreshView();
+      };
+  }
 
   // Collapse Epics Toggle
   if (container.querySelector('#collapse-epics')) {
