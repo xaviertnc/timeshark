@@ -11,6 +11,16 @@ try {
     switch ($method) {
         case 'GET':
             $entries = $store->get($file);
+            $migrated = false;
+            foreach ($entries as &$entry) {
+                if (!isset($entry['tags'])) {
+                    $entry['tags'] = [];
+                    $migrated = true;
+                }
+            }
+            if ($migrated) {
+                $store->save($file, $entries);
+            }
             // Sort by start_time desc
             usort($entries, function($a, $b) {
                 return strcmp($b['start_time'], $a['start_time']);
@@ -28,6 +38,18 @@ try {
             $action = $_GET['action'] ?? 'create';
             debug_log('time-entries', "POST action={$action}", $data);
 
+            if (isset($data['tags'])) {
+                if (is_array($data['tags'])) {
+                    $tags = array_map(function($t) { return strtolower(trim((string)$t)); }, $data['tags']);
+                    $data['tags'] = array_values(array_unique(array_filter($tags, 'strlen')));
+                } elseif (is_string($data['tags'])) {
+                    $tagsArr = array_map('trim', explode(',', strtolower($data['tags'])));
+                    $data['tags'] = array_values(array_unique(array_filter($tagsArr, 'strlen')));
+                } else {
+                    $data['tags'] = [];
+                }
+            }
+
             if ($action === 'start') {
                 // Check for running timer
                 $entries = $store->get($file);
@@ -44,6 +66,7 @@ try {
                     'project_name' => $data['project_name'] ?? 'Unknown Project',
                     'description' => $data['description'] ?? '',
                     'resource_id' => $data['resource_id'] ?? 'Main',
+                    'tags' => $data['tags'] ?? [],
                     'start_time' => gmdate('c'),
                     'end_time' => null
                 ];
@@ -87,6 +110,7 @@ try {
                     debug_log('time-entries', 'Updating', ['id' => $data['id'], 'fields' => array_keys($data)]);
                     $result = $store->update($file, $data['id'], $data);
                 } else {
+                    if (!isset($data['tags'])) $data['tags'] = [];
                     $result = $store->insert($file, $data);
                     debug_log('time-entries', 'Created', ['id' => $result['id']]);
                 }

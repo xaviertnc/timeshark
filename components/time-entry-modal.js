@@ -95,6 +95,16 @@ export class TimeEntryModal {
                         </div>
                         ` : ''}
 
+                        <!-- Row: Tags -->
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Tags</label>
+                            <div class="bg-highlight border border-subtle rounded-xl p-3 focus-within:ring-2 focus-within:ring-primary/20 transition-all flex flex-wrap gap-2 items-center min-h-[50px] shadow-sm" id="modal-tags-container">
+                                <input type="text" id="modal-tag-input" placeholder="Type tag and press Enter..." class="bg-transparent border-none outline-none text-main font-bold text-sm flex-1 min-w-[150px] placeholder:opacity-30 placeholder:font-normal" style="border: none !important; box-shadow: none !important; background: transparent !important; outline: none !important; padding: 0;">
+                            </div>
+                            <input type="hidden" name="tags" id="hidden-tags-input" value="${entry && entry.tags ? escapeHTML(entry.tags.join(',')) : ''}">
+                            <div class="mt-2 ml-1 flex flex-wrap gap-1.5" id="suggested-tags-container"></div>
+                        </div>
+
                         <!-- Actions -->
                         <div class="flex gap-4 pt-4 border-t border-subtle">
                             <button type="button" id="cancel-modal" class="flex-1 zen-btn text-[10px] font-black uppercase text-dim tracking-widest hover:text-main hover:bg-highlight transition-all">Cancel</button>
@@ -153,10 +163,91 @@ export class TimeEntryModal {
 
         renderTaskSelect(projectInput.value);
 
+        // --- Tag Logic ---
+        const tagsContainer = overlay.querySelector('#modal-tags-container');
+        const tagInput = overlay.querySelector('#modal-tag-input');
+        const hiddenTagsInput = overlay.querySelector('#hidden-tags-input');
+        const suggestedContainer = overlay.querySelector('#suggested-tags-container');
+        
+        let currentTags = entry && entry.tags ? [...entry.tags].map(t => t.toLowerCase()) : [];
+        const existingTagsRaw = [...(state.projects || []).flatMap(p => p.tags || []), ...(state.tasks || []).flatMap(t => t.tags || []), ...(state.timeEntries || []).flatMap(en => en.tags || [])];
+        let uniqueGlobalTags = [...new Set(existingTagsRaw.map(t => t.toLowerCase()))];
+        
+        const renderTags = () => {
+            const badges = currentTags.map(t => `<span class="bg-primary/20 text-primary border border-primary/20 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1.5">${t} <button type="button" class="remove-tag hover:text-white" data-tag="${t}">&times;</button></span>`).join('');
+            
+            const suggestions = uniqueGlobalTags.filter(t => !currentTags.includes(t)).slice(0, 15);
+            suggestedContainer.innerHTML = suggestions.length > 0 
+                ? `<span class="text-[9px] font-black text-dim/50 uppercase tracking-widest mr-2 py-1">Suggestions:</span>` + suggestions.map(t => `<button type="button" class="suggested-tag bg-white/5 hover:bg-primary/20 hover:text-primary text-dim text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded transition-colors border border-white/5" data-tag="${t}">+ ${t}</button>`).join('')
+                : '';
+
+            tagsContainer.querySelectorAll('span').forEach(el => el.remove());
+            tagInput.insertAdjacentHTML('beforebegin', badges);
+            hiddenTagsInput.value = currentTags.join(',');
+            
+            tagsContainer.querySelectorAll('.remove-tag').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    currentTags = currentTags.filter(t => t !== btn.dataset.tag);
+                    renderTags();
+                };
+            });
+            
+            suggestedContainer.querySelectorAll('.suggested-tag').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    const newTag = btn.dataset.tag;
+                    if (!currentTags.includes(newTag)) {
+                        currentTags.push(newTag);
+                        tagInput.value = '';
+                        renderTags();
+                    }
+                };
+            });
+        };
+        
+        if (tagsContainer) renderTags();
+        
+        if (tagInput) {
+            tagInput.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const rawTags = tagInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+                    let added = false;
+                    rawTags.forEach(t => {
+                        if (!currentTags.includes(t)) {
+                            currentTags.push(t);
+                            if (!uniqueGlobalTags.includes(t)) uniqueGlobalTags.push(t);
+                            added = true;
+                        }
+                    });
+                    if (added) {
+                        tagInput.value = '';
+                        renderTags();
+                    }
+                }
+            };
+        }
+
         overlay.querySelector('#edit-time-entry-form').onsubmit = async (e) => {
             e.preventDefault();
+            // flush any floating text left in tag input into tags
+            if (tagInput && tagInput.value.trim()) {
+                const rawTags = tagInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+                rawTags.forEach(t => {
+                    if (!currentTags.includes(t)) {
+                        currentTags.push(t);
+                    }
+                });
+                hiddenTagsInput.value = currentTags.join(',');
+                tagInput.value = '';
+                renderTags();
+            }
+
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
+
+            data.tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
             data.id = entry.id;
             data.task_id = data.task_id || null;

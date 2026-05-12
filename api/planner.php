@@ -11,6 +11,16 @@ try {
     switch ($method) {
         case 'GET':
             $tasks = $store->get($file);
+            $migrated = false;
+            foreach ($tasks as &$task) {
+                if (!isset($task['tags'])) {
+                    $task['tags'] = [];
+                    $migrated = true;
+                }
+            }
+            if ($migrated) {
+                $store->save($file, $tasks);
+            }
             debug_log('planner', 'GET', ['count' => count($tasks)]);
             echo json_encode($tasks);
             break;
@@ -22,6 +32,18 @@ try {
             }
 
             debug_log('planner', 'POST received', $data);
+
+            if (isset($data['tags'])) {
+                if (is_array($data['tags'])) {
+                    $tags = array_map(function($t) { return strtolower(trim((string)$t)); }, $data['tags']);
+                    $data['tags'] = array_values(array_unique(array_filter($tags, 'strlen')));
+                } elseif (is_string($data['tags'])) {
+                    $tagsArr = array_map('trim', explode(',', strtolower($data['tags'])));
+                    $data['tags'] = array_values(array_unique(array_filter($tagsArr, 'strlen')));
+                } else {
+                    $data['tags'] = [];
+                }
+            }
 
             if (!empty($data['id'])) {
                 // Update — must find existing record
@@ -51,6 +73,7 @@ try {
                 if (!isset($data['resource_id'])) $data['resource_id'] = 'me';
                 if (!isset($data['start_date'])) $data['start_date'] = date('Y-m-d');
                 if (!isset($data['end_date'])) $data['end_date'] = date('Y-m-d');
+                if (!isset($data['tags'])) $data['tags'] = [];
 
                 $result = $store->insert($file, $data);
                 debug_log('planner', 'Created', ['id' => $result['id'], 'title' => $result['title']]);

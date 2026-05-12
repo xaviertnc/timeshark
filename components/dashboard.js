@@ -249,6 +249,12 @@ export async function renderDashboard(forceRefresh = false) {
     const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
     const taskColor = shiftColor(proj.color, -10);
 
+    const taskObj = e.task_id ? (state.tasks || []).find(t => String(t.id) === String(e.task_id)) : null;
+    const projTags = proj.tags || [];
+    const taskTags = taskObj?.tags || [];
+    const entryTags = e.tags || [];
+    const displayTags = [...new Set([...projTags, ...taskTags, ...entryTags])];
+
     if (isHistoryCompact) {
       return `
             <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-subtle" data-entry-id="${e.id}">
@@ -258,9 +264,9 @@ export async function renderDashboard(forceRefresh = false) {
               </div>
               <div class="flex items-center gap-1.5 min-w-0">
                 <span class="text-[11px] font-bold truncate shrink-0 max-w-[120px]" style="color: ${proj.color}">${escapeHTML(proj.name)}</span>
-                ${proj.tags && proj.tags.length > 0 ? `
+                ${displayTags.length > 0 ? `
                     <div class="flex items-center gap-1 overflow-hidden shrink">
-                        ${proj.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                        ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
                     </div>
                 ` : (org ? `<span class="text-[10px] text-dim/30 font-medium truncate shrink"> @ ${escapeHTML(org.name)}</span>` : '')}
               </div>
@@ -298,9 +304,9 @@ export async function renderDashboard(forceRefresh = false) {
                   <div class="flex items-center gap-2 mb-0.5 min-w-0">
                     <span class="text-sm font-medium text-muted truncate shrink-0 max-w-[50%]">${escapeHTML(proj.name)}</span>
                     ${org ? `<span class="text-xs text-dim/40 truncate shrink-0">@ ${escapeHTML(org.name)}</span>` : ''}
-                    ${proj.tags && proj.tags.length > 0 ? `
+                    ${displayTags.length > 0 ? `
                         <div class="flex items-center gap-1 overflow-hidden shrink ml-1">
-                            ${proj.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                            ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
                         </div>
                     ` : ''}
                   </div>
