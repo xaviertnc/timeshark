@@ -335,6 +335,20 @@ export class ProjectModal {
 
         projectForm.onsubmit = async (e) => {
             e.preventDefault();
+
+            // flush any floating text left in tag input into tags
+            if (tagInput && tagInput.value.trim()) {
+                const rawTags = tagInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+                rawTags.forEach(t => {
+                    if (!currentTags.includes(t)) {
+                        currentTags.push(t);
+                    }
+                });
+                hiddenTagsInput.value = currentTags.join(',');
+                tagInput.value = '';
+                renderTags();
+            }
+
             const data = Object.fromEntries(new FormData(projectForm).entries());
             
             data.tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
