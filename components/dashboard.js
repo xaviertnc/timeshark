@@ -302,6 +302,8 @@ export async function renderDashboard(forceRefresh = false) {
               <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity whitespace-nowrap">
                 <button class="resume-btn h-6 px-1.5 flex items-center justify-center rounded-md text-dim/50 hover:text-primary hover:bg-primary/10 transition-all"
                         data-project-id="${e.project_id}"
+                        data-task-id="${e.task_id || ''}"
+                        data-tags="${e.tags ? escapeHTML(e.tags.join(',')) : ''}"
                         data-description="${escapeHTML(e.description || '')}"
                         data-notes="${escapeHTML(e.notes || '')}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
@@ -357,6 +359,8 @@ export async function renderDashboard(forceRefresh = false) {
                 <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
                   <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-primary hover:bg-primary/10 transition-all"
                           data-project-id="${e.project_id}"
+                          data-task-id="${e.task_id || ''}"
+                          data-tags="${e.tags ? escapeHTML(e.tags.join(',')) : ''}"
                           data-description="${escapeHTML(e.description || '')}"
                           data-notes="${escapeHTML(e.notes || '')}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -1119,6 +1123,8 @@ export async function renderDashboard(forceRefresh = false) {
     btn.onclick = async () => {
       const data = {
         project_id: btn.dataset.projectId,
+        task_id: btn.dataset.taskId,
+        tags: btn.dataset.tags ? btn.dataset.tags.split(',') : [],
         description: btn.dataset.description,
         notes: btn.dataset.notes,
         project_name: projects.find(p => String(p.id) === String(btn.dataset.projectId))?.name || 'Unassigned',
