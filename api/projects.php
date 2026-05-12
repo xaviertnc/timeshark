@@ -105,6 +105,21 @@ try {
                 throw new Exception('Invalid JSON input');
             }
 
+            // Normalize Tags across entire payload
+            if (isset($data['tags'])) {
+                if (is_array($data['tags'])) {
+                    $tags = array_map(function($t) { return strtolower(trim((string)$t)); }, $data['tags']);
+                    $data['tags'] = array_values(array_unique(array_filter($tags, 'strlen')));
+                } elseif (is_string($data['tags'])) {
+                    $tagsArr = array_map('trim', explode(',', strtolower($data['tags'])));
+                    $data['tags'] = array_values(array_unique(array_filter($tagsArr, 'strlen')));
+                } else {
+                    $data['tags'] = [];
+                }
+            } else {
+                $data['tags'] = [];
+            }
+
             debug_log('projects', 'POST received', $data);
 
             // Validate: name is required for create, cannot be blank on update

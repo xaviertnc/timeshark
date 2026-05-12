@@ -40,6 +40,7 @@ let searchTerm = '';
 let statusFilter = 'active'; // 'active' or 'archived'
 let sortConfig = { key: 'list_order', direction: 'asc' };
 let groupByOrg = false;
+let collapseEpics = false;
 
 export async function renderProjects() {
   const state = store.get();
@@ -146,12 +147,20 @@ export async function renderProjects() {
             </div>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
             <label class="flex items-center gap-3 cursor-pointer group">
-                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Organization</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
+                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                    <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''}>
+                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                </div>
+            </label>
+            <div class="w-px h-4 bg-white/10 hidden sm:block"></div>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Org</span>
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
                     <input type="checkbox" id="group-by-org" class="sr-only" ${groupByOrg ? 'checked' : ''}>
-                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByOrg ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim/40'}"></div>
+                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByOrg ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
         </div>
@@ -189,7 +198,9 @@ export async function renderProjects() {
 
   // --- RENDERING HELPERS ---
 
-  function renderTableRows(items, customers) {
+  function renderTableRows(inItems, customers) {
+    const items = collapseEpics ? inItems.filter(p => !p.parent_id) : inItems;
+
     if (items.length === 0) {
       return `<tr><td colspan="6" class="py-20 text-center opacity-20"><p class="text-xs font-black uppercase tracking-[0.3em]">No projects found</p></td></tr>`;
     }
@@ -263,9 +274,9 @@ export async function renderProjects() {
         </td>
         <td class="px-4 py-3 ${isChild ? 'pl-8' : ''}">
             <div class="flex items-center gap-2">
-                ${isChild ? '<svg class="w-3 h-3 text-dim/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>' : ''}
+                ${isChild ? '<div class="w-3 h-3 border-l-2 border-b-2 border-dim/40 rounded-bl-sm mb-1 ml-1 shrink-0"></div>' : ''}
                 ${epicBadge}
-                <span class="font-bold text-main text-sm tracking-tight group-hover/row:text-primary transition-colors truncate block">${p.name}</span>
+                <span class="${isChild ? 'font-semibold text-main/80 text-xs' : 'font-bold text-main text-sm'} tracking-tight group-hover/row:text-primary transition-colors truncate block">${p.name}</span>
             </div>
             ${tagsHtml}
         </td>
@@ -337,6 +348,14 @@ export async function renderProjects() {
     groupByOrg = e.target.checked;
     refreshView();
   };
+
+  // Collapse Epics Toggle
+  if (container.querySelector('#collapse-epics')) {
+    container.querySelector('#collapse-epics').onchange = (e) => {
+      collapseEpics = e.target.checked;
+      refreshView();
+    };
+  }
 
   // Sorting
   container.querySelectorAll('th[data-sort]').forEach(th => {
