@@ -43,6 +43,7 @@ let groupByOrg = false;
 let groupByTag = false;
 let collapseEpics = false;
 let tagFilter = '';
+let selectedProjectIds = new Set();
 
 export async function renderProjects() {
   const state = store.get();
@@ -192,11 +193,14 @@ export async function renderProjects() {
     </div>
 
     <!-- Projects Table -->
-    <div class="zen-card bg-card border border-soft shadow-sm overflow-hidden backdrop-blur-sm">
+    <div class="zen-card bg-card border border-soft shadow-sm overflow-hidden backdrop-blur-sm relative">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse table-fixed">
             <thead>
             <tr class="bg-app/50 border-b border-soft">
+                <th class="py-2.5 px-4 w-12 text-center border-r border-white/5">
+                    <input type="checkbox" id="select-all-projects" class="cursor-pointer accent-primary w-3.5 h-3.5" ${filtered.length > 0 && selectedProjectIds.size === filtered.length ? 'checked' : ''}>
+                </th>
                 <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-12 text-center" data-sort="list_order">
                     <div class="flex items-center justify-center gap-1"># ${renderSortIcon('list_order')}</div>
                 </th>
@@ -221,6 +225,24 @@ export async function renderProjects() {
         </table>
       </div>
     </div>
+
+    <!-- Bulk Actions Overaly -->
+    ${selectedProjectIds.size > 0 ? `
+    <div id="bulk-action-bar" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-card border border-primary/30 shadow-[0_10px_40px_rgba(35,35,35,1)] rounded-2xl px-6 py-3 flex items-center gap-6 animate-fade-in backdrop-blur-md">
+        <span class="text-xs font-black text-main uppercase tracking-widest"><span class="text-primary">${selectedProjectIds.size}</span> Selected</span>
+        <div class="w-px h-6 bg-white/10"></div>
+        <div class="flex items-center gap-2">
+            ${statusFilter === 'active' ? `
+            <button id="bulk-archive" class="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">Archive</button>
+            ` : `
+            <button id="bulk-restore" class="px-4 py-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">Restore</button>
+            `}
+            <button id="bulk-delete" class="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">Delete</button>
+            <button id="bulk-clear" class="px-4 py-2 ml-2 text-dim hover:text-main text-[10px] font-bold uppercase tracking-widest transition-colors">Cancel</button>
+        </div>
+    </div>
+    ` : ''}
+
   `;
 
   // --- RENDERING HELPERS ---
@@ -272,7 +294,7 @@ export async function renderProjects() {
         
         return Object.entries(groups).sort(([a], [b]) => a === 'Untagged' ? 1 : b === 'Untagged' ? -1 : a.localeCompare(b)).map(([tag, groupProjects]) => `
             <tr class="bg-app/40">
-                <td colspan="6" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
+                <td colspan="7" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
                     <span class="opacity-50 mr-2">#</span> ${tag} 
                     <span class="text-dim/40 ml-2 font-black tabular-nums">[${groupProjects.length}]</span>
                 </td>
@@ -291,7 +313,7 @@ export async function renderProjects() {
 
     return Object.entries(groups).map(([orgName, projects]) => `
         <tr class="bg-app/40">
-            <td colspan="6" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
+            <td colspan="7" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
                 <span class="opacity-50 mr-2">/</span> ${orgName} 
                 <span class="text-dim/40 ml-2 font-black tabular-nums">[${projects.length}]</span>
             </td>
@@ -317,6 +339,9 @@ export async function renderProjects() {
 
     return `
     <tr draggable="true" class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
+        <td class="px-4 py-2 text-center border-r border-white/5" onclick="event.stopPropagation()">
+            <input type="checkbox" class="project-checkbox cursor-pointer accent-primary w-3.5 h-3.5" value="${p.id}" ${selectedProjectIds.has(String(p.id)) ? 'checked' : ''}>
+        </td>
         <td class="px-4 py-2 text-center">
              <div class="w-2 h-2 rounded-full mx-auto shadow-sm" style="background-color: ${pColor}"></div>
         </td>
@@ -438,7 +463,78 @@ export async function renderProjects() {
   });
 
   // Table Interactions
+  container.addEventListener('change', (e) => {
+    if (e.target.classList.contains('project-checkbox')) {
+        const id = e.target.value;
+        if (e.target.checked) selectedProjectIds.add(String(id));
+        else selectedProjectIds.delete(String(id));
+        refreshView();
+    }
+    
+    if (e.target.id === 'select-all-projects') {
+        const isChecked = e.target.checked;
+        const boxes = container.querySelectorAll('.project-checkbox');
+        boxes.forEach(b => {
+             b.checked = isChecked;
+             if (isChecked) selectedProjectIds.add(String(b.value));
+             else selectedProjectIds.delete(String(b.value));
+        });
+        refreshView();
+    }
+  });
+
   container.addEventListener('click', async (e) => {
+    // Bulk Clear
+    if (e.target.id === 'bulk-clear') {
+        selectedProjectIds.clear();
+        refreshView();
+        return;
+    }
+
+    // Bulk Delete
+    if (e.target.id === 'bulk-delete') {
+        if (confirm(`CRITICAL: Permanently delete ${selectedProjectIds.size} projects? This cannot be undone.`)) {
+            const arr = Array.from(selectedProjectIds);
+            await Promise.all(arr.map(id => api.delete(`projects.php?id=${id}`)));
+            
+            const [newProjects, newTasks, newTimeEntries] = await Promise.all([
+                api.get('projects.php'),
+                api.get('planner.php'),
+                api.get('time-entries.php')
+            ]);
+            store.update('projects', newProjects);
+            store.update('tasks', newTasks);
+            store.update('timeEntries', newTimeEntries);
+            selectedProjectIds.clear();
+            refreshView();
+        }
+        return;
+    }
+
+    // Bulk Archive
+    if (e.target.id === 'bulk-archive') {
+        if (confirm(`Archive ${selectedProjectIds.size} selected projects?`)) {
+            const arr = Array.from(selectedProjectIds);
+            await Promise.all(arr.map(id => api.get(`projects.php?action=archive&id=${id}`)));
+            store.update('projects', await api.get('projects.php'));
+            selectedProjectIds.clear();
+            refreshView();
+        }
+        return;
+    }
+
+    // Bulk Restore
+    if (e.target.id === 'bulk-restore') {
+        if (confirm(`Restore ${selectedProjectIds.size} archived projects?`)) {
+            const arr = Array.from(selectedProjectIds);
+            await Promise.all(arr.map(id => api.get(`projects.php?action=restore&id=${id}`)));
+            store.update('projects', await api.get('projects.php'));
+            selectedProjectIds.clear();
+            refreshView();
+        }
+        return;
+    }
+
     // Archive
     const archiveBtn = e.target.closest('.archive-btn');
     if (archiveBtn) {
