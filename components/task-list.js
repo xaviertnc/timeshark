@@ -98,7 +98,8 @@ export const TaskList = {
                 const term = options.searchTerm.toLowerCase();
                 groupTasks = groupTasks.filter(t => 
                     (t.title || '').toLowerCase().includes(term) || 
-                    (t.notes || '').toLowerCase().includes(term)
+                    (t.notes || '').toLowerCase().includes(term) ||
+                    (t.tags && t.tags.some(tag => tag.toLowerCase().includes(term)))
                 );
             }
             // Apply Project Filter from Options (if any)
@@ -120,7 +121,12 @@ export const TaskList = {
 
                 // Apply Internal Search
                 if (search) {
-                    groupTasks = groupTasks.filter(t => t.title.toLowerCase().includes(search.toLowerCase()));
+                    const term = search.toLowerCase();
+                    groupTasks = groupTasks.filter(t => 
+                        (t.title || '').toLowerCase().includes(term) || 
+                        (t.notes || '').toLowerCase().includes(term) ||
+                        (t.tags && t.tags.some(tag => tag.toLowerCase().includes(term)))
+                    );
                 }
 
                 // Apply Limit/Today Logic
