@@ -8,6 +8,7 @@ import { SearchableSelect } from './searchable-select.js';
 import { syncSpanToProject } from '../utils/project-span-sync.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { TaskFilterBar } from './task-filter-bar.js';
+import { escapeHTML } from '../utils/dom.js';
 
 /**
  * components/dashboard.js
@@ -78,11 +79,11 @@ export async function renderDashboard(forceRefresh = false) {
                 <span class="w-1 h-1 rounded-full animate-pulse" style="background-color: ${pColor}"></span>
                 Chomping
               </div>
-              <h3 class="text-4xl font-bold text-main mb-1 tracking-tight transition-colors">${activeTimer.description || 'Focusing'}</h3>
+              <h3 class="text-4xl font-bold text-main mb-1 tracking-tight transition-colors">${escapeHTML(activeTimer.description) || 'Focusing'}</h3>
               <p class="text-muted font-medium text-lg leading-relaxed">
-                ${activeProj?.name || activeTimer.project_name || 'Unassigned'}
+                ${escapeHTML(activeProj?.name || activeTimer.project_name || 'Unassigned')}
               </p>
-              ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${activeTimer.notes}</p>` : ''}
+              ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${escapeHTML(activeTimer.notes)}</p>` : ''}
               <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity bg-card shadow-soft rounded-full p-1.5 text-primary border border-soft">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
               </div>
@@ -194,11 +195,11 @@ export async function renderDashboard(forceRefresh = false) {
             <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-white/5" data-entry-id="${e.id}">
               <div class="w-1 h-4 rounded-full" style="background-color: ${taskColor}"></div>
               <div class="min-w-0">
-                <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors">${e.description || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${e.notes}</span>` : ''}</span>
+                <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors">${escapeHTML(e.description) || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${escapeHTML(e.notes)}</span>` : ''}</span>
               </div>
               <div class="flex items-center gap-1.5 truncate">
-                <span class="text-[11px] font-bold" style="color: ${proj.color}">${proj.name}</span>
-                ${org ? `<span class="text-[10px] text-dim/30 font-medium"> @ ${org.name}</span>` : ''}
+                <span class="text-[11px] font-bold" style="color: ${proj.color}">${escapeHTML(proj.name)}</span>
+                ${org ? `<span class="text-[10px] text-dim/30 font-medium"> @ ${escapeHTML(org.name)}</span>` : ''}
               </div>
               <div class="text-[10px] font-black text-dim/40 uppercase tracking-widest whitespace-nowrap">
                 ${formatTime(e.start_time)} – ${formatTime(e.end_time)}
@@ -209,8 +210,8 @@ export async function renderDashboard(forceRefresh = false) {
               <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity whitespace-nowrap">
                 <button class="resume-btn h-6 px-1.5 flex items-center justify-center rounded-md text-dim/50 hover:text-primary hover:bg-primary/10 transition-all"
                         data-project-id="${e.project_id}"
-                        data-description="${e.description || ''}"
-                        data-notes="${e.notes || ''}">
+                        data-description="${escapeHTML(e.description || '')}"
+                        data-notes="${escapeHTML(e.notes || '')}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
                 </button>
                 <button class="delete-history-btn h-6 px-1.5 flex items-center justify-center rounded-md text-dim/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
@@ -228,23 +229,23 @@ export async function renderDashboard(forceRefresh = false) {
                 <div class="w-1 h-10 rounded-full" style="background-color: ${taskColor}"></div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 mb-0.5">
-                    <h4 class="text-base font-bold tracking-tight">${e.description || 'No description'}</h4>
-                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${e.resource_id || 'Main'}</span>
+                    <h4 class="text-base font-bold tracking-tight">${escapeHTML(e.description) || 'No description'}</h4>
+                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${escapeHTML(e.resource_id) || 'Main'}</span>
                   </div>
-                  <p class="text-sm font-medium text-muted truncate">${proj.name} ${org ? `<span class="opacity-40 mx-1">•</span> ${org.name}` : ''}</p>
+                  <p class="text-sm font-medium text-muted truncate">${escapeHTML(proj.name)} ${org ? `<span class="opacity-40 mx-1">•</span> ${escapeHTML(org.name)}` : ''}</p>
                   ${(() => {
         if (e.task_id) {
           const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
           return `<div class="mt-1 flex items-center gap-1.5">
                       <span class="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 flex items-center gap-1 uppercase tracking-tighter">
                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        Linked Todo: ${t ? t.title : 'Deleted Todo'}
+                        Linked Todo: ${t ? escapeHTML(t.title) : 'Deleted Todo'}
                       </span>
                     </div>`;
         }
         return '';
       })()}
-                  ${e.notes ? `<p class="text-xs text-dim italic mt-1.5">${e.notes}</p>` : ''}
+                  ${e.notes ? `<p class="text-xs text-dim italic mt-1.5">${escapeHTML(e.notes)}</p>` : ''}
                 </div>
               </div>
 
@@ -256,8 +257,8 @@ export async function renderDashboard(forceRefresh = false) {
                 <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
                   <button class="resume-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-primary hover:bg-primary/10 transition-all"
                           data-project-id="${e.project_id}"
-                          data-description="${e.description || ''}"
-                          data-notes="${e.notes || ''}">
+                          data-description="${escapeHTML(e.description || '')}"
+                          data-notes="${escapeHTML(e.notes || '')}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </button>
                   <button class="delete-history-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-red-500 hover:bg-red-500/10 transition-all"

@@ -3,6 +3,7 @@
  * 
  * Premium, searchable dropdown component using Portal for z-index safety.
  */
+import { escapeHTML } from '../utils/dom.js';
 
 export const SearchableSelect = {
     render(container, items, options = {}) {
@@ -34,7 +35,7 @@ export const SearchableSelect = {
         container.innerHTML = `
             <!-- Trigger Button -->
             <button type="button" class="${triggerClasses}">
-                <span class="ss-label truncate text-left flex-grow text-[10px] font-black">${initialLabel}</span>
+                <span class="ss-label truncate text-left flex-grow text-[10px] font-black">${escapeHTML(initialLabel)}</span>
                 <svg class="ss-caret w-3.5 h-3.5 text-dim opacity-30 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
             </button>
         `;
@@ -89,7 +90,7 @@ export const SearchableSelect = {
                 const isSelected = id === String(value);
                 return `
                     <div class="ss-item px-3 py-1 rounded-sm text-[11px] font-bold text-main/70 hover:bg-white/5 hover:text-white cursor-pointer transition-all flex items-center justify-between group active:scale-[0.98]" data-id="${id}">
-                        <span class="truncate pr-2 text-[11px]">${getName(item)}</span>
+                        <span class="truncate pr-2 text-[11px]">${escapeHTML(getName(item))}</span>
                         ${isSelected ? '<svg class="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
                     </div>
                 `;

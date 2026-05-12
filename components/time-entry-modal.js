@@ -1,6 +1,7 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { SearchableSelect } from './searchable-select.js';
+import { escapeHTML } from '../utils/dom.js';
 
 /**
  * components/time-entry-modal.js
@@ -51,7 +52,7 @@ export class TimeEntryModal {
                         <!-- Description -->
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Description</label>
-                            <input type="text" name="description" value="${entry.description || ''}" placeholder="What are you working on?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all">
+                            <input type="text" name="description" value="${escapeHTML(entry.description || '')}" placeholder="What are you working on?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all">
                         </div>
 
                         <!-- Project + Linked Todo -->
@@ -82,7 +83,7 @@ export class TimeEntryModal {
                             ` : `
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                                <input type="text" name="notes" value="${entry.notes || ''}" placeholder="Optional details..." class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                                <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                             </div>
                             `}
                         </div>
@@ -90,7 +91,7 @@ export class TimeEntryModal {
                         ${!isLive ? `
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                            <input type="text" name="notes" value="${entry.notes || ''}" placeholder="Optional details..." class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                         </div>
                         ` : ''}
 

@@ -9,6 +9,7 @@ import { api } from '../utils/api.js';
 import { store } from '../utils/store.js';
 import { SearchableSelect } from './searchable-select.js';
 import { syncSpanToProject } from '../utils/project-span-sync.js';
+import { escapeHTML } from '../utils/dom.js';
 
 export class TaskModal {
     static open(task = null, options = {}) {
@@ -40,7 +41,7 @@ export class TaskModal {
                         <!-- Title -->
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Task Name</label>
-                            <input type="text" name="title" required placeholder="What needs to be done?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all" value="${task?.title || ''}">
+                            <input type="text" name="title" required placeholder="What needs to be done?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all" value="${escapeHTML(task?.title || '')}">
                         </div>
 
                         <!-- Row: Member, Project -->
@@ -90,7 +91,7 @@ export class TaskModal {
                         <!-- Notes -->
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                            <textarea name="notes" rows="3" placeholder="Add details, links, or anything helpful..." class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-main text-sm outline-none transition-all resize-none font-medium">${task?.notes || ''}</textarea>
+                            <textarea name="notes" rows="3" placeholder="Add details, links, or anything helpful..." class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 text-main text-sm outline-none transition-all resize-none font-medium">${escapeHTML(task?.notes || '')}</textarea>
                         </div>
 
                         <!-- Schedule Section -->
