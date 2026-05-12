@@ -763,13 +763,14 @@ export async function renderDashboard(forceRefresh = false) {
     }
     chartEl.classList.remove('hidden');
 
-    // Parse dates and filter out spans without valid dates
+    // Parse dates and filter out spans without valid dates or missing/archived projects
     const parsed = spans.map(s => {
-      const proj = projects.find(p => String(p.id) === String(s.project_id)) || { name: 'Unassigned', color: '#64748b' };
+      const proj = projects.find(p => String(p.id) === String(s.project_id));
+      if (!proj) return null; // Skip if project is deleted or archived
       const startDate = s.start_date ? new Date(s.start_date) : null;
       const endDate = s.end_date ? new Date(s.end_date) : null;
       return { ...s, proj, startDate, endDate };
-    }).filter(s => s.startDate && s.endDate);
+    }).filter(s => s && s.startDate && s.endDate);
 
     if (parsed.length === 0) {
       chartEl.innerHTML = ``;
