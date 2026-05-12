@@ -167,25 +167,27 @@ export async function renderProjects() {
     </div>
 
     <!-- Projects Table -->
-    <div class="bg-card rounded-[2rem] border border-soft shadow-sm overflow-hidden backdrop-blur-sm">
+    <div class="zen-card bg-card border border-soft shadow-sm overflow-hidden backdrop-blur-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse table-fixed">
             <thead>
             <tr class="bg-app/50 border-b border-soft">
-                <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest w-10 text-center">#</th>
-                <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="name">
+                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-12 text-center" data-sort="list_order">
+                    <div class="flex items-center justify-center gap-1"># ${renderSortIcon('list_order')}</div>
+                </th>
+                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="name">
                     <div class="flex items-center gap-2">Project ${renderSortIcon('name')}</div>
                 </th>
-                <th class="hidden sm:table-cell p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="status">
+                <th class="hidden sm:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="status">
                     <div class="flex items-center gap-2">Status ${renderSortIcon('status')}</div>
                 </th>
-                <th class="hidden md:table-cell p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="customer">
+                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="customer">
                     <div class="flex items-center gap-2">Organization ${renderSortIcon('customer')}</div>
                 </th>
-                <th class="hidden lg:table-cell p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-40" data-sort="progress">
+                <th class="hidden lg:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-40" data-sort="progress">
                     <div class="flex items-center gap-2">Progress ${renderSortIcon('progress')}</div>
                 </th>
-                <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest w-24 text-right">Actions</th>
+                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest w-24 text-right">Actions</th>
             </tr>
             </thead>
             <tbody id="projects-table-body">
@@ -268,11 +270,11 @@ export async function renderProjects() {
         : '';
 
     return `
-    <tr class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
-        <td class="px-4 py-3 text-center">
+    <tr draggable="true" class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
+        <td class="px-4 py-2 text-center">
              <div class="w-2 h-2 rounded-full mx-auto shadow-sm" style="background-color: ${pColor}"></div>
         </td>
-        <td class="px-4 py-3 ${isChild ? 'pl-8' : ''}">
+        <td class="px-4 py-2 ${isChild ? 'pl-8' : ''}">
             <div class="flex items-center gap-2">
                 ${isChild ? '<div class="w-3 h-3 border-l-2 border-b-2 border-dim/40 rounded-bl-sm mb-1 ml-1 shrink-0"></div>' : ''}
                 ${epicBadge}
@@ -280,14 +282,14 @@ export async function renderProjects() {
             </div>
             ${tagsHtml}
         </td>
-        <td class="hidden sm:table-cell px-4 py-3">
+        <td class="hidden sm:table-cell px-4 py-2">
             <span class="text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border" 
                   style="background-color: ${applyAlpha(pColor, 0.08)}; border-color: ${applyAlpha(pColor, 0.15)}; color: ${pColor}">${p.status || 'Active'}</span>
         </td>
-        <td class="hidden md:table-cell px-4 py-3">
+        <td class="hidden md:table-cell px-4 py-2">
             <span class="text-[10px] font-bold text-dim/60 group-hover/row:text-main transition-colors uppercase tracking-widest truncate block">${org ? org.name : 'Individual'}</span>
         </td>
-        <td class="hidden lg:table-cell px-4 py-3">
+        <td class="hidden lg:table-cell px-4 py-2">
             <div class="flex items-center gap-4">
                 <div class="flex-1 bg-app rounded-full h-1.5 overflow-hidden border border-white/5 shadow-inner">
                     <div class="h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]" style="width: ${progress}%; background-color: ${pColor}"></div>
@@ -295,19 +297,19 @@ export async function renderProjects() {
                 <span class="text-[10px] font-black text-main tabular-nums tracking-widest w-8 text-right">${progress}%</span>
             </div>
         </td>
-        <td class="px-4 py-3 text-right">
+        <td class="px-4 py-2 text-right">
             <div class="flex justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-all transform translate-x-1 group-hover/row:translate-x-0">
                 ${statusFilter === 'active' ? `
-                    <button class="archive-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/30 hover:text-amber-500 hover:bg-amber-500/10 transition-all" title="Archive Project" data-id="${p.id}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    <button class="archive-btn w-7 h-7 flex items-center justify-center rounded-md text-dim/30 hover:text-amber-500 hover:bg-amber-500/10 transition-all" title="Archive Project" data-id="${p.id}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
                     </button>
                 ` : `
-                    <button class="restore-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/30 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all" title="Restore Project" data-id="${p.id}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                    <button class="restore-btn w-7 h-7 flex items-center justify-center rounded-md text-dim/30 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all" title="Restore Project" data-id="${p.id}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                     </button>
                 `}
-                <button class="delete-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/30 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Delete Permanently" data-id="${p.id}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <button class="delete-btn w-7 h-7 flex items-center justify-center rounded-md text-dim/30 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Delete Permanently" data-id="${p.id}">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
             </div>
         </td>
@@ -441,6 +443,63 @@ export async function renderProjects() {
             refreshView();
           }
         });
+      }
+    }
+  });
+
+  // Drag and Drop (List Order)
+  let draggedRow = null;
+
+  container.addEventListener('dragstart', (e) => {
+    const tr = e.target.closest('tr[data-id]');
+    if (tr) {
+      draggedRow = tr;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', tr.dataset.id);
+      setTimeout(() => tr.classList.add('opacity-50'), 0);
+    }
+  });
+
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const tr = e.target.closest('tr[data-id]');
+    if (tr && tr !== draggedRow && draggedRow) {
+      // Reorder in DOM
+      const rect = tr.getBoundingClientRect();
+      const offset = e.clientY - rect.top;
+      if (offset > rect.height / 2) {
+        tr.parentNode.insertBefore(draggedRow, tr.nextSibling);
+      } else {
+        tr.parentNode.insertBefore(draggedRow, tr);
+      }
+    }
+  });
+
+  container.addEventListener('dragend', async (e) => {
+    if (draggedRow) {
+      draggedRow.classList.remove('opacity-50');
+      draggedRow = null;
+
+      // Extract new list order
+      const tbody = container.querySelector('#projects-table-body');
+      const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+      const reorderPayload = rows.map((r, index) => ({ id: r.dataset.id, list_order: index }));
+      
+      try {
+        await api.post('projects.php', { reorder: reorderPayload });
+        const updatedProjects = await api.get('projects.php');
+        store.update('projects', updatedProjects);
+        
+        // Ensure sort is by list_order if dropped so the change persists visually
+        if (sortConfig.key !== 'list_order') {
+            sortConfig.key = 'list_order';
+            sortConfig.direction = 'asc';
+        }
+        
+        // Refresh view to update the table sort state headers
+        refreshView();
+      } catch (err) {
+        console.error('Failed to save list order', err);
       }
     }
   });
