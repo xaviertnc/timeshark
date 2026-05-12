@@ -29,13 +29,13 @@ export const SearchableSelect = {
 
         const isMinimal = variant === 'minimal';
         const triggerClasses = isMinimal
-            ? "ss-trigger zen-input w-full flex items-center justify-between gap-2 text-[11px] font-bold text-main/60 hover:text-main outline-none transition-all uppercase tracking-widest px-3 bg-highlight border border-subtle hover:border-soft"
-            : "ss-trigger zen-input w-full flex items-center justify-between gap-2 bg-highlight border border-subtle px-4 text-[11px] font-bold text-main outline-none hover:border-soft transition-all focus:ring-1 focus:ring-primary/20 uppercase tracking-widest";
+            ? "ss-trigger zen-input w-full flex items-center justify-between gap-2 text-main/60 hover:text-main outline-none transition-all uppercase tracking-widest bg-highlight border border-subtle hover:border-soft"
+            : "ss-trigger zen-input w-full flex items-center justify-between gap-2 bg-highlight border border-subtle text-main outline-none hover:border-soft transition-all focus:ring-1 focus:ring-primary/20 uppercase tracking-widest";
 
         container.innerHTML = `
             <!-- Trigger Button -->
             <button type="button" class="${triggerClasses}">
-                <span class="ss-label truncate text-left flex-grow text-[10px] font-black">${escapeHTML(initialLabel)}</span>
+                <span class="ss-label truncate text-left flex-grow">${escapeHTML(initialLabel)}</span>
                 <svg class="ss-caret w-3.5 h-3.5 text-dim opacity-30 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
             </button>
         `;
@@ -56,7 +56,7 @@ export const SearchableSelect = {
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg class="w-3.5 h-3.5 text-dim/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <input type="text" class="ss-search w-full bg-transparent border-none pl-10 pr-3 py-2 text-[12px] font-bold text-main outline-none ring-0 placeholder:text-dim/15" placeholder="Search...">
+                    <input type="text" class="ss-search w-full bg-transparent border-none pl-10 pr-3 h-10 text-[13px] font-bold text-main outline-none ring-0 placeholder:text-dim/15" placeholder="Search...">
                 </div>
             </div>
             <div class="ss-list max-h-[250px] overflow-y-auto custom-scrollbar p-1 space-y-px"></div>
@@ -89,21 +89,21 @@ export const SearchableSelect = {
                 filteredItems.push(item);
                 const isSelected = id === String(value);
                 return `
-                    <div class="ss-item px-3 py-1.5 rounded-md text-[11px] font-bold text-main/70 hover:bg-highlight hover:text-primary cursor-pointer transition-all flex items-center justify-between group active:scale-[0.98]" data-id="${id}">
-                        <span class="truncate pr-2 text-[11px]">${escapeHTML(getName(item))}</span>
+                    <div class="ss-item px-4 py-2 rounded-md text-[12px] font-bold text-main/70 hover:bg-highlight hover:text-primary cursor-pointer transition-all flex items-center justify-between group active:scale-[0.98]" data-id="${id}">
+                        <span class="truncate pr-2">${escapeHTML(getName(item))}</span>
                         ${isSelected ? '<svg class="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
                     </div>
                 `;
             };
 
             if (recentItems.length > 0) {
-                html += `<div class="px-3 py-2 text-[9px] font-black text-dim/40 uppercase tracking-[0.2em] select-none">Recently Used</div>`;
+                html += `<div class="px-4 py-2 text-[9px] font-black text-dim/40 uppercase tracking-[0.2em] select-none">Recently Used</div>`;
                 recentItems.forEach(item => html += renderItem(item));
             }
 
             if (otherItems.length > 0) {
                 if (recentItems.length > 0) html += `<div class="h-px bg-subtle mx-2 my-1.5"></div>`;
-                html += `<div class="px-3 py-2 text-[9px] font-black text-dim/40 uppercase tracking-[0.2em] select-none">${allLabel}</div>`;
+                html += `<div class="px-4 py-2 text-[9px] font-black text-dim/40 uppercase tracking-[0.2em] select-none">${allLabel}</div>`;
                 otherItems.forEach(item => html += renderItem(item));
             }
 

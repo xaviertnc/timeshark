@@ -52,7 +52,7 @@ export class TimeEntryModal {
                         <!-- Description -->
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Description</label>
-                            <input type="text" name="description" value="${escapeHTML(entry.description || '')}" placeholder="What are you working on?" class="w-full zen-input px-4 bg-highlight border border-subtle focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all">
+                            <input type="text" name="description" value="${escapeHTML(entry.description || '')}" placeholder="What are you working on?" class="w-full zen-input bg-highlight border border-subtle focus:ring-2 focus:ring-primary/20 text-main outline-none transition-all">
                         </div>
 
                         <!-- Project + Linked Todo -->
@@ -73,17 +73,17 @@ export class TimeEntryModal {
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Started At</label>
-                                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full zen-input bg-highlight border border-subtle px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                             </div>
                             ${!isLive ? `
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Ended At</label>
-                                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full zen-input bg-highlight border border-subtle px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                             </div>
                             ` : `
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full zen-input bg-highlight border border-subtle px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                             </div>
                             `}
                         </div>
@@ -91,7 +91,7 @@ export class TimeEntryModal {
                         ${!isLive ? `
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                         </div>
                         ` : ''}
 

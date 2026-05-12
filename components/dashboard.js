@@ -103,7 +103,7 @@ export async function renderDashboard(forceRefresh = false) {
               <!-- Row 1: Spacious description + START -->
               <div class="flex items-center gap-3">
                 <div class="flex-1">
-                  <input type="text" name="description" placeholder="Task description..." class="w-full zen-input bg-highlight border border-soft px-5 font-bold text-main text-[15px] focus:ring-2 focus:ring-primary/20 focus:border-primary/40 placeholder:text-dim/20 placeholder:font-normal transition-all">
+                  <input type="text" name="description" placeholder="Task description..." class="w-full zen-input bg-highlight border border-soft text-main focus:ring-2 focus:ring-primary/20 focus:border-primary/40 placeholder:text-dim/20 placeholder:font-normal transition-all">
                 </div>
                 <button type="submit" class="zen-btn px-10 bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-primary/20 whitespace-nowrap self-end">
                   Start
@@ -123,7 +123,7 @@ export async function renderDashboard(forceRefresh = false) {
                 </div>
                 <div class="space-y-1">
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Notes</label>
-                  <input type="text" name="notes" placeholder="Optional..." class="w-full zen-input bg-highlight border border-subtle px-3 font-bold text-main text-[11px] focus:ring-1 focus:ring-primary/20 focus:border-primary/30 placeholder:text-dim/30 transition-all">
+                  <input type="text" name="notes" placeholder="Optional..." class="w-full zen-input bg-highlight border border-subtle text-main focus:ring-1 focus:ring-primary/20 focus:border-primary/30 placeholder:text-dim/30 transition-all">
                 </div>
               </div>
             </form>
