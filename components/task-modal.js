@@ -26,7 +26,7 @@ export class TaskModal {
         container.innerHTML = `
             <div id="task-modal" class="fixed inset-0 bg-secondary/40 flex items-start justify-center z-50 backdrop-blur-md pointer-events-auto overflow-y-auto py-6 px-4">
                 <div class="bg-card rounded-2xl shadow-soft w-full max-w-2xl p-8 md:p-10 transform transition-all scale-95 opacity-0 relative mx-3 sm:mx-auto" id="task-modal-content">
-                    <button id="close-task-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
+                    <button id="close-task-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-highlight hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-subtle z-10" title="Close">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
 
@@ -41,7 +41,7 @@ export class TaskModal {
                         <!-- Title -->
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Task Name</label>
-                            <input type="text" name="title" required placeholder="What needs to be done?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all" value="${escapeHTML(task?.title || '')}">
+                            <input type="text" name="title" required placeholder="What needs to be done?" class="w-full py-3 px-4 bg-app border border-subtle rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all" value="${escapeHTML(task?.title || '')}">
                         </div>
 
                         <!-- Row: Member, Project -->
@@ -62,7 +62,7 @@ export class TaskModal {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Status</label>
-                                <select name="status" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
+                                <select name="status" class="w-full bg-app border border-subtle rounded-xl py-2.5 px-3 text-main font-bold cursor-pointer appearance-none text-[11px] outline-none">
                                     <option value="todo" ${task?.status === 'todo' ? 'selected' : ''}>Todo</option>
                                     <option value="in-progress" ${task?.status === 'in-progress' ? 'selected' : ''}>In-Progress</option>
                                     <option value="done" ${task?.status === 'done' ? 'selected' : ''}>Done</option>
@@ -95,7 +95,7 @@ export class TaskModal {
                         </div>
 
                         <!-- Schedule Section -->
-                        <div class="space-y-4 border-t border-white/5 pt-5">
+                        <div class="space-y-4 border-t border-subtle pt-5">
                             <div class="flex items-center justify-between">
                                 <span class="text-[10px] font-black text-dim uppercase tracking-widest">Schedule</span>
                                 <label class="inline-flex items-center cursor-pointer">
@@ -184,7 +184,7 @@ export class TaskModal {
                             <!-- Quick Buttons -->
                             <div class="flex gap-2">
                                 ${[0, 25, 50, 75, 100].map(v => `
-                                    <button type="button" class="progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${v === (task?.progress || 0) ? 'bg-primary/15 border-primary/30 text-primary ring-1 ring-primary/20' : 'bg-white/5 border-white/10 text-dim hover:bg-primary/10 hover:text-primary hover:border-primary/20'}" data-progress="${v}">
+                                    <button type="button" class="progress-quick-btn flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${v === (task?.progress || 0) ? 'bg-primary/15 border-primary/30 text-primary ring-1 ring-primary/20' : 'bg-highlight border-subtle text-dim hover:bg-primary/10 hover:text-primary hover:border-primary/20'}" data-progress="${v}">
                                         ${v}%
                                     </button>
                                 `).join('')}

@@ -5,18 +5,20 @@
     --primary-soft: #e0f2f1;
     --primary-soft-dark: rgba(51, 138, 129, 0.15);
 
-    --bg-app: #fafafe;
+    --bg-app: #f1f5f9; /* Slate 100 - Better contrast for white cards */
     --bg-card: #ffffff;
     --bg-sidebar: #ffffff;
-    --bg-input: #f8fafc;
+    --bg-input: #ffffff; /* Brighter input on slate bg */
 
-    --text-main: #334155;
-    --text-muted: #64748b;
-    --text-dim: #94a3b8;
-    --text-light: #f1f5f9;
+    --text-main: #1e293b; /* Slate 800 - Stronger readability */
+    --text-muted: #475569; /* Slate 600 */
+    --text-dim: #64748b; /* Slate 500 */
+    --text-light: #f8fafc;
 
-    --border-soft: #f1f5f9;
-    --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.05);
+    --border-soft: #e2e8f0; /* Slate 200 - More visible border */
+    --border-subtle: rgba(0, 0, 0, 0.1);
+    --highlight-soft: rgba(0, 0, 0, 0.04);
+    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 }
 
 .dark {
@@ -32,6 +34,8 @@
     --text-dim: #334155;
 
     --border-soft: #1a1e23;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --highlight-soft: rgba(255, 255, 255, 0.04);
     --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
@@ -115,12 +119,12 @@ body {
 /* Refined Form Styles */
 input,
 select {
-    border: none;
+    border: 1px solid var(--border-soft); /* Added border for definition */
     background-color: var(--bg-input);
-    border-radius: 6px;
+    border-radius: 8px; /* Slightly more rounded */
     padding: 0.8rem 1rem;
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 500; /* Medium weight is cleaner than 600 for main text */
     color: var(--text-main);
     transition: all 0.2s ease;
 }
@@ -128,7 +132,8 @@ select {
 input:focus,
 select:focus {
     background-color: var(--bg-card);
-    box-shadow: 0 0 0 2px rgba(51, 138, 129, 0.15);
+    border-color: var(--primary); /* Highlight border on focus */
+    box-shadow: 0 0 0 4px rgba(51, 138, 129, 0.1);
     outline: none;
 }
 

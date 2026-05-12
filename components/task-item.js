@@ -64,7 +64,7 @@ export const TaskItem = {
                     </div>
                 </div>
 
-                <div class="inline-progress-bar shrink-0 w-24 h-5 bg-white/10 rounded-md overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
+                <div class="inline-progress-bar shrink-0 w-24 h-5 bg-highlight rounded-md overflow-hidden cursor-pointer relative" data-task-id="${t.id}" data-progress="${progress}">
                     <div class="absolute inset-y-0 left-0 rounded-md transition-all duration-300" style="width: ${Math.max(progress, 6)}%; background-color: ${proj.color}; opacity: ${isDone ? 0.35 : 1}"></div>
                     <span class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white drop-shadow-sm leading-none ${isDone ? 'opacity-50' : ''}">${progress}%</span>
                 </div>
@@ -96,7 +96,7 @@ export const TaskItem = {
         }
 
         return `
-            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[20px_1fr_180px_60px_min-content] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
+            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[20px_1fr_180px_60px_min-content] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
                 ${isSpan
                 ? `<div class="shrink-0 w-4 h-4 rounded-sm bg-primary flex items-center justify-center">
                             <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>

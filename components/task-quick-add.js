@@ -27,14 +27,14 @@ export const TaskQuickAdd = {
                         <span class="text-dim/30 text-base font-black">+</span>
                     </div>
                     <input type="text" id="quick-add-input" placeholder="${placeholder}"
-                           class="w-full bg-white/[0.03] border border-white/10 rounded-md pl-10 pr-4 py-2.5 text-sm font-bold text-main outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-dim/15 placeholder:font-normal">
+                           class="w-full h-[42px] bg-highlight border border-soft rounded-md pl-10 pr-4 text-sm font-bold text-main outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-dim/20 placeholder:font-normal">
                 </div>
 
                 <!-- Project Selector: Fixed max-width, shrinks if needed but preserves min-width -->
                 <div id="quick-add-project-container" class="shrink-0 w-full min-w-[120px] max-w-[240px]"></div>
 
                 <!-- Submit Button -->
-                <button id="quick-add-submit" class="shrink-0 h-[40px] px-4 bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/40 text-primary rounded-md transition-all flex items-center justify-center group focus:ring-2 focus:ring-primary/40 outline-none" title="Add Task">
+                <button id="quick-add-submit" class="shrink-0 h-[42px] px-4 bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/40 text-primary rounded-md transition-all flex items-center justify-center group focus:ring-2 focus:ring-primary/40 outline-none" title="Add Task">
                     <svg class="w-5 h-5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                     </svg>

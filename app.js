@@ -81,11 +81,11 @@ function updateActiveLink(hash) {
         const isActive = link.getAttribute('href') === hash || (hash === '' && link.getAttribute('href') === '#');
         if (isActive) {
             link.classList.add('active');
-            link.classList.remove('text-slate-300', 'text-slate-200');
+            link.classList.remove('text-slate-400', 'text-slate-500');
             link.classList.add('text-primary');
         } else {
             link.classList.remove('active', 'text-primary');
-            link.classList.add('text-slate-200');
+            link.classList.add('text-slate-400');
         }
     });
 }

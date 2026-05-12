@@ -29,8 +29,8 @@ export const SearchableSelect = {
 
         const isMinimal = variant === 'minimal';
         const triggerClasses = isMinimal
-            ? "ss-trigger w-full flex items-center justify-between gap-2 text-[11px] font-bold text-main/60 hover:text-main outline-none transition-all uppercase tracking-widest min-h-[38px] px-3 bg-white/[0.03] border border-white/10 rounded-md hover:border-white/20"
-            : "ss-trigger w-full flex items-center justify-between gap-2 bg-app/40 border border-white/5 rounded-lg px-4 py-2 sm:py-2 text-[11px] font-bold text-main outline-none hover:border-white/10 transition-all focus:ring-1 focus:ring-primary/20 uppercase tracking-widest min-h-[38px]";
+            ? "ss-trigger w-full flex items-center justify-between gap-2 text-[11px] font-bold text-main/60 hover:text-main outline-none transition-all uppercase tracking-widest h-[42px] px-3 bg-highlight border border-subtle rounded-md hover:border-soft"
+            : "ss-trigger w-full flex items-center justify-between gap-2 bg-highlight border border-subtle rounded-lg px-4 py-2 sm:py-2 text-[11px] font-bold text-main outline-none hover:border-soft transition-all focus:ring-1 focus:ring-primary/20 uppercase tracking-widest h-[42px]";
 
         container.innerHTML = `
             <!-- Trigger Button -->
@@ -49,10 +49,10 @@ export const SearchableSelect = {
         if (!portal) return;
 
         const dropdown = document.createElement('div');
-        dropdown.className = "ss-dropdown hidden fixed mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-[0_25px_70px_rgba(0,0,0,0.9)] z-[1000] overflow-hidden transform origin-top scale-95 opacity-0 transition-all duration-200 min-w-[260px] pointer-events-auto";
+        dropdown.className = "ss-dropdown hidden fixed mt-1 bg-card border border-soft rounded-lg shadow-soft z-[1000] overflow-hidden transform origin-top scale-95 opacity-0 transition-all duration-200 min-w-[260px] pointer-events-auto";
         dropdown.innerHTML = `
-            <div class="p-2 border-b border-white/5">
-                <div class="relative flex items-center bg-white/[0.03] border border-white/10 rounded-md focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+            <div class="p-2 border-b border-subtle">
+                <div class="relative flex items-center bg-highlight border border-subtle rounded-md focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg class="w-3.5 h-3.5 text-dim/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
@@ -89,7 +89,7 @@ export const SearchableSelect = {
                 filteredItems.push(item);
                 const isSelected = id === String(value);
                 return `
-                    <div class="ss-item px-3 py-1 rounded-sm text-[11px] font-bold text-main/70 hover:bg-white/5 hover:text-white cursor-pointer transition-all flex items-center justify-between group active:scale-[0.98]" data-id="${id}">
+                    <div class="ss-item px-3 py-1.5 rounded-md text-[11px] font-bold text-main/70 hover:bg-highlight hover:text-primary cursor-pointer transition-all flex items-center justify-between group active:scale-[0.98]" data-id="${id}">
                         <span class="truncate pr-2 text-[11px]">${escapeHTML(getName(item))}</span>
                         ${isSelected ? '<svg class="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
                     </div>
@@ -102,7 +102,7 @@ export const SearchableSelect = {
             }
 
             if (otherItems.length > 0) {
-                if (recentItems.length > 0) html += `<div class="h-px bg-white/5 mx-2 my-1.5"></div>`;
+                if (recentItems.length > 0) html += `<div class="h-px bg-subtle mx-2 my-1.5"></div>`;
                 html += `<div class="px-3 py-2 text-[9px] font-black text-dim/40 uppercase tracking-[0.2em] select-none">${allLabel}</div>`;
                 otherItems.forEach(item => html += renderItem(item));
             }
@@ -201,10 +201,10 @@ export const SearchableSelect = {
             const itemsEl = listContainer.querySelectorAll('.ss-item');
             itemsEl.forEach((item, idx) => {
                 if (idx === highlightedIndex) {
-                    item.classList.add('bg-white/10', 'text-white');
+                    item.classList.add('bg-highlight', 'text-primary');
                     item.scrollIntoView({ block: 'nearest' });
                 } else {
-                    item.classList.remove('bg-white/10', 'text-white');
+                    item.classList.remove('bg-highlight', 'text-primary');
                 }
             });
         };

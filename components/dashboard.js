@@ -103,7 +103,7 @@ export async function renderDashboard(forceRefresh = false) {
               <!-- Row 1: Spacious description + START -->
               <div class="flex items-center gap-3">
                 <div class="flex-1">
-                  <input type="text" name="description" placeholder="Task description..." class="w-full bg-app border-none rounded-lg px-5 py-2.5 font-bold text-main text-[15px] focus:ring-2 focus:ring-primary/20 placeholder:text-dim/15 placeholder:font-normal">
+                  <input type="text" name="description" placeholder="Task description..." class="w-full h-[42px] bg-highlight border border-soft rounded-lg px-5 font-bold text-main text-[15px] focus:ring-2 focus:ring-primary/20 focus:border-primary/40 placeholder:text-dim/20 placeholder:font-normal transition-all">
                 </div>
                 <button type="submit" class="h-[42px] px-10 bg-primary hover:bg-primary-dark text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-primary/20 whitespace-nowrap self-end">
                   Start
@@ -123,7 +123,7 @@ export async function renderDashboard(forceRefresh = false) {
                 </div>
                 <div class="space-y-1">
                   <label class="block text-[8px] font-black text-dim uppercase tracking-widest ml-1 opacity-60">Notes</label>
-                  <input type="text" name="notes" placeholder="Optional..." class="w-full bg-app/60 border-none rounded-lg px-3 py-2 font-bold text-main text-[11px] focus:ring-1 focus:ring-primary/20 placeholder:text-dim/25">
+                  <input type="text" name="notes" placeholder="Optional..." class="w-full h-[42px] bg-highlight border border-subtle rounded-lg px-3 font-bold text-main text-[11px] focus:ring-1 focus:ring-primary/20 focus:border-primary/30 placeholder:text-dim/30 transition-all">
                 </div>
               </div>
             </form>
@@ -146,7 +146,7 @@ export async function renderDashboard(forceRefresh = false) {
     <div class="space-y-3">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Todo</h3>
-        <div id="task-filter-toggles" class="flex items-center gap-1 bg-app/30 p-1  rounded-lg border border-white/5">
+        <div id="task-filter-toggles" class="flex items-center gap-1 bg-highlight p-1 rounded-lg border border-subtle">
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export async function renderDashboard(forceRefresh = false) {
     <div class="space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Recent History</h3>
-        <button id="history-compact-toggle" class="p-1 rounded-md transition-all ${isHistoryCompact ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-white/5'}" title="Toggle Compact Mode">
+        <button id="history-compact-toggle" class="p-1 rounded-md transition-all ${isHistoryCompact ? 'bg-primary/20 text-primary' : 'text-dim hover:text-main hover:bg-highlight'}" title="Toggle Compact Mode">
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
       </div>
@@ -192,7 +192,7 @@ export async function renderDashboard(forceRefresh = false) {
 
     if (isHistoryCompact) {
       return `
-            <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-white/5 transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-white/5" data-entry-id="${e.id}">
+            <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-subtle" data-entry-id="${e.id}">
               <div class="w-1 h-4 rounded-full" style="background-color: ${taskColor}"></div>
               <div class="min-w-0">
                 <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors">${escapeHTML(e.description) || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${escapeHTML(e.notes)}</span>` : ''}</span>

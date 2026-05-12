@@ -29,7 +29,9 @@
                             deep: '#0f172a',
                             sand: '#f8fafc'
                         },
-                        soft: 'var(--border-soft)'
+                        soft: 'var(--border-soft)',
+                        subtle: 'var(--border-subtle)',
+                        highlight: 'var(--highlight-soft)'
                     },
                     borderRadius: {
                         '3xl': '1rem',
@@ -67,7 +69,7 @@
         <!-- Minimal Header -->
         <header class="h-20 flex items-center justify-between px-16 z-10 sticky top-0">
             <div class="opacity-0 transition-opacity duration-700" id="page-header-container">
-                <h1 class="text-xs font-black text-slate-300 uppercase tracking-[0.5em]" id="page-title">Dashboard</h1>
+                <h1 class="text-xs font-black text-dim uppercase tracking-[0.5em]" id="page-title">Dashboard</h1>
             </div>
 
             <!-- Subtle Timer Indicator -->
