@@ -9,10 +9,11 @@
 
 const FILTER_DEFS = [
     { key: 'today', label: 'Today', icon: '☀' },
-    { key: 'completed', label: 'Completed', icon: '✓' },
+    { key: 'overdue', label: 'Overdue', icon: '⏰' },
     { key: 'planned', label: 'Planned', icon: '📅' },
-    { key: 'projects', label: 'Projects', icon: '▓' },
-    { key: 'backlog', label: 'Backlog', icon: '📋' }
+    { key: 'backlog', label: 'Backlog', icon: '📋' },
+    { key: 'completed', label: 'Completed', icon: '✓' },
+    { key: 'projects', label: 'Projects', icon: '📊' }
 ];
 
 /**
@@ -35,24 +36,42 @@ export const TaskFilterBar = {
             onToggleCompact
         } = options;
 
+        // ── Toggle All ──
+        let html = `
+            <button class="filter-bar-toggle-all-btn p-1.5 rounded-lg text-dim/40 hover:text-dim hover:bg-highlight mr-1 transition-all" title="Toggle All Filters">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            </button>
+            <div class="w-px h-3 bg-white/5 mr-1"></div>
+        `;
+
         // ── Build filter buttons ──
-        let html = FILTER_DEFS.map(f => `
-            <button class="task-filter-btn inline-flex items-center gap-1 px-1.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide leading-none transition-all ${filters[f.key] ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-highlight'}" data-filter="${f.key}">
-                <span class="text-[10px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
+        html += FILTER_DEFS.map(f => `
+            <button class="task-filter-btn inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none transition-all ${filters[f.key] ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/40 hover:text-dim hover:bg-highlight'}" data-filter="${f.key}">
+                <span class="text-[11px] leading-none">${f.icon}</span><span class="leading-none">${f.label}</span>
             </button>
         `).join('');
 
         // ── Compact toggle ──
         if (showCompact) {
             html += `
-                <div class="w-px h-3 bg-subtle mx-0.5"></div>
+                <div class="w-px h-3 bg-white/5 mx-1"></div>
                 <button class="filter-bar-compact-toggle p-1 rounded-md transition-all ${isCompact ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-highlight'}" title="Toggle Compact Mode">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
             `;
         }
 
+        if (options.extraControls) {
+            html += `<div class="flex items-center gap-2 ml-2">${options.extraControls}</div>`;
+        }
+
         container.innerHTML = html;
+
+        // ── Wire Toggle All ──
+        const toggleAllBtn = container.querySelector('.filter-bar-toggle-all-btn');
+        if (toggleAllBtn && options.onToggleAll) {
+            toggleAllBtn.onclick = () => options.onToggleAll();
+        }
 
         // ── Wire filter clicks ──
         container.querySelectorAll('.task-filter-btn').forEach(btn => {

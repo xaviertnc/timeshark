@@ -62,7 +62,6 @@ export const TaskQuickAdd = {
             placeholder: 'Unassigned',
             recentIds,
             allLabel: 'All Projects',
-            variant: 'minimal',
             onChange: (id) => {
                 selectedProjectId = id;
                 submitBtn.focus();

@@ -18,6 +18,9 @@ import { escapeHTML } from '../utils/dom.js';
  */
 
 export async function renderDashboard(forceRefresh = false) {
+  let isCompact = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
+  let isHistoryCompact = localStorage.getItem('dashboard_history_compact') === 'true'; // Default to false
+
   if (forceRefresh || !store.get().tasks || store.get().tasks.length === 0) {
     await PlannerState.init();
   }
@@ -28,9 +31,6 @@ export async function renderDashboard(forceRefresh = false) {
   const entries = state.timeEntries || [];
   const customers = state.customers || [];
   const modalPortal = document.getElementById('modal-portal');
-
-  let isCompact = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
-  let isHistoryCompact = localStorage.getItem('dashboard_history_compact') === 'true'; // Default to false
 
   const formatDuration = (secs) => {
     const h = Math.floor(secs / 3600);
@@ -143,15 +143,45 @@ export async function renderDashboard(forceRefresh = false) {
     </div>
 
     <!-- Todo Section -->
-    <div class="space-y-3">
-      <div class="flex items-center justify-between flex-wrap gap-2">
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Todo</h3>
-        <div id="task-filter-toggles" class="flex items-center gap-1 bg-highlight p-1 rounded-lg border border-subtle">
-        </div>
       </div>
 
       <!-- Quick Add Container -->
       <div id="dashboard-quick-add-container"></div>
+
+      <!-- Row 1: Search, Filter & Utility Toggles -->
+      <div class="flex items-center gap-3 flex-wrap mb-4">
+          <!-- Search Input -->
+          <div class="relative flex-1 min-w-[280px]">
+              <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </div>
+              <input type="text" id="task-search-input" placeholder="Search tasks..." class="w-full h-9 px-3 bg-highlight border border-white/5 rounded-lg pl-9 text-[11px] font-bold text-main focus:border-primary/40 focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-dim/20">
+          </div>
+          
+          <!-- Project Filter -->
+          <div class="flex items-center gap-3 px-3 h-9 bg-highlight border border-white/5 rounded-lg transition-all focus-within:border-primary/20">
+              <span class="text-[11px] font-black text-dim/20 uppercase tracking-widest whitespace-nowrap leading-none">Project</span>
+              <div id="task-project-filter-container" class="w-40 h-full"></div>
+          </div>
+
+          <div class="flex items-center gap-2">
+              <!-- Bulk Select Toggle -->
+              <button id="selection-mode-toggle" class="h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap border-soft text-dim hover:text-main hover:bg-highlight">
+                  <span class="text-[11px] leading-none" id="selection-mode-icon">⊞</span>
+                  <span class="text-[10px] font-black uppercase tracking-widest leading-none" id="selection-mode-label">Bulk Select</span>
+              </button>
+          </div>
+      </div>
+
+      <!-- Row 2: Primary Group Filters -->
+      <div class="mb-8">
+          <div id="task-filter-toggles" class="inline-flex items-center gap-1 bg-highlight p-1 rounded-lg border border-white/5">
+              <!-- Rendered by TaskFilterBar.render() -->
+          </div>
+      </div>
 
       <!-- Task List Container -->
       <div id="dashboard-task-list">
@@ -159,8 +189,37 @@ export async function renderDashboard(forceRefresh = false) {
       </div>
 
       <!-- Spans Timeline Chart -->
-      <div id="dashboard-spans-chart">
+      <div id="dashboard-spans-chart" class="mt-4">
         <!-- Mini Gantt rendered here when Spans tab active -->
+      </div>
+
+      <!-- Bulk Action Toolbar -->
+      <div id="bulk-action-toolbar" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] translate-y-32 transition-all duration-500 pointer-events-none">
+        <div class="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] px-6 py-3 flex items-center gap-6 pointer-events-auto min-w-[500px]">
+          <div class="flex items-center gap-4 pr-6 border-r border-white/10">
+            <div class="flex flex-col">
+                <span class="text-[10px] font-black text-white/90 uppercase tracking-widest" id="bulk-count-label">0 Selected</span>
+                <div class="flex gap-2.5 mt-1">
+                    <button class="text-[9px] font-black text-dim hover:text-white transition-colors uppercase tracking-widest" id="bulk-clear-btn">Clear</button>
+                    <button class="text-[9px] font-black text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest" id="bulk-close-btn">Close</button>
+                </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 flex-grow">
+             <button class="zen-btn bg-emerald-600 text-white h-9 px-5 rounded-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2 flex-1 whitespace-nowrap" id="bulk-move-today-btn">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <span class="text-[10px] font-black uppercase tracking-widest">To Today</span>
+             </button>
+             <button class="zen-btn bg-primary text-white h-9 px-5 rounded-lg hover:shadow-[0_0_20px_rgba(51,138,129,0.3)] transition-all flex items-center justify-center gap-2 flex-1 whitespace-nowrap" id="bulk-move-future-btn">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-[10px] font-black uppercase tracking-widest">Move +1 Week</span>
+             </button>
+             <button class="zen-btn bg-white/5 text-white h-9 px-5 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 flex-1 border border-white/10 whitespace-nowrap" id="bulk-move-backlog-btn">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <span class="text-[10px] font-black uppercase tracking-widest">To Backlog</span>
+             </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -354,7 +413,15 @@ export async function renderDashboard(forceRefresh = false) {
   };
   window.addEventListener('compact-mode-change', handleCompactChange);
 
-  const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{"today":true,"completed":false,"planned":false,"projects":false,"backlog":false}');
+  const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{}');
+  const filterDefaults = { today: true, overdue: true, planned: false, projects: false, timeline: true, backlog: false, completed: false };
+  Object.keys(filterDefaults).forEach(k => { if (taskFilters[k] === undefined) taskFilters[k] = filterDefaults[k]; });
+
+  let searchTerm = '';
+  let projectFilter = 'all';
+  let isSelectionMode = false;
+  let lastCheckedTaskId = null;
+  let selectedTaskIds = new Set();
   const allTasks = state.tasks || [];
 
   const renderTaskToggles = () => {
@@ -376,6 +443,15 @@ export async function renderDashboard(forceRefresh = false) {
         renderTaskToggles();
         renderDashboardTasks();
       },
+      onToggleAll: () => {
+        const keys = ['today', 'overdue', 'planned', 'projects', 'backlog', 'completed'];
+        const allOn = keys.every(k => taskFilters[k]);
+        keys.forEach(k => taskFilters[k] = !allOn);
+        localStorage.setItem('dashboard_task_filters', JSON.stringify(taskFilters));
+        renderTaskToggles();
+        renderDashboardTasks();
+      },
+      showCompact: true,
       isCompact,
       onToggleCompact: (val) => {
         isCompact = val;
@@ -385,54 +461,249 @@ export async function renderDashboard(forceRefresh = false) {
         renderDashboardTasks();
       }
     });
+
+    const selToggle = container.querySelector('#selection-mode-toggle');
+    const selIcon = container.querySelector('#selection-mode-icon');
+    const selLabel = container.querySelector('#selection-mode-label');
+    
+    if (selToggle) {
+        if (isSelectionMode) {
+            selToggle.className = 'h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap bg-primary border-primary text-white shadow-lg shadow-primary/20';
+            selIcon.textContent = '✓';
+            selLabel.textContent = 'Selecting';
+        } else {
+            selToggle.className = 'h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap border-white/5 text-dim hover:text-main hover:bg-highlight';
+            selIcon.textContent = '⊞';
+            selLabel.textContent = 'Bulk Select';
+        }
+
+        selToggle.onclick = () => {
+            isSelectionMode = !isSelectionMode;
+            if (!isSelectionMode) selectedTaskIds.clear();
+            renderTaskToggles();
+            renderDashboardTasks();
+            renderBulkToolbar();
+        };
+    }
+
+    // Search input logic
+    const searchInput = container.querySelector('#task-search-input');
+    if (searchInput) {
+      searchInput.value = searchTerm;
+      searchInput.oninput = (e) => {
+        searchTerm = e.target.value.toLowerCase().trim();
+        renderDashboardTasks();
+      };
+    }
+
+    // Project filter logic
+    const projectFilterContainer = container.querySelector('#task-project-filter-container');
+    if (projectFilterContainer) {
+      const filterProjects = [{ id: 'all', name: 'All' }, ...projects];
+      SearchableSelect.render(projectFilterContainer, filterProjects, {
+        value: projectFilter,
+        placeholder: 'All Projects',
+        allLabel: 'Filter by Project',
+        onChange: (val) => {
+          projectFilter = val;
+          renderDashboardTasks();
+        },
+        variant: 'minimal',
+        size: 'small'
+      });
+    }
+
+    renderBulkToolbar();
+  };
+
+  const renderBulkToolbar = () => {
+    const toolbar = container.querySelector('#bulk-action-toolbar');
+    if (!toolbar) return;
+
+    if (selectedTaskIds.size === 0) {
+      toolbar.classList.add('translate-y-32', 'pointer-events-none');
+      toolbar.classList.remove('translate-y-0');
+      return;
+    }
+
+    toolbar.classList.remove('translate-y-32', 'pointer-events-none');
+    toolbar.classList.add('translate-y-0');
+
+    const countLabel = toolbar.querySelector('#bulk-count-label');
+    if (countLabel) countLabel.textContent = `${selectedTaskIds.size} Selected`;
+
+    const clearBtn = toolbar.querySelector('#bulk-clear-btn');
+    if (clearBtn) {
+      clearBtn.onclick = () => {
+        selectedTaskIds.clear();
+        const checkboxes = container.querySelectorAll('.task-bulk-checkbox');
+        checkboxes.forEach(cb => cb.checked = false);
+        renderBulkToolbar();
+      };
+    }
+
+    const closeBtn = toolbar.querySelector('#bulk-close-btn');
+    if (closeBtn) {
+       closeBtn.onclick = () => {
+          isSelectionMode = false;
+          selectedTaskIds.clear();
+          renderTaskToggles();
+          renderDashboardTasks();
+          renderBulkToolbar();
+       };
+    }
+
+    const moveTodayBtn = toolbar.querySelector('#bulk-move-today-btn');
+    if (moveTodayBtn) {
+      moveTodayBtn.onclick = async () => {
+        if (!confirm(`Move ${selectedTaskIds.size} tasks to Today?`)) return;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString();
+        
+        try {
+          for (const id of selectedTaskIds) {
+            await api.post('planner.php', { 
+              id, 
+              status: 'todo', 
+              start_date: todayStr,
+              end_date: todayStr 
+            });
+          }
+          selectedTaskIds.clear();
+          refreshView();
+        } catch (err) { alert('Failed to move tasks'); }
+      };
+    }
+
+    const moveFutureBtn = toolbar.querySelector('#bulk-move-future-btn');
+    if (moveFutureBtn) {
+      moveFutureBtn.onclick = async () => {
+        if (!confirm(`Move ${selectedTaskIds.size} tasks into next week?`)) return;
+        const tasksToMove = allTasks.filter(t => selectedTaskIds.has(String(t.id)));
+        
+        // Find the earliest start date among selected tasks to calculate the shift
+        const startDates = tasksToMove.map(t => t.start_date ? new Date(t.start_date).getTime() : null).filter(d => d !== null);
+        if (startDates.length === 0) return;
+
+        const earliest = Math.min(...startDates);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const dayMs = 24 * 60 * 60 * 1000;
+        const target = today.getTime() + (7 * dayMs);
+        
+        // If earliest is in the past, we shift to target (today+7).
+        // If already in the future, we just add 7 days to the earliest.
+        const finalStartForEarliest = Math.max(target, earliest + (7 * dayMs));
+        const shiftMs = finalStartForEarliest - earliest;
+
+        try {
+          for (const t of tasksToMove) {
+            const updates = { id: t.id };
+            if (t.start_date) {
+               const newS = new Date(new Date(t.start_date).getTime() + shiftMs);
+               updates.start_date = newS.toISOString();
+            }
+            if (t.end_date) {
+               const newE = new Date(new Date(t.end_date).getTime() + shiftMs);
+               updates.end_date = newE.toISOString();
+            }
+            updates.status = 'todo'; 
+            await api.post('planner.php', updates);
+          }
+          selectedTaskIds.clear();
+          refreshView();
+        } catch (err) { alert('Failed to move tasks'); }
+      };
+    }
+
+    const moveBacklogBtn = toolbar.querySelector('#bulk-move-backlog-btn');
+    if (moveBacklogBtn) {
+      moveBacklogBtn.onclick = async () => {
+        if (!confirm(`Move ${selectedTaskIds.size} tasks to Backlog?`)) return;
+        try {
+          for (const id of selectedTaskIds) {
+            await api.post('planner.php', { id, status: 'backlog', start_date: null, end_date: null });
+          }
+          selectedTaskIds.clear();
+          refreshView();
+        } catch (err) { alert('Failed to move tasks'); }
+      };
+    }
   };
 
   const renderDashboardTasks = () => {
     const taskListEl = container.querySelector('#dashboard-task-list');
     if (!taskListEl) return;
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const tomMid = new Date(today); tomMid.setDate(today.getDate() + 1);
+    const activeFilters = { ...taskFilters };
+    // If today is on, we show overdue unless explicitly hidden
+    if (activeFilters.today && activeFilters.overdue === undefined) activeFilters.overdue = true;
 
-    const intersectsToday = (t) => {
-      if (!t.start_date) return false;
-      const s = new Date(t.start_date); s.setHours(0, 0, 0, 0);
-      const e = t.end_date ? new Date(t.end_date) : s; e.setHours(23, 59, 59, 999);
-      return s < tomMid && e >= today;
-    };
-
-    const filtered = [];
-    const seen = new Set();
-    const add = (list) => list.forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); filtered.push(t); } });
-
-    if (taskFilters.today) {
-      add(allTasks.filter(t => (t.status === 'todo' || t.status === 'in-progress') && t.task_type !== 'project_span' && intersectsToday(t)));
-    }
-    if (taskFilters.planned) {
-      add(allTasks.filter(t => (t.status === 'todo' || t.status === 'in-progress') && t.task_type !== 'project_span' && t.start_date && !intersectsToday(t)));
-    }
-    if (taskFilters.backlog) {
-      add(allTasks.filter(t => t.status === 'backlog' || (!t.start_date && t.status !== 'done' && t.task_type !== 'project_span')));
-    }
-    if (taskFilters.completed) {
-      add(allTasks.filter(t => t.status === 'done'));
-    }
-
+    // 1. Handle Gantt Chart (Timeline) logic - tied to 'projects' filter
     if (taskFilters.projects) {
       const spanTasks = allTasks.filter(t => t.task_type === 'project_span');
-      renderSpansChart(spanTasks);
+      // Apply global project filter to the timeline visualization as well
+      const filteredSpans = projectFilter !== 'all' 
+        ? spanTasks.filter(s => String(s.project_id) === String(projectFilter))
+        : spanTasks;
+      renderSpansChart(filteredSpans);
     } else {
       const spansChartEl = container.querySelector('#dashboard-spans-chart');
       if (spansChartEl) spansChartEl.innerHTML = '';
     }
 
-    // Only render task list if there are filtered tasks or at least one relevant filter (excluding projects) is on
-    const relevantFilterOn = taskFilters.today || taskFilters.planned || taskFilters.backlog || taskFilters.completed;
+    // 2. Handle Task List rendering logic (Sections inside TaskList.render)
+    const anyListFilter = taskFilters.today || taskFilters.planned || taskFilters.backlog || taskFilters.completed;
+    
+    // If search is active but NO filter is on, we act on ALL tasks by temporarily enabling them for rendering
+    let effectiveFilters = { ...taskFilters };
+    if (searchTerm.length > 0 && !anyListFilter) {
+        effectiveFilters = { ...effectiveFilters, today: true, overdue: true, planned: true, backlog: true, completed: true };
+    }
 
-    if (relevantFilterOn || filtered.length > 0) {
-      TaskList.render(taskListEl, filtered, projects, {
+    const shouldShowList = anyListFilter || searchTerm.length > 0;
+
+    if (shouldShowList) {
+      TaskList.render(taskListEl, allTasks, projects, {
         mode: isCompact ? 'compact' : 'full',
-        showDone: taskFilters.completed
+        showDone: effectiveFilters.completed,
+        activeFilters: effectiveFilters,
+        searchTerm,
+        projectFilter,
+        selectionMode: isSelectionMode
+      });
+
+      // Restore checkbox states & Attach Selection Logic
+      const checkboxes = taskListEl.querySelectorAll('.task-bulk-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = selectedTaskIds.has(String(cb.dataset.taskId));
+        cb.onclick = (e) => {
+          e.stopPropagation();
+          const taskId = cb.dataset.taskId;
+          
+          if (e.shiftKey && lastCheckedTaskId) {
+              const allCbs = [...taskListEl.querySelectorAll('.task-bulk-checkbox')];
+              const startIdx = allCbs.findIndex(x => x.dataset.taskId === String(lastCheckedTaskId));
+              const endIdx = allCbs.findIndex(x => x.dataset.taskId === String(taskId));
+              
+              if (startIdx !== -1 && endIdx !== -1) {
+                  const [min, max] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
+                  const isChecking = e.target.checked;
+                  allCbs.slice(min, max + 1).forEach(el => {
+                      el.checked = isChecking;
+                      if (isChecking) selectedTaskIds.add(el.dataset.taskId);
+                      else selectedTaskIds.delete(el.dataset.taskId);
+                  });
+              }
+          } else {
+              if (e.target.checked) selectedTaskIds.add(String(taskId));
+              else selectedTaskIds.delete(String(taskId));
+          }
+          lastCheckedTaskId = taskId;
+          renderBulkToolbar();
+        };
       });
     } else {
       taskListEl.innerHTML = '';
@@ -443,12 +714,13 @@ export async function renderDashboard(forceRefresh = false) {
   const renderSpansChart = (spans) => {
     const chartEl = container.querySelector('#dashboard-spans-chart');
     if (!chartEl) return;
+
     if (!spans || spans.length === 0) {
-      chartEl.innerHTML = `<div class="text-center py-6 opacity-30">
-        <p class="text-xs font-bold text-dim uppercase tracking-widest">No project spans found</p>
-      </div>`;
+      chartEl.innerHTML = ``;
+      chartEl.classList.add('hidden');
       return;
     }
+    chartEl.classList.remove('hidden');
 
     // Parse dates and filter out spans without valid dates
     const parsed = spans.map(s => {
@@ -459,9 +731,8 @@ export async function renderDashboard(forceRefresh = false) {
     }).filter(s => s.startDate && s.endDate);
 
     if (parsed.length === 0) {
-      chartEl.innerHTML = `<div class="text-center py-6 opacity-30">
-        <p class="text-xs font-bold text-dim uppercase tracking-widest">No dated spans to display</p>
-      </div>`;
+      chartEl.innerHTML = ``;
+      chartEl.classList.add('hidden');
       return;
     }
 
@@ -471,8 +742,9 @@ export async function renderDashboard(forceRefresh = false) {
       return d !== 0 ? d : b.endDate - a.endDate;
     });
 
-    // Find min/max with some padding
-    const allDates = parsed.flatMap(s => [s.startDate, s.endDate]);
+    // Find min/max with some padding (always include 'now')
+    const now = new Date();
+    const allDates = [...parsed.flatMap(s => [s.startDate, s.endDate]), now];
     const minDate = new Date(Math.min(...allDates));
     const maxDate = new Date(Math.max(...allDates));
 
@@ -486,7 +758,6 @@ export async function renderDashboard(forceRefresh = false) {
     const toPercent = (date) => ((date.getTime() - scaleStart.getTime()) / scaleMs) * 100;
 
     // Today indicator
-    const now = new Date();
     const todayPct = toPercent(now);
     const showToday = todayPct >= 0 && todayPct <= 100;
 
@@ -515,34 +786,32 @@ export async function renderDashboard(forceRefresh = false) {
     };
 
     chartEl.innerHTML = `
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Projects</span>
-        <div class="h-px flex-grow bg-white/5"></div>
-        <span class="text-[9px] font-black text-dim opacity-30">${parsed.length}</span>
+      <div class="flex items-center gap-3 mb-3 px-1">
+          <div class="w-[6px] h-[6px] rounded-full shadow-[0_0_8px_rgba(51,138,129,0.2)]" style="background-color: #338a81;"></div>
+          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-primary">PROJECTS TIMELINE</span>
+          <div class="flex-grow h-px bg-white/[0.04] ml-2"></div>
       </div>
-      <div class="bg-card rounded-xl border border-soft shadow-sm p-4 pb-3 overflow-hidden">
+      <div class="bg-card/30 rounded-2xl border border-white/[0.04] p-6 overflow-hidden relative">
         <div class="relative" style="height: ${chartHeight}px;">
           <!-- Month tick labels -->
           ${ticks.map(t => `
-            <div class="absolute top-0 text-[9px] font-black text-dim/25 uppercase tracking-wider" style="left: ${t.pct}%; transform: translateX(-50%);">
+            <div class="absolute top-0 text-[10px] font-black text-dim/20 uppercase tracking-widest" style="left: ${t.pct}%; transform: translateX(-50%);">
               ${t.label}
             </div>
           `).join('')}
 
           <!-- Tick grid lines -->
           ${ticks.map(t => `
-            <div class="absolute bg-white/4" style="left: ${t.pct}%; top: ${chartPadTop}px; bottom: 0; width: 1px;"></div>
+            <div class="absolute bg-white/5" style="left: ${t.pct}%; top: ${chartPadTop}px; bottom: 0; width: 1px;"></div>
           `).join('')}
 
           <!-- Today indicator -->
           ${showToday ? `
             <div class="absolute z-20" style="left: ${todayPct}%; top: 0; bottom: 0;">
-              <div class="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-red-500/90 text-[7px] font-black text-white uppercase tracking-wider whitespace-nowrap shadow-lg shadow-red-500/30">
+              <div class="absolute -top-0.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-red-600 text-[8px] font-black text-white uppercase tracking-wider whitespace-nowrap shadow-lg shadow-red-500/30">
                 Today
               </div>
-              <div class="absolute top-4 bottom-0 w-px bg-red-500/50 left-1/2 -translate-x-1/2">
-                <div class="absolute inset-0 bg-red-500/30 animate-pulse"></div>
-              </div>
+              <div class="absolute top-4 bottom-0 w-px border-l-2 border-dashed border-red-500/50 left-1/2 -translate-x-1/2"></div>
             </div>
           ` : ''}
 
@@ -560,16 +829,16 @@ export async function renderDashboard(forceRefresh = false) {
       return `
             <!-- Label row -->
             <div class="absolute flex items-center gap-2 whitespace-nowrap cursor-pointer ${isPast ? 'opacity-40' : ''}" style="left: ${left}%; top: ${top}px; height: 20px;" data-span-project-id="${s.project_id}">
-              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${s.proj.color};"></span>
-              <span class="text-xs font-bold text-main">${s.proj.name}</span>
-              <span class="text-[10px] text-dim/40 font-bold">${formatDate(s.startDate)} – ${formatDate(s.endDate)}</span>
-              <span class="text-xs font-black" style="color: ${s.proj.color};">${prog}%</span>
+              <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${s.proj.color};"></span>
+              <span class="text-xs font-bold text-main/80">${s.proj.name}</span>
+              <span class="text-[10px] text-dim/30 font-bold">${formatDate(s.startDate)} – ${formatDate(s.endDate)}</span>
+              <span class="text-[11px] font-black" style="color: ${s.proj.color};">${prog}%</span>
             </div>
 
             <!-- Bar -->
-            <div class="absolute rounded-lg overflow-hidden cursor-pointer ${isPast ? 'opacity-40' : ''} ${isCurrent ? 'shadow-md' : ''}" style="left: ${left}%; width: ${width}%; top: ${top + 22}px; height: ${barHeight}px; background-color: ${s.proj.color}15; border: 1px solid ${s.proj.color}30;" data-span-project-id="${s.project_id}">
+            <div class="absolute rounded-xl overflow-hidden cursor-pointer ${isPast ? 'opacity-40' : ''} ${isCurrent ? 'shadow-lg shadow-primary/5' : ''}" style="left: ${left}%; width: ${width}%; top: ${top + 22}px; height: ${barHeight}px; background-color: ${s.proj.color}10; border: 1px solid ${s.proj.color}20;" data-span-project-id="${s.project_id}">
               <!-- Progress fill -->
-              <div class="absolute inset-y-0 left-0 rounded-lg pointer-events-none" style="width: ${Math.max(prog, 1)}%; background-color: ${s.proj.color}; opacity: 0.5;"></div>
+              <div class="absolute inset-y-0 left-0 rounded-xl" style="width: ${Math.max(prog, 1)}%; background-color: ${s.proj.color}; opacity: 0.4;"></div>
             </div>
           `;
     }).join('')}
@@ -690,6 +959,8 @@ export async function renderDashboard(forceRefresh = false) {
       // Click task item → open TaskModal for editing
       const taskItem = e.target.closest('.task-item');
       if (taskItem) {
+        if (isSelectionMode) return; // Prevent modal in selection mode
+
         const taskId = taskItem.dataset.taskId;
         const task = (store.get().tasks || []).find(t => String(t.id) === String(taskId));
         if (task) {

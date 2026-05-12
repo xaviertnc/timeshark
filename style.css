@@ -116,6 +116,22 @@ input, select, button.ss-trigger {
     color: var(--text-muted);
 }
 
+.bg-primary {
+    background-color: var(--primary);
+}
+
+.bg-dim {
+    background-color: var(--text-dim);
+}
+
+.bg-red-500 {
+    background-color: #ef4444;
+}
+
+.bg-emerald-500 {
+    background-color: #10b981;
+}
+
 /* Animations */
 @keyframes slideUp {
     from {

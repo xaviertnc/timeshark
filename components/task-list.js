@@ -82,11 +82,30 @@ export const TaskList = {
         listDiv.className = mode === 'full' ? 'space-y-6 px-1' : 'space-y-4';
 
         // Render Groups
-        Object.entries(groups).forEach(([key, group]) => {
-            if (group.tasks.length === 0 && (key !== 'completed' || !showDone)) return;
-            if (key === 'completed' && !showDone) return;
+        const activeFilters = options.activeFilters || null;
 
+        Object.entries(groups).forEach(([key, group]) => {
+            const isActive = activeFilters ? !!activeFilters[key] : true;
+            
+            // Overdue logic: if Today is active, we often show overdue tasks there too, 
+            // but here we follow the filters. If no filters provided, show if has tasks.
+            if (!activeFilters && group.tasks.length === 0) return;
+            if (activeFilters && !isActive) return;
+
+            // Apply Global Search from Options (if any)
             let groupTasks = group.tasks;
+            if (options.searchTerm) {
+                const term = options.searchTerm.toLowerCase();
+                groupTasks = groupTasks.filter(t => 
+                    (t.title || '').toLowerCase().includes(term) || 
+                    (t.notes || '').toLowerCase().includes(term)
+                );
+            }
+            // Apply Project Filter from Options (if any)
+            if (options.projectFilter && options.projectFilter !== 'all') {
+                groupTasks = groupTasks.filter(t => String(t.project_id) === String(options.projectFilter));
+            }
+
             let showMoreBtn = '';
             let emptyLabel = '';
             let headerAnchor = '';
@@ -99,7 +118,7 @@ export const TaskList = {
                     headerAnchor = `<div class="completed-controls-anchor ml-auto"></div>`;
                 }
 
-                // Apply Search
+                // Apply Internal Search
                 if (search) {
                     groupTasks = groupTasks.filter(t => t.title.toLowerCase().includes(search.toLowerCase()));
                 }
@@ -115,47 +134,61 @@ export const TaskList = {
                         const taskDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
                         return taskDay === today;
                     });
-
-                    if (groupTasks.length === 0) {
-                        const padding = mode === 'compact' ? 'py-1 px-2' : 'py-2 px-4';
-                        emptyLabel = `<div class="${padding} text-center text-dim/10 text-[9px] font-black italic uppercase tracking-[0.3em] bg-white/[0.01] rounded-lg border border-white/[0.02]">No items for today</div>`;
-                    }
                 } else if (limit !== 'all') {
                     const n = parseInt(limit);
                     groupTasks = groupTasks.slice(0, n);
                 }
-
-                if (groupTasks.length === 0 && !emptyLabel) {
-                    const padding = mode === 'compact' ? 'py-1 px-2' : 'py-2 px-4';
-                    emptyLabel = `<div class="${padding} text-center text-dim/10 text-[9px] font-black italic uppercase tracking-[0.3em] bg-white/[0.01] rounded-lg border border-white/[0.02]">No matching tasks</div>`;
-                }
-            } else {
+            } else if (key !== 'projects') {
                 const PAGE_SIZE = 15;
                 if (!container._pageState[key]) container._pageState[key] = PAGE_SIZE;
                 const visibleCount = container._pageState[key];
-                groupTasks = group.tasks.slice(0, visibleCount);
-                if (group.tasks.length > visibleCount) {
+                const totalInGroup = groupTasks.length;
+                
+                if (totalInGroup > visibleCount) {
                     showMoreBtn = `
                         <button class="show-more-btn w-full mt-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-dim hover:text-primary transition-colors border border-dashed border-white/5 rounded-lg" data-group="${key}">
-                            Show More (+${Math.min(PAGE_SIZE, group.tasks.length - visibleCount)})
+                            Show More (+${Math.min(PAGE_SIZE, totalInGroup - visibleCount)})
                         </button>
                     `;
+                    groupTasks = groupTasks.slice(0, visibleCount);
                 }
             }
 
+            if (groupTasks.length === 0) {
+                const padding = mode === 'compact' ? 'py-0.5 px-2' : 'py-1 px-3';
+                emptyLabel = `
+                    <div class="${padding} flex flex-col items-center justify-center bg-highlight/[0.01] rounded-lg border border-dashed border-white/[0.03]">
+                        <div class="text-[8px] font-black italic uppercase tracking-[0.6em] text-dim/[0.1] leading-none">No ${key} tasks</div>
+                    </div>
+                `;
+            }
+
             const groupEl = document.createElement('div');
-            groupEl.className = 'task-group mb-6';
+            groupEl.className = 'task-group mb-4 last:mb-0';
+
+            const dotColors = {
+                overdue: '#ef4444',
+                today: '#338a81',
+                completed: '#338a81',
+                planned: '#338a81',
+                projects: '#338a81',
+                backlog: '#338a81'
+            };
+            const dotColor = dotColors[key] || '#64748b';
 
             groupEl.innerHTML = `
-                <div class="flex items-center gap-2 mb-2 px-2">
-                    <span class="text-[10px] font-black uppercase tracking-[0.2em] ${group.color}">${group.label}</span>
-                    <span class="text-[9px] font-bold text-dim/30 mr-2">(${groupUsage(groupTasks, key, container)})</span>
-                    <div class="flex-grow h-px bg-white/5"></div>
+                <div class="flex items-center gap-3 mb-3 px-1">
+                    <div class="w-[6px] h-[6px] rounded-full shadow-[0_0_8px_rgba(51,138,129,0.2)]" style="background-color: ${dotColor};"></div>
+                    <span class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: ${key === 'overdue' ? '#ef4444' : 'var(--primary)'}">${group.label}</span>
+                    <div class="px-2 py-0.5 rounded-full bg-highlight text-[9px] font-black text-dim/40 tabular-nums border border-white/5">
+                        ${groupTasks.length}${groupTasks.length < group.tasks.length ? `<span class="opacity-30 mx-1">/</span>${group.tasks.length}` : ''}
+                    </div>
+                    <div class="flex-grow h-px bg-white/[0.04] ml-2"></div>
                     ${headerAnchor}
                 </div>
                 ${emptyLabel ? emptyLabel : `
-                    <div class="${mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-0'}">
-                        ${groupTasks.map(t => TaskItem.render(t, projects, { mode })).join('')}
+                    <div class="${mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-0.5'}">
+                        ${groupTasks.map(t => TaskItem.render(t, projects, { mode, selectionMode: options.selectionMode })).join('')}
                     </div>
                 `}
                 ${showMoreBtn}
@@ -234,12 +267,11 @@ export const TaskList = {
     getGroupedTasks(tasks) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const groups = {
-            overdue: { label: 'Overdue', tasks: [], color: 'text-red-500/70' },
             today: { label: 'Today', tasks: [], color: 'text-primary' },
-            completed: { label: 'Completed', tasks: [], color: 'text-emerald-500/60' },
-            planned: { label: 'Planned', tasks: [], color: 'text-dim' },
-            projects: { label: 'Projects', tasks: [], color: 'text-primary' },
-            backlog: { label: 'Backlog', tasks: [], color: 'text-dim/60' }
+            overdue: { label: 'Overdue', tasks: [], color: 'text-red-500' },
+            planned: { label: 'Planned', tasks: [], color: 'text-primary' },
+            backlog: { label: 'Backlog', tasks: [], color: 'text-primary' },
+            completed: { label: 'Completed', tasks: [], color: 'text-primary' }
         };
 
         const sorted = [...tasks].sort((a, b) => {
@@ -257,10 +289,7 @@ export const TaskList = {
                 groups.backlog.tasks.push(t);
                 return;
             }
-            if (t.task_type === 'project_span') {
-                groups.projects.tasks.push(t);
-                return;
-            }
+            if (t.task_type === 'project_span') return;
             if (!t.start_date) {
                 groups.backlog.tasks.push(t);
                 return;

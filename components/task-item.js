@@ -32,14 +32,20 @@ export const TaskItem = {
         const timeStr = this.formatTime(task);
 
         if (mode === 'compact') {
-            return this.renderCompact(task, proj, isDone, isSpan, progress, prio, timeStr);
+            return this.renderCompact(task, proj, isDone, isSpan, progress, prio, timeStr, options);
         }
-        return this.renderFull(task, proj, isDone, isSpan, progress, prio, timeStr);
+        return this.renderFull(task, proj, isDone, isSpan, progress, prio, timeStr, options);
     },
 
-    renderFull(t, proj, isDone, isSpan, progress, prio, timeStr) {
+    renderFull(t, proj, isDone, isSpan, progress, prio, timeStr, options = {}) {
+        const isSelectionMode = !!options.selectionMode;
         return `
-            <div class="task-item group/task relative flex items-center gap-3 p-4 rounded-xl bg-card border border-soft shadow-sm hover:border-primary/20 transition-all cursor-pointer" data-task-id="${t.id}">
+            <div class="task-item group/task relative flex items-center gap-3 p-4 rounded-xl bg-card border border-white/5 shadow-sm hover:border-primary/20 transition-all cursor-pointer" data-task-id="${t.id}">
+                <!-- Bulk Selection Checkbox -->
+                <div class="task-selector-container shrink-0 items-center justify-center w-5 h-5 ${isSelectionMode ? 'flex' : 'hidden'}">
+                    <input type="checkbox" class="task-bulk-checkbox w-4 h-4 rounded border-white/10 text-primary focus:ring-primary/20 cursor-pointer accent-primary" data-task-id="${t.id}" onclick="event.stopPropagation()">
+                </div>
+
                 ${isSpan
                 ? `<div class="shrink-0 w-5 h-5 rounded-sm bg-primary flex items-center justify-center">
                         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -61,6 +67,7 @@ export const TaskItem = {
                             <span class="text-xs font-bold tracking-tight">${timeStr}</span>
                         </div>` : ''}
                         ${t.priority && t.priority !== 'low' ? `<span class="${prio.bg} ${prio.color} text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none shrink-0">${prio.label}</span>` : ''}
+                        ${t.status ? `<span class="bg-white/5 text-dim text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none shrink-0 border border-white/5 uppercase">${t.status}</span>` : ''}
                     </div>
                 </div>
 
@@ -78,7 +85,8 @@ export const TaskItem = {
         `;
     },
 
-    renderCompact(t, proj, isDone, isSpan, progress, prio, timeStr) {
+    renderCompact(t, proj, isDone, isSpan, progress, prio, timeStr, options = {}) {
+        const isSelectionMode = !!options.selectionMode;
         // High-density grid layout (the "perfect" original compact view)
         let startStr = '';
         let endStr = '';
@@ -96,7 +104,12 @@ export const TaskItem = {
         }
 
         return `
-            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[20px_1fr_180px_60px_min-content] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
+            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[${isSelectionMode ? '24px_' : ''}20px_1fr_180px_60px_min-content] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
+                <!-- Bulk Selection Checkbox -->
+                <div class="task-selector-container shrink-0 items-center justify-center w-4 h-4 ${isSelectionMode ? 'flex' : 'hidden'}">
+                    <input type="checkbox" class="task-bulk-checkbox w-3.5 h-3.5 rounded border-white/10 text-primary focus:ring-primary/20 cursor-pointer accent-primary" data-task-id="${t.id}" onclick="event.stopPropagation()">
+                </div>
+
                 ${isSpan
                 ? `<div class="shrink-0 w-4 h-4 rounded-sm bg-primary flex items-center justify-center">
                             <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>

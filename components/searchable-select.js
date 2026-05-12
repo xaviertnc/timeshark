@@ -28,14 +28,16 @@ export const SearchableSelect = {
         const initialLabel = selectedItem ? getName(selectedItem) : placeholder;
 
         const isMinimal = variant === 'minimal';
+        const heightClass = options.size === 'small' ? 'h-9 rounded-lg' : 'zen-input';
+        
         const triggerClasses = isMinimal
-            ? "ss-trigger zen-input w-full flex items-center justify-between gap-2 text-main/60 hover:text-main outline-none transition-all uppercase tracking-widest bg-highlight border border-subtle hover:border-soft"
-            : "ss-trigger zen-input w-full flex items-center justify-between gap-2 bg-highlight border border-subtle text-main outline-none hover:border-soft transition-all focus:ring-1 focus:ring-primary/20 uppercase tracking-widest";
+            ? `ss-trigger ${heightClass} w-full flex items-center justify-between gap-2 text-main/60 hover:text-main outline-none transition-all tracking-widest bg-transparent border-none`
+            : `ss-trigger ${heightClass} w-full flex items-center justify-between gap-2 bg-highlight border border-soft text-main outline-none hover:border-primary/30 transition-all focus:ring-1 focus:ring-primary/20 tracking-widest`;
 
         container.innerHTML = `
             <!-- Trigger Button -->
             <button type="button" class="${triggerClasses}">
-                <span class="ss-label truncate text-left flex-grow">${escapeHTML(initialLabel)}</span>
+                <span class="ss-label truncate text-left flex-grow text-[11px] font-bold tracking-widest leading-none">${escapeHTML(initialLabel)}</span>
                 <svg class="ss-caret w-3.5 h-3.5 text-dim opacity-30 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
             </button>
         `;
