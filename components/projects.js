@@ -38,7 +38,7 @@ const applyAlpha = (color, alpha) => {
 // Persistent UI State
 let searchTerm = '';
 let statusFilter = 'active'; // 'active' or 'archived'
-let sortConfig = { key: 'sort_order', direction: 'asc' };
+let sortConfig = { key: 'list_order', direction: 'asc' };
 let groupByOrg = false;
 
 export async function renderProjects() {
@@ -60,21 +60,17 @@ export async function renderProjects() {
 
   // Filter Logic
   let filtered = projects.filter(p => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const matchesTag = p.tags && p.tags.some(t => t.toLowerCase().includes(searchTermLower));
     const searchMatch = !searchTerm ||
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (customers.find(c => c.id == p.customer_id)?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      p.name.toLowerCase().includes(searchTermLower) ||
+      (customers.find(c => c.id == p.customer_id)?.name || '').toLowerCase().includes(searchTermLower) ||
+      matchesTag;
     return searchMatch;
   });
 
-  // Calculate Progress for all
-  const calculateProgress = (p) => {
-    if (p.progress !== undefined) return p.progress;
-    if (!p.todos || p.todos.length === 0) return 0;
-    const completed = p.todos.filter(t => t.completed).length;
-    return Math.round((completed / p.todos.length) * 100);
-  };
-
-  filtered = filtered.map(p => ({ ...p, _progress: calculateProgress(p) }));
+  // Set explicit Progress for all
+  filtered = filtered.map(p => ({ ...p, _progress: p.progress || 0 }));
 
   // Sorting Logic (Apply before grouping)
   if (sortConfig.key) {
@@ -98,9 +94,9 @@ export async function renderProjects() {
           valA = a._progress;
           valB = b._progress;
           break;
-        case 'sort_order':
-          valA = a.sort_order ?? 0;
-          valB = b.sort_order ?? 0;
+        case 'list_order':
+          valA = a.list_order ?? 0;
+          valB = b.list_order ?? 0;
           break;
         default:
           valA = a[sortConfig.key];
@@ -171,13 +167,13 @@ export async function renderProjects() {
                 <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="name">
                     <div class="flex items-center gap-2">Project ${renderSortIcon('name')}</div>
                 </th>
-                <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="status">
+                <th class="hidden sm:table-cell p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="status">
                     <div class="flex items-center gap-2">Status ${renderSortIcon('status')}</div>
                 </th>
-                <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="customer">
+                <th class="hidden md:table-cell p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="customer">
                     <div class="flex items-center gap-2">Organization ${renderSortIcon('customer')}</div>
                 </th>
-                <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-40" data-sort="progress">
+                <th class="hidden lg:table-cell p-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-40" data-sort="progress">
                     <div class="flex items-center gap-2">Progress ${renderSortIcon('progress')}</div>
                 </th>
                 <th class="p-4 text-[9px] font-black text-dim uppercase tracking-widest w-24 text-right">Actions</th>
@@ -199,7 +195,31 @@ export async function renderProjects() {
     }
 
     if (!groupByOrg) {
-      return items.map(p => renderProjectRow(p, customers)).join('');
+      // Group by Epic hierarchically
+      const epics = items.filter(p => p.type === 'epic');
+      const standalone = items.filter(p => p.type !== 'epic' && !p.parent_id);
+      
+      let rowsHtml = '';
+      
+      epics.forEach(epic => {
+          rowsHtml += renderProjectRow(epic, customers, false);
+          const children = items.filter(p => p.parent_id == epic.id);
+          children.forEach(child => {
+              rowsHtml += renderProjectRow(child, customers, true);
+          });
+      });
+      
+      standalone.forEach(p => {
+          rowsHtml += renderProjectRow(p, customers, false);
+      });
+      
+      // Orphaned children (parent filtered out or missing)
+      const orphaned = items.filter(p => p.type !== 'epic' && p.parent_id && !epics.find(e => e.id == p.parent_id));
+      orphaned.forEach(p => {
+          rowsHtml += renderProjectRow(p, customers, false);
+      });
+
+      return rowsHtml;
     }
 
     const groups = items.reduce((acc, p) => {
@@ -217,31 +237,46 @@ export async function renderProjects() {
                 <span class="text-dim/40 ml-2 font-black tabular-nums">[${projects.length}]</span>
             </td>
         </tr>
-        ${projects.map(p => renderProjectRow(p, customers)).join('')}
+        ${projects.map(p => renderProjectRow(p, customers, false)).join('')}
     `).join('');
   }
 
-  function renderProjectRow(p, customers) {
+  function renderProjectRow(p, customers, isChild = false) {
     const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
     const progress = p._progress;
     const pColor = p.color || '#338a81';
+    
+    // Tag rendering
+    const tagsHtml = p.tags && p.tags.length > 0 
+        ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`
+        : '';
+        
+    // Epic formatting
+    const epicBadge = p.type === 'epic' 
+        ? '<span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>' 
+        : '';
 
     return `
-    <tr class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer" data-id="${p.id}">
+    <tr class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
         <td class="px-4 py-3 text-center">
              <div class="w-2 h-2 rounded-full mx-auto shadow-sm" style="background-color: ${pColor}"></div>
         </td>
-        <td class="px-4 py-3">
-            <span class="font-bold text-main text-sm tracking-tight group-hover/row:text-primary transition-colors truncate block">${p.name}</span>
+        <td class="px-4 py-3 ${isChild ? 'pl-8' : ''}">
+            <div class="flex items-center gap-2">
+                ${isChild ? '<svg class="w-3 h-3 text-dim/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>' : ''}
+                ${epicBadge}
+                <span class="font-bold text-main text-sm tracking-tight group-hover/row:text-primary transition-colors truncate block">${p.name}</span>
+            </div>
+            ${tagsHtml}
         </td>
-        <td class="px-4 py-3">
+        <td class="hidden sm:table-cell px-4 py-3">
             <span class="text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border" 
                   style="background-color: ${applyAlpha(pColor, 0.08)}; border-color: ${applyAlpha(pColor, 0.15)}; color: ${pColor}">${p.status || 'Active'}</span>
         </td>
-        <td class="px-4 py-3">
+        <td class="hidden md:table-cell px-4 py-3">
             <span class="text-[10px] font-bold text-dim/60 group-hover/row:text-main transition-colors uppercase tracking-widest truncate block">${org ? org.name : 'Individual'}</span>
         </td>
-        <td class="px-4 py-3">
+        <td class="hidden lg:table-cell px-4 py-3">
             <div class="flex items-center gap-4">
                 <div class="flex-1 bg-app rounded-full h-1.5 overflow-hidden border border-white/5 shadow-inner">
                     <div class="h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]" style="width: ${progress}%; background-color: ${pColor}"></div>

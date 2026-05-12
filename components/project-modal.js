@@ -118,19 +118,38 @@ export class ProjectModal {
                                 </div>
                             </div>
 
-                            <!-- Row 5: Lane Order + Continuous -->
-                            <div class="grid grid-cols-2 gap-6">
+                            <!-- Row 5: Project Type & Parent Epic -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Timeline Lane Order</label>
-                                    <input type="number" name="lane_order" min="1" max="99" value="${project && project.lane_order ? project.lane_order : ''}" placeholder="Auto" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold text-sm outline-none">
+                                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Type</label>
+                                    <div class="relative group">
+                                        <select name="type" id="modal-type-select" class="w-full bg-app border-none rounded-xl py-3 px-5 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest outline-none">
+                                            <option value="project" ${project && project.type !== 'epic' ? 'selected' : ''}>Project</option>
+                                            <option value="epic" ${project && project.type === 'epic' ? 'selected' : ''}>Epic</option>
+                                        </select>
+                                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Tracking</label>
-                                    <label class="flex items-center gap-3 w-full py-3 px-5 bg-app rounded-xl cursor-pointer hover:bg-white/5 transition-all">
-                                        <input type="checkbox" name="continuous" id="project-continuous" class="accent-primary w-4 h-4" ${project && project.continuous ? 'checked' : ''}>
-                                        <span class="text-[11px] font-black text-main uppercase tracking-widest">∞ Continuous</span>
-                                    </label>
+                                <div class="space-y-2" id="parent-epic-container">
+                                    <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Parent Epic</label>
+                                    <div class="relative group">
+                                        <select name="parent_id" id="modal-parent-select" class="w-full bg-app border-none rounded-xl py-3 px-5 appearance-none cursor-pointer text-main font-bold focus:ring-4 focus:ring-primary/10 transition-all uppercase text-[11px] tracking-widest outline-none">
+                                            <option value="">None (Standalone)</option>
+                                            ${(state.projects || []).filter(p => p.type === 'epic' && (!project || p.id !== project.id)).map(p => `<option value="${p.id}" ${project && project.parent_id == p.id ? 'selected' : ''}>[EPIC] ${p.name}</option>`).join('')}
+                                        </select>
+                                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                            
+                            <!-- Row 6: Tags -->
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-dim uppercase tracking-[0.2em] block ml-2">Tags (Comma Separated)</label>
+                                <input type="text" name="tags" value="${project && project.tags ? project.tags.join(', ') : ''}" placeholder="e.g. mobile, frontend, urgent" class="w-full py-3 px-5 bg-app border-none rounded-xl focus:ring-4 focus:ring-primary/10 text-main font-bold text-sm outline-none">
                             </div>
 
                             <div class="space-y-6 pt-10 border-t-2 border-soft border-dashed">
@@ -231,11 +250,22 @@ export class ProjectModal {
 
         progressSlider.oninput = () => { progressLabel.textContent = `${progressSlider.value}%`; };
 
+        const typeSelect = projectForm.querySelector('#modal-type-select');
+        const parentContainer = projectForm.querySelector('#parent-epic-container');
+        if (typeSelect && parentContainer) {
+            typeSelect.onchange = (e) => {
+                parentContainer.style.display = e.target.value === 'epic' ? 'none' : 'block';
+            };
+            typeSelect.dispatchEvent(new Event('change'));
+        }
+
         projectForm.onsubmit = async (e) => {
             e.preventDefault();
             const data = Object.fromEntries(new FormData(projectForm).entries());
-            data.continuous = projectForm.querySelector('#project-continuous').checked;
-            data.lane_order = data.lane_order ? parseInt(data.lane_order) : null;
+            
+            data.tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+            if (data.type === 'epic') data.parent_id = null;
+            if (!data.parent_id) data.parent_id = null;
 
             try {
                 await api.post('projects.php', data);

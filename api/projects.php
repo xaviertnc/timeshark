@@ -129,77 +129,18 @@ try {
             }
 
             if (!empty($data['reorder']) && is_array($data['reorder'])) {
-                // Batch Reorder (sort_order)
-                debug_log('projects', 'Batch sort_order reorder', ['count' => count($data['reorder'])]);
+                // Batch Reorder (list_order)
+                debug_log('projects', 'Batch list_order reorder', ['count' => count($data['reorder'])]);
                 $projects = $store->get($file);
                 foreach ($data['reorder'] as $item) {
                     foreach ($projects as &$p) {
                         if ($p['id'] == $item['id']) {
-                            $p['sort_order'] = $item['sort_order'];
+                            $p['list_order'] = $item['list_order'] ?? ($item['sort_order'] ?? 0);
                             break;
                         }
                     }
                 }
                 $store->save($file, $projects);
-                $result = ['success' => true];
-            } elseif (!empty($data['lane_reorder']) && is_array($data['lane_reorder'])) {
-                // Single lane move: { id, lane_order } — backend shifts the rest
-                $moveId = $data['lane_reorder']['id'] ?? null;
-                $newPos = (int)($data['lane_reorder']['lane_order'] ?? 0);
-                debug_log('projects', 'Lane move', ['id' => $moveId, 'to' => $newPos]);
-
-                if (!$moveId || $newPos < 1) {
-                    http_response_code(400);
-                    echo json_encode(['error' => 'lane_reorder requires id and lane_order']);
-                    exit;
-                }
-
-                $projects = $store->get($file);
-
-                // 1. Collect indices of projects with lane_order, sorted by current lane_order
-                $laneIndices = [];
-                $moveIdx = null;
-                foreach ($projects as $i => $p) {
-                    if (isset($p['lane_order']) && $p['lane_order'] !== null) {
-                        $laneIndices[] = $i;
-                    }
-                    if ($p['id'] == $moveId) {
-                        $moveIdx = $i;
-                    }
-                }
-
-                if ($moveIdx === null) {
-                    debug_log('projects', 'Lane move: project not found', $moveId);
-                    http_response_code(404);
-                    echo json_encode(['error' => 'Project not found: ' . $moveId]);
-                    exit;
-                }
-
-                // Sort indices by current lane_order
-                usort($laneIndices, function($a, $b) use ($projects) {
-                    return ($projects[$a]['lane_order'] ?? 0) - ($projects[$b]['lane_order'] ?? 0);
-                });
-
-                // 2. Remove the moved project from the sorted list (if it's in it)
-                $laneIndices = array_values(array_filter($laneIndices, function($i) use ($moveIdx) {
-                    return $i !== $moveIdx;
-                }));
-
-                // 3. Insert it at the new position (1-based → 0-based)
-                $insertAt = min($newPos - 1, count($laneIndices));
-                array_splice($laneIndices, $insertAt, 0, [$moveIdx]);
-
-                // 4. Re-assign sequential lane_order 1, 2, 3, ...
-                foreach ($laneIndices as $pos => $idx) {
-                    $projects[$idx]['lane_order'] = $pos + 1;
-                }
-
-                $store->save($file, $projects);
-                debug_log('projects', 'Lane move complete', [
-                    'id' => $moveId,
-                    'finalPos' => $projects[$moveIdx]['lane_order'],
-                    'totalLanes' => count($laneIndices)
-                ]);
                 $result = ['success' => true];
             } elseif (!empty($data['id'])) {
                 // Update — id provided, must find existing record
@@ -213,59 +154,35 @@ try {
                 debug_log('projects', 'Updating', ['id' => $data['id'], 'fields' => array_keys($data)]);
                 $result = $store->update($file, $data['id'], $data);
                 
-                // If name changed, sync with other stores
-                if (isset($data['name']) && $data['name'] !== $original['name']) {
-                    $pid = $data['id'];
-                    $newName = $data['name'];
-                    debug_log('projects', 'Name changed, syncing stores', ['id' => $pid, 'old' => $original['name'], 'new' => $newName]);
 
-                    // Update time entries
-                    $timeEntries = $store->get('time-entries');
-                    $updatedEntries = false;
-                    foreach ($timeEntries as &$entry) {
-                        if (($entry['project_id'] ?? '') == $pid) {
-                            $entry['project_name'] = $newName;
-                            $updatedEntries = true;
-                        }
-                    }
-                    if ($updatedEntries) {
-                        $store->save('time-entries', $timeEntries);
-                    }
-
-                    // Update tasks (planner)
-                    $tasks = $store->get('tasks');
-                    $updatedTasks = false;
-                    foreach ($tasks as &$task) {
-                        if (($task['project_id'] ?? '') == $pid) {
-                            $task['project_name'] = $newName;
-                            $updatedTasks = true;
-                        }
-                    }
-                    if ($updatedTasks) {
-                        $store->save('tasks', $tasks);
-                    }
-                }
             } else {
                 // Create — no id provided
                 if (!isset($data['status'])) {
                     $data['status'] = 'Active';
                 }
-                if (!isset($data['todos'])) {
-                    $data['todos'] = [];
+                if (!isset($data['type'])) {
+                    $data['type'] = 'project';
+                }
+                if (!isset($data['tags']) || !is_array($data['tags'])) {
+                    $data['tags'] = [];
+                }
+                if (!isset($data['parent_id'])) {
+                    $data['parent_id'] = null;
                 }
                 if (!isset($data['created_at'])) {
                     $data['created_at'] = date('c');
                 }
-                // Set default sort order to end of list
-                if (!isset($data['sort_order'])) {
+                // Set default list order to end of list
+                if (!isset($data['list_order'])) {
                     $projects = $store->get($file);
                     $maxOrder = 0;
                     foreach ($projects as $p) {
-                        if (isset($p['sort_order']) && $p['sort_order'] > $maxOrder) {
-                            $maxOrder = $p['sort_order'];
+                        $ord = $p['list_order'] ?? ($p['sort_order'] ?? 0);
+                        if ($ord > $maxOrder) {
+                            $maxOrder = $ord;
                         }
                     }
-                    $data['sort_order'] = $maxOrder + 1;
+                    $data['list_order'] = $maxOrder + 1;
                 }
                 $result = $store->insert($file, $data);
                 debug_log('projects', 'Created', ['id' => $result['id'], 'name' => $result['name']]);
@@ -286,7 +203,7 @@ try {
             foreach ($timeEntries as &$entry) {
                 if (($entry['project_id'] ?? '') == $id) {
                     $entry['project_id'] = '';
-                    $entry['project_name'] = '[Deleted Project]';
+                    unset($entry['project_name']);
                     $updatedEntries = true;
                 }
             }
