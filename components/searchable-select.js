@@ -29,8 +29,8 @@ export const SearchableSelect = {
 
         const isMinimal = variant === 'minimal';
         const triggerClasses = isMinimal
-            ? "ss-trigger w-full flex items-center justify-between gap-2 text-[11px] font-bold text-main/60 hover:text-main outline-none transition-all uppercase tracking-widest h-[42px] px-3 bg-highlight border border-subtle rounded-md hover:border-soft"
-            : "ss-trigger w-full flex items-center justify-between gap-2 bg-highlight border border-subtle rounded-lg px-4 py-2 sm:py-2 text-[11px] font-bold text-main outline-none hover:border-soft transition-all focus:ring-1 focus:ring-primary/20 uppercase tracking-widest h-[42px]";
+            ? "ss-trigger zen-input w-full flex items-center justify-between gap-2 text-[11px] font-bold text-main/60 hover:text-main outline-none transition-all uppercase tracking-widest px-3 bg-highlight border border-subtle hover:border-soft"
+            : "ss-trigger zen-input w-full flex items-center justify-between gap-2 bg-highlight border border-subtle px-4 text-[11px] font-bold text-main outline-none hover:border-soft transition-all focus:ring-1 focus:ring-primary/20 uppercase tracking-widest";
 
         container.innerHTML = `
             <!-- Trigger Button -->

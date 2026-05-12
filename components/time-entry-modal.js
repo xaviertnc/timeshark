@@ -38,7 +38,7 @@ export class TimeEntryModal {
 
         const modalHtml = `
             <div class="time-entry-modal-overlay fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[100] pointer-events-auto">
-                <div id="modal-content" class="bg-card rounded-2xl shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main">
+                <div id="modal-content" class="bg-card zen-card shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main">
                     <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -52,7 +52,7 @@ export class TimeEntryModal {
                         <!-- Description -->
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Description</label>
-                            <input type="text" name="description" value="${escapeHTML(entry.description || '')}" placeholder="What are you working on?" class="w-full py-3 px-4 bg-app border border-white/5 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all">
+                            <input type="text" name="description" value="${escapeHTML(entry.description || '')}" placeholder="What are you working on?" class="w-full zen-input px-4 bg-highlight border border-subtle focus:ring-2 focus:ring-primary/20 font-bold text-main text-sm outline-none transition-all">
                         </div>
 
                         <!-- Project + Linked Todo -->
@@ -73,17 +73,17 @@ export class TimeEntryModal {
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Started At</label>
-                                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full zen-input bg-highlight border border-subtle px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                             </div>
                             ${!isLive ? `
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Ended At</label>
-                                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full zen-input bg-highlight border border-subtle px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                             </div>
                             ` : `
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                                <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full bg-app border border-white/5 rounded-xl py-2.5 px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full zen-input bg-highlight border border-subtle px-3 font-bold text-main text-[11px] outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                             </div>
                             `}
                         </div>
@@ -96,9 +96,9 @@ export class TimeEntryModal {
                         ` : ''}
 
                         <!-- Actions -->
-                        <div class="flex gap-4 pt-4 border-t border-white/5">
-                            <button type="button" id="cancel-modal" class="flex-1 py-3.5 text-[10px] font-black uppercase text-dim tracking-widest hover:text-main rounded-xl hover:bg-white/5 transition-all">Cancel</button>
-                            <button type="submit" class="flex-[2] py-3.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all">Save Changes</button>
+                        <div class="flex gap-4 pt-4 border-t border-subtle">
+                            <button type="button" id="cancel-modal" class="flex-1 zen-btn text-[10px] font-black uppercase text-dim tracking-widest hover:text-main hover:bg-highlight transition-all">Cancel</button>
+                            <button type="submit" class="flex-[2] zen-btn bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all">Save Changes</button>
                         </div>
                     </form>
                 </div>

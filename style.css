@@ -19,6 +19,12 @@
     --border-subtle: rgba(0, 0, 0, 0.1);
     --highlight-soft: rgba(0, 0, 0, 0.04);
     --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+
+    /* Zen Design Policy */
+    --input-h: 42px;
+    --radius-huge: 16px;
+    --radius-large: 12px;   /* Default for inputs/buttons */
+    --radius-medium: 8px;
 }
 
 .dark {
@@ -45,6 +51,26 @@ body {
     background-color: var(--bg-app);
     color: var(--text-main);
     transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Design Policy Enforcement */
+.zen-input {
+    height: var(--input-h);
+    border-radius: var(--radius-large);
+    transition: all 0.2s ease-in-out;
+}
+
+.zen-card {
+    border-radius: var(--radius-huge);
+}
+
+.zen-btn {
+    height: var(--input-h);
+    border-radius: var(--radius-large);
+}
+
+input, select, button.ss-trigger {
+    box-sizing: border-box;
 }
 
 /* Base Utility Classes */
