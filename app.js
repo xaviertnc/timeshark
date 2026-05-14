@@ -15,6 +15,7 @@ import { store } from './utils/store.js';
  * Last 3 version commits:
  * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
  * @version 1.1 - UPD - 28 Jan 2026 - Rename Customers to Organizations and Clients
+ * @version 2.1 - UPD - 14 May 2026 - Comprehensive upgrade. TAGS Support + TODOs & Projects management
  */
 
 // Components
