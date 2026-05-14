@@ -6,6 +6,7 @@
  */
 
 import { TaskItem } from './task-item.js';
+import { escapeHTML } from '../utils/dom.js';
 
 export const TaskList = {
     /**
@@ -210,10 +211,50 @@ export const TaskList = {
             };
             const dotColor = dotColors[key] || '#64748b';
 
+            let tasksHtml = '';
+            if (groupTasks.length > 0) {
+                if (options.isProjectGrouped) {
+                    const projectBuckets = [];
+                    const pMap = {};
+                    groupTasks.forEach(t => {
+                        const pid = t.project_id || 'unassigned';
+                        if (!pMap[pid]) {
+                            pMap[pid] = [];
+                            projectBuckets.push({ pid, tasks: pMap[pid] });
+                        }
+                        pMap[pid].push(t);
+                    });
+                    
+                    tasksHtml = projectBuckets.map(bucket => {
+                        const proj = projects.find(p => String(p.id) === String(bucket.pid));
+                        const projName = proj ? proj.name : 'Unassigned';
+                        const projColor = proj ? proj.color : '#eceff1';
+                        
+                        const header = `
+                            <div class="flex items-center gap-2 mb-2.5 pointer-events-none select-none pl-6">
+                                <span class="w-[5px] h-[5px] opacity-80 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style="background-color: ${projColor}"></span>
+                                <span class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: ${projColor}">${escapeHTML(projName)}</span>
+                            </div>
+                        `;
+                        const items = bucket.tasks.map(t => TaskItem.render(t, projects, { mode, selectionMode: options.selectionMode, hideProjectName: true })).join('');
+                        return `
+                        <div class="mb-5 last:mb-0 mt-2">
+                            ${header}
+                            <div class="${mode === 'full' ? 'grid grid-cols-1 gap-2' : 'space-y-[3px]'} pl-3 ml-[27px] border-l-[2px] relative" style="border-color: ${projColor}30;">
+                                ${items}
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                } else {
+                    tasksHtml = groupTasks.map(t => TaskItem.render(t, projects, { mode, selectionMode: options.selectionMode })).join('');
+                }
+            }
+
             groupEl.innerHTML = `
-                <div class="flex items-center gap-3 mb-3 px-1">
+                <div class="flex items-center gap-3 mb-4 px-1 mt-5 first:mt-0">
                     <div class="w-[6px] h-[6px] rounded-full shadow-[0_0_8px_rgba(51,138,129,0.2)]" style="background-color: ${dotColor};"></div>
-                    <span class="text-[10px] font-black uppercase tracking-[0.3em]" style="color: ${key === 'overdue' ? '#ef4444' : 'var(--primary)'}">${group.label}</span>
+                    <span class="text-xs font-black uppercase tracking-[0.3em]" style="color: ${key === 'overdue' ? '#ef4444' : 'var(--primary)'}">${group.label}</span>
                     <div class="px-2 py-0.5 rounded-full bg-highlight text-[9px] font-black text-dim/40 tabular-nums border border-white/5">
                         ${groupTasks.length}${groupTasks.length < group.tasks.length ? `<span class="opacity-30 mx-1">/</span>${group.tasks.length}` : ''}
                     </div>
@@ -221,8 +262,8 @@ export const TaskList = {
                     ${headerAnchor}
                 </div>
                 ${emptyLabel ? emptyLabel : `
-                    <div class="${mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-0.5'}">
-                        ${groupTasks.map(t => TaskItem.render(t, projects, { mode, selectionMode: options.selectionMode })).join('')}
+                    <div class="${options.isProjectGrouped ? '' : (mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-0.5')}">
+                        ${tasksHtml}
                     </div>
                 `}
                 ${showMoreBtn}

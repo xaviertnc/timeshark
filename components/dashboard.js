@@ -613,6 +613,7 @@ export async function renderDashboard(forceRefresh = false) {
   const filterDefaults = { today: true, overdue: true, planned: false, projects: false, timeline: true, backlog: false, completed: false };
   Object.keys(filterDefaults).forEach(k => { if (taskFilters[k] === undefined) taskFilters[k] = filterDefaults[k]; });
 
+  let isProjectGrouped = localStorage.getItem('dashboard_project_grouped') === 'true';
   let searchTerm = localStorage.getItem('dashboard_search_term') || '';
   let projectFilter = [];
   try {
@@ -659,6 +660,14 @@ export async function renderDashboard(forceRefresh = false) {
         isCompact = val;
         localStorage.setItem('planner_sidebar_compact', String(val));
         window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact: val } }));
+        renderTaskToggles();
+        renderDashboardTasks();
+      },
+      showProjectGroupToggle: true,
+      isProjectGrouped,
+      onToggleProjectGroup: (val) => {
+        isProjectGrouped = val;
+        localStorage.setItem('dashboard_project_grouped', String(val));
         renderTaskToggles();
         renderDashboardTasks();
       },
@@ -932,6 +941,7 @@ export async function renderDashboard(forceRefresh = false) {
         activeFilters: effectiveFilters,
         searchTerm,
         projectFilter,
+        isProjectGrouped,
         selectionMode: isSelectionMode
       });
 

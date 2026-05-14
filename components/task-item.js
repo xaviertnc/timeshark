@@ -50,7 +50,7 @@ export const TaskItem = {
         }
 
         return `
-            <div class="task-item group/task relative flex items-center gap-3 p-4 rounded-xl bg-card border border-white/5 shadow-sm hover:border-primary/20 transition-all cursor-pointer" data-task-id="${t.id}">
+            <div class="task-item group/task relative flex items-center gap-3 py-3 px-3 rounded-xl bg-card border border-white/5 shadow-sm hover:border-primary/20 transition-all cursor-pointer" data-task-id="${t.id}">
                 <!-- Bulk Selection Checkbox -->
                 <div class="task-selector-container shrink-0 items-center justify-center w-5 h-5 ${isSelectionMode ? 'flex' : 'hidden'}">
                     <input type="checkbox" class="task-bulk-checkbox w-4 h-4 rounded border-white/10 text-primary focus:ring-primary/20 cursor-pointer accent-primary" data-task-id="${t.id}" onclick="event.stopPropagation()">
@@ -68,7 +68,7 @@ export const TaskItem = {
                 <div class="flex-grow min-w-0">
                     <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}" title="${t.title ? t.title.replace(/"/g, '&quot;') : ''}">${t.title}</span>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 opacity-40">
-                        ${proj.name !== 'Unassigned' ? `
+                        ${!options.hideProjectName && proj.name !== 'Unassigned' ? `
                         <div class="flex items-center gap-1 shrink-0 min-w-0 max-w-[200px]">
                             <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${proj.color}"></span>
                             <span class="text-sm font-medium text-muted truncate" title="${proj.name ? proj.name.replace(/"/g, '&quot;') : ''}">${proj.name}</span>
@@ -145,7 +145,7 @@ export const TaskItem = {
             }
                 <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}" title="${t.title ? t.title.replace(/"/g, '&quot;') : ''}">${t.title}</span>
                 <div class="flex flex-col justify-center gap-[3px] min-w-0 overflow-hidden py-0.5">
-                    ${proj.name !== 'Unassigned' ? `<span class="text-xs font-semibold truncate leading-none" style="color: ${proj.color}" title="${proj.name ? proj.name.replace(/"/g, '&quot;') : ''}">${proj.name}</span>` : ''}
+                    ${!options.hideProjectName && proj.name !== 'Unassigned' ? `<span class="text-xs font-semibold truncate leading-none" style="color: ${proj.color}" title="${proj.name ? proj.name.replace(/"/g, '&quot;') : ''}">${proj.name}</span>` : ''}
                     ${displayTags.length > 0 ? `
                         <div class="flex items-center gap-1 overflow-hidden">
                             ${displayTags.map(tag => `<span class="text-[7px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-[1px] rounded-sm leading-none border border-white/5 truncate max-w-[80px]" title="${tag ? tag.replace(/"/g, '&quot;') : ''}">${tag}</span>`).join('')}
