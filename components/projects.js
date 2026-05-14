@@ -330,10 +330,13 @@ export async function renderProjects() {
       ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`
       : '';
 
-    // Epic formatting
-    const epicBadge = p.type === 'epic'
-      ? '<span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>'
-      : '';
+    // Type formatting
+    let typeBadge = '';
+    if (p.type === 'epic') {
+      typeBadge = '<span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>';
+    } else if (p.type === 'full-time') {
+      typeBadge = '<span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[8px] uppercase tracking-widest font-black mr-1 border border-blue-500/20 hover:bg-blue-500/30 transition-colors" title="Full Time">FULL TIME</span>';
+    }
 
     return `
     <tr draggable="true" class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
@@ -346,8 +349,8 @@ export async function renderProjects() {
         <td class="px-4 py-2 ${isChild ? 'pl-8' : ''}">
             <div class="flex items-center gap-2">
                 ${isChild ? '<div class="w-3 h-3 border-l-2 border-b-2 border-dim/40 rounded-bl-sm mb-1 ml-1 shrink-0"></div>' : ''}
-                ${epicBadge}
-                <span class="${isChild ? 'font-semibold text-main/80 text-xs' : 'font-bold text-main text-sm'} tracking-tight group-hover/row:text-primary transition-colors truncate block">${p.name}</span>
+                ${typeBadge}
+                <span class="${isChild ? 'font-semibold text-main/80 text-xs' : 'font-bold text-main text-sm'} tracking-tight group-hover/row:text-primary transition-colors truncate block" title="${p.name}">${p.name}</span>
             </div>
             ${tagsHtml}
         </td>
@@ -356,7 +359,7 @@ export async function renderProjects() {
                   style="background-color: ${applyAlpha(pColor, 0.08)}; border-color: ${applyAlpha(pColor, 0.15)}; color: ${pColor}">${p.status || 'Active'}</span>
         </td>
         <td class="hidden md:table-cell px-4 py-2">
-            <span class="text-[10px] font-bold text-dim/60 group-hover/row:text-main transition-colors uppercase tracking-widest truncate block">${org ? org.name : 'Individual'}</span>
+            <span class="text-[10px] font-bold text-dim/60 group-hover/row:text-main transition-colors uppercase tracking-widest truncate block" title="${org ? org.name : 'Individual'}">${org ? org.name : 'Individual'}</span>
         </td>
         <td class="hidden lg:table-cell px-4 py-2">
             <div class="flex items-center gap-4">
