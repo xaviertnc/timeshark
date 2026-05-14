@@ -49,7 +49,7 @@
 <body class="bg-app text-main font-sans h-screen flex overflow-hidden">
 
     <!-- Sidebar: Ultra Zen -->
-    <aside class="w-20 lg:w-24 bg-sidebar border-r border-soft flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
+    <aside class="w-14 lg:w-20 bg-sidebar border-r border-soft flex flex-col transition-all duration-500 z-30 relative" id="sidebar">
         <div class="h-16 flex items-center justify-center shrink-0">
             <a href="#" class="w-11 h-11 rounded-2xl overflow-hidden border border-soft shadow-sm transition-transform hover:scale-110 duration-500 block">
                  <img src="images/time-shark-logo.jpg" class="w-full h-full object-cover">
@@ -67,7 +67,7 @@
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col h-full relative overflow-hidden">
         <!-- Minimal Header -->
-        <header class="h-20 flex items-center justify-between px-16 z-10 sticky top-0">
+        <header class="h-20 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0">
             <div class="opacity-0 transition-opacity duration-700" id="page-header-container">
                 <h1 class="text-xs font-black text-dim uppercase tracking-[0.5em]" id="page-title">Dashboard</h1>
             </div>
@@ -86,7 +86,7 @@
         </header>
 
         <!-- The Stage -->
-        <div id="app" class="flex-1 overflow-y-auto px-16 pb-16 relative scroll-smooth">
+        <div id="app" class="flex-1 overflow-y-auto px-4 md:px-8 pb-16 relative scroll-smooth">
             <!-- Views Injected Here -->
         </div>
     </main>

@@ -55,7 +55,7 @@ export async function renderDashboard(forceRefresh = false) {
   };
 
   const container = document.createElement('div');
-  container.className = 'max-w-6xl mx-auto pb-10 space-y-14';
+  container.className = 'max-w-6xl mx-auto pb-10 space-y-8';
 
   const shiftColor = (color, percent) => {
     if (!color || typeof color !== 'string' || !color.startsWith('#')) return color;
@@ -95,7 +95,7 @@ export async function renderDashboard(forceRefresh = false) {
                 ${activeProj?.name && activeProj.name !== 'Unassigned' ? escapeHTML(activeProj.name) : (activeTimer.project_name && activeTimer.project_name !== 'Unassigned' ? escapeHTML(activeTimer.project_name) : '')}
                 ${activeDisplayTags.length > 0 ? `
                     <span class="flex items-center gap-1.5 ml-2 overflow-hidden">
-                        ${activeDisplayTags.map(t => `<span class="text-[9px] uppercase tracking-widest bg-white/5 text-dim/80 px-2 py-0.5 rounded-md leading-none border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                        ${activeDisplayTags.map(t => `<span class="text-[9px] uppercase tracking-widest bg-white/5 text-dim/80 px-2 py-0.5 rounded-md leading-none border border-white/5 truncate" title="${escapeHTML(t)}">${escapeHTML(t)}</span>`).join('')}
                     </span>
                 ` : ''}
               </p>
@@ -169,11 +169,11 @@ export async function renderDashboard(forceRefresh = false) {
 
     <!-- Todo Section -->
     <div>
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Todo</h3>
-        <button id="todos-collapse-toggle" class="p-1 rounded-md transition-all ${isTodosCollapsed ? 'bg-primary/20 text-primary' : 'text-dim hover:text-main hover:bg-highlight'}" title="Toggle Todo Section">
+      <div id="todos-collapse-toggle" class="flex items-center gap-2 mb-4 cursor-pointer group w-full" title="Toggle Todo Section">
+        <h3 class="text-xs font-black text-dim group-hover:text-main transition-colors uppercase tracking-[0.4em]">Todo</h3>
+        <div class="p-1 rounded-md transition-all ${isTodosCollapsed ? 'text-primary' : 'text-dim group-hover:text-main'}">
           <svg class="w-3 h-3 transition-transform ${isTodosCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
-        </button>
+        </div>
       </div>
 
       <div id="dashboard-todos-content" class="space-y-4 ${isTodosCollapsed ? 'hidden' : ''}">
@@ -192,7 +192,7 @@ export async function renderDashboard(forceRefresh = false) {
           </div>
           
           <!-- Project Filter -->
-          <div class="flex items-center gap-3 px-3 h-9 bg-highlight border border-white/5 rounded-lg transition-all focus-within:border-primary/20">
+          <div id="project-filter-wrapper" class="flex items-center gap-3 px-3 h-9 bg-highlight border border-white/5 rounded-lg transition-all focus-within:border-primary/20">
               <span class="text-[11px] font-black text-dim/20 uppercase tracking-widest whitespace-nowrap leading-none">Project</span>
               <div id="task-project-filter-container" class="w-40 h-full"></div>
           </div>
@@ -200,7 +200,7 @@ export async function renderDashboard(forceRefresh = false) {
 
       <!-- Row 2: Primary Group Filters -->
       <div class="mb-8">
-          <div id="task-filter-toggles" class="inline-flex items-center gap-1 bg-highlight p-1 rounded-lg border border-white/5">
+          <div id="task-filter-toggles" class="inline-flex flex-wrap items-center gap-1 bg-highlight p-1 rounded-lg border border-white/5">
               <!-- Rendered by TaskFilterBar.render() -->
           </div>
       </div>
@@ -286,15 +286,15 @@ export async function renderDashboard(forceRefresh = false) {
             <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-subtle" data-entry-id="${e.id}">
               <div class="w-1 h-4 rounded-full" style="background-color: ${taskColor}"></div>
               <div class="min-w-0">
-                <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors">${escapeHTML(e.description) || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${escapeHTML(e.notes)}</span>` : ''}</span>
+                <span class="text-sm font-bold truncate text-main block group-hover/row:text-primary transition-colors" title="${escapeHTML(e.description) || 'No description'}">${escapeHTML(e.description) || 'No description'} ${e.notes ? `<span class="text-[10px] text-dim/40 font-normal italic">— ${escapeHTML(e.notes)}</span>` : ''}</span>
               </div>
               <div class="flex items-center gap-1.5 min-w-0">
-                ${proj.name !== 'Unassigned' ? `<span class="text-[11px] font-bold truncate shrink-0 max-w-[120px]" style="color: ${proj.color}">${escapeHTML(proj.name)}</span>` : ''}
+                ${proj.name !== 'Unassigned' ? `<span class="text-[11px] font-bold truncate shrink-0 max-w-[120px]" style="color: ${proj.color}" title="${escapeHTML(proj.name)}">${escapeHTML(proj.name)}</span>` : ''}
                 ${displayTags.length > 0 ? `
                     <div class="flex items-center gap-1 overflow-hidden shrink">
-                        ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                        ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate" title="${escapeHTML(t)}">${escapeHTML(t)}</span>`).join('')}
                     </div>
-                ` : (org ? `<span class="text-[10px] text-dim/30 font-medium truncate shrink"> @ ${escapeHTML(org.name)}</span>` : '')}
+                ` : (org ? `<span class="text-[10px] text-dim/30 font-medium truncate shrink" title="${escapeHTML(org.name)}"> @ ${escapeHTML(org.name)}</span>` : '')}
               </div>
               <div class="text-[10px] font-black text-dim/40 uppercase tracking-widest whitespace-nowrap">
                 ${formatTime(e.start_time)} – ${formatTime(e.end_time)}
@@ -330,11 +330,11 @@ export async function renderDashboard(forceRefresh = false) {
                     <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-app text-dim uppercase tracking-widest">${escapeHTML(e.resource_id) || 'Main'}</span>
                   </div>
                   <div class="flex items-center gap-2 mb-0.5 min-w-0">
-                    ${proj.name !== 'Unassigned' ? `<span class="text-sm font-medium text-muted truncate shrink-0 max-w-[50%]">${escapeHTML(proj.name)}</span>` : ''}
-                    ${org && proj.name !== 'Unassigned' ? `<span class="text-xs text-dim/40 truncate shrink-0">@ ${escapeHTML(org.name)}</span>` : ''}
+                    ${proj.name !== 'Unassigned' ? `<span class="text-sm font-medium text-muted truncate shrink-0 max-w-[50%]" title="${escapeHTML(proj.name)}">${escapeHTML(proj.name)}</span>` : ''}
+                    ${org && proj.name !== 'Unassigned' ? `<span class="text-xs text-dim/40 truncate shrink-0" title="${escapeHTML(org.name)}">@ ${escapeHTML(org.name)}</span>` : ''}
                     ${displayTags.length > 0 ? `
                         <div class="flex items-center gap-1 overflow-hidden shrink ml-1">
-                            ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate">${escapeHTML(t)}</span>`).join('')}
+                            ${displayTags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate" title="${escapeHTML(t)}">${escapeHTML(t)}</span>`).join('')}
                         </div>
                     ` : ''}
                   </div>
@@ -465,18 +465,18 @@ export async function renderDashboard(forceRefresh = false) {
       localStorage.setItem('dashboard_todos_collapsed', String(isTodosCollapsed));
       const divider = container.querySelector('#dashboard-todos-divider');
       const content = container.querySelector('#dashboard-todos-content');
+      const iconContainer = todosCollapseToggle.querySelector('div');
+      const svgIcon = todosCollapseToggle.querySelector('svg');
       if (isTodosCollapsed) {
           divider?.classList.add('hidden');
           content?.classList.add('hidden');
-          todosCollapseToggle.classList.add('bg-primary/20', 'text-primary');
-          todosCollapseToggle.classList.remove('text-dim', 'hover:text-main', 'hover:bg-highlight');
-          todosCollapseToggle.innerHTML = '<svg class="w-3 h-3 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>';
+          iconContainer.className = 'p-1 rounded-md transition-all text-primary';
+          svgIcon.classList.add('rotate-180');
       } else {
           divider?.classList.remove('hidden');
           content?.classList.remove('hidden');
-          todosCollapseToggle.classList.remove('bg-primary/20', 'text-primary');
-          todosCollapseToggle.classList.add('text-dim', 'hover:text-main', 'hover:bg-highlight');
-          todosCollapseToggle.innerHTML = '<svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>';
+          iconContainer.className = 'p-1 rounded-md transition-all text-dim group-hover:text-main';
+          svgIcon.classList.remove('rotate-180');
       }
     };
   }
@@ -502,8 +502,8 @@ export async function renderDashboard(forceRefresh = false) {
   const filterDefaults = { today: true, overdue: true, planned: false, projects: false, timeline: true, backlog: false, completed: false };
   Object.keys(filterDefaults).forEach(k => { if (taskFilters[k] === undefined) taskFilters[k] = filterDefaults[k]; });
 
-  let searchTerm = '';
-  let projectFilter = 'all';
+  let searchTerm = localStorage.getItem('dashboard_search_term') || '';
+  let projectFilter = localStorage.getItem('dashboard_project_filter') || 'all';
   let isSelectionMode = false;
   let lastCheckedTaskId = null;
   let selectedTaskIds = new Set();
@@ -595,12 +595,24 @@ export async function renderDashboard(forceRefresh = false) {
       searchInput.value = searchTerm;
       searchInput.oninput = (e) => {
         searchTerm = e.target.value.toLowerCase().trim();
+        localStorage.setItem('dashboard_search_term', searchTerm);
         renderDashboardTasks();
       };
     }
 
     // Project filter logic
     const projectFilterContainer = container.querySelector('#task-project-filter-container');
+    const projectFilterWrapper = container.querySelector('#project-filter-wrapper');
+    if (projectFilterWrapper) {
+      if (projectFilter !== 'all') {
+        projectFilterWrapper.className = 'flex items-center gap-3 px-3 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-primary/10 border border-primary/30';
+        projectFilterWrapper.querySelector('span').className = 'text-[11px] font-black uppercase tracking-widest whitespace-nowrap leading-none text-primary';
+      } else {
+        projectFilterWrapper.className = 'flex items-center gap-3 px-3 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-highlight border border-white/5';
+        projectFilterWrapper.querySelector('span').className = 'text-[11px] font-black uppercase tracking-widest whitespace-nowrap leading-none text-dim/20';
+      }
+    }
+    
     if (projectFilterContainer) {
       const filterProjects = [{ id: 'all', name: 'All' }, ...projects];
       SearchableSelect.render(projectFilterContainer, filterProjects, {
@@ -609,6 +621,7 @@ export async function renderDashboard(forceRefresh = false) {
         allLabel: 'Filter by Project',
         onChange: (val) => {
           projectFilter = val;
+          localStorage.setItem('dashboard_project_filter', val);
           renderDashboardTasks();
         },
         variant: 'minimal',

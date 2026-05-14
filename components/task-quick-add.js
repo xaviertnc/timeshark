@@ -20,9 +20,9 @@ export const TaskQuickAdd = {
         const placeholder = options.placeholder || 'Add a task...';
 
         container.innerHTML = `
-            <div class="flex items-center gap-2 w-full">
-                <!-- Input Area: Flex-1 forces it to take all remaining space -->
-                <div class="flex-1 min-w-[100px] relative">
+            <div class="flex flex-wrap items-center gap-2 w-full">
+                <!-- Input Area: Flex-auto allows it to grow and take all remaining space -->
+                <div class="flex-auto min-w-[200px] relative">
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none select-none">
                         <span class="text-dim/30 text-base font-black">+</span>
                     </div>
@@ -31,7 +31,7 @@ export const TaskQuickAdd = {
                 </div>
 
                 <!-- Tag Input -->
-                <div class="shrink-0 w-[140px] max-w-[220px]">
+                <div class="flex-1 min-w-[100px] max-w-[160px]">
                     <div class="relative w-full overflow-hidden bg-highlight border border-soft rounded-lg zen-focus-within transition-all flex items-center h-[42px] px-3 shadow-sm">
                         <span class="text-dim/50 font-black text-[10px] uppercase tracking-widest mr-2 select-none shrink-0 opacity-40">#</span>
                         <input type="text" id="quick-add-tags" placeholder="Tags..." autocomplete="off"
@@ -39,8 +39,8 @@ export const TaskQuickAdd = {
                     </div>
                 </div>
 
-                <!-- Project Selector: Fixed max-width, shrinks if needed but preserves min-width -->
-                <div id="quick-add-project-container" class="shrink-0 w-full min-w-[120px] max-w-[240px]"></div>
+                <!-- Project Selector -->
+                <div id="quick-add-project-container" class="flex-1 min-w-[130px] max-w-[240px]"></div>
 
                 <!-- Submit Button -->
                 <button id="quick-add-submit" class="shrink-0 zen-btn px-4 bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/40 text-primary transition-all flex items-center justify-center group focus:ring-2 focus:ring-primary/40 outline-none" title="Add Task">
