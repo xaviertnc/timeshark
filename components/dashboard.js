@@ -192,9 +192,8 @@ export async function renderDashboard(forceRefresh = false) {
           </div>
           
           <!-- Project Filter -->
-          <div id="project-filter-wrapper" class="flex items-center gap-3 px-3 h-9 bg-highlight border border-white/5 rounded-lg transition-all focus-within:border-primary/20">
-              <span class="text-[11px] font-black text-dim/20 uppercase tracking-widest whitespace-nowrap leading-none">Project</span>
-              <div id="task-project-filter-container" class="w-40 h-full"></div>
+          <div id="project-filter-wrapper" class="flex items-center gap-1 pl-1 pr-1 h-9 bg-highlight border border-white/5 rounded-lg transition-all focus-within:border-primary/20">
+              <div id="task-project-filter-container" class="w-48 h-full"></div>
           </div>
       </div>
 
@@ -397,13 +396,36 @@ export async function renderDashboard(forceRefresh = false) {
       .map(e => String(e.project_id))
     )].slice(0, 5);
 
-    const initialProjectId = recentProjectIds[0] || '';
+    let initialProjectId = localStorage.getItem('timer_last_project_id');
+    if (initialProjectId === null) {
+        initialProjectId = recentProjectIds[0] || '';
+    }
     projectInput.value = initialProjectId;
+    
+    let initialTodoId = localStorage.getItem('timer_last_todo_id') || '';
+    todoInput.value = initialTodoId;
 
     const tagsInput = container.querySelector('input[name="tags"]');
     if (tagsInput) {
         tagsInput.addEventListener('input', () => renderTodoSelect(projectInput.value));
     }
+
+    const renderProjectSelect = (pid) => {
+      SearchableSelect.render(projectContainer, projects, {
+        value: pid,
+        placeholder: 'Select Project...',
+        recentIds: recentProjectIds,
+        allLabel: 'All Projects',
+        clearable: true,
+        onChange: (newPid) => {
+          projectInput.value = newPid;
+          todoInput.value = '';
+          localStorage.setItem('timer_last_project_id', newPid || '');
+          localStorage.setItem('timer_last_todo_id', '');
+          renderTodoSelect(newPid);
+        }
+      });
+    };
 
     const renderTodoSelect = (pid) => {
       const activeTags = tagsInput ? tagsInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
@@ -424,28 +446,25 @@ export async function renderDashboard(forceRefresh = false) {
         placeholder: tasks.length > 0 ? 'Link a task...' : 'No active tasks',
         allLabel: 'Available Tasks',
         nameField: 'title',
+        clearable: true,
         onChange: (tid) => {
           todoInput.value = tid;
+          localStorage.setItem('timer_last_todo_id', tid || '');
           const task = tasks.find(t => String(t.id) === String(tid));
           if (task && !descInput.value.trim()) {
             descInput.value = task.title;
+          }
+          
+          if (task && task.project_id && String(task.project_id) !== String(projectInput.value)) {
+              projectInput.value = task.project_id;
+              localStorage.setItem('timer_last_project_id', task.project_id);
+              renderProjectSelect(task.project_id);
           }
         }
       });
     };
 
-    SearchableSelect.render(projectContainer, projects, {
-      value: initialProjectId,
-      placeholder: 'Select Project...',
-      recentIds: recentProjectIds,
-      allLabel: 'All Projects',
-      onChange: (pid) => {
-        projectInput.value = pid;
-        todoInput.value = '';
-        renderTodoSelect(pid);
-      }
-    });
-
+    renderProjectSelect(initialProjectId);
     renderTodoSelect(initialProjectId);
   }
 
@@ -503,7 +522,13 @@ export async function renderDashboard(forceRefresh = false) {
   Object.keys(filterDefaults).forEach(k => { if (taskFilters[k] === undefined) taskFilters[k] = filterDefaults[k]; });
 
   let searchTerm = localStorage.getItem('dashboard_search_term') || '';
-  let projectFilter = localStorage.getItem('dashboard_project_filter') || 'all';
+  let projectFilter = [];
+  try {
+      const stored = localStorage.getItem('dashboard_project_filter');
+      projectFilter = stored ? JSON.parse(stored) : [];
+  } catch(e) {
+      projectFilter = [];
+  }
   let isSelectionMode = false;
   let lastCheckedTaskId = null;
   let selectedTaskIds = new Set();
@@ -602,27 +627,54 @@ export async function renderDashboard(forceRefresh = false) {
 
     // Project filter logic
     const projectFilterContainer = container.querySelector('#task-project-filter-container');
-    const projectFilterWrapper = container.querySelector('#project-filter-wrapper');
-    if (projectFilterWrapper) {
-      if (projectFilter !== 'all') {
-        projectFilterWrapper.className = 'flex items-center gap-3 px-3 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-primary/10 border border-primary/30';
-        projectFilterWrapper.querySelector('span').className = 'text-[11px] font-black uppercase tracking-widest whitespace-nowrap leading-none text-primary';
-      } else {
-        projectFilterWrapper.className = 'flex items-center gap-3 px-3 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-highlight border border-white/5';
-        projectFilterWrapper.querySelector('span').className = 'text-[11px] font-black uppercase tracking-widest whitespace-nowrap leading-none text-dim/20';
-      }
-    }
-    
+      const updateWrapperState = () => {
+        const wrapper = container.querySelector('#project-filter-wrapper');
+        if (!wrapper) return;
+        if (projectFilter && projectFilter.length > 0) {
+            wrapper.className = 'flex items-center pl-1 pr-1 gap-1 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-primary/10 border border-primary/30';
+            let clearBtn = wrapper.querySelector('.project-filter-clear');
+            if (!clearBtn) {
+                clearBtn = document.createElement('button');
+                clearBtn.className = 'project-filter-clear flex items-center justify-center w-6 h-6 rounded hover:bg-primary/20 text-primary transition-all';
+                clearBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                clearBtn.title = 'Clear Filter';
+                clearBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    projectFilter = [];
+                    localStorage.setItem('dashboard_project_filter', JSON.stringify(projectFilter));
+                    renderTaskToggles();
+                    renderDashboardTasks();
+                };
+                wrapper.appendChild(clearBtn);
+            }
+        } else {
+            wrapper.className = 'flex items-center gap-1 pl-1 pr-1 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-highlight border border-white/5';
+            const clearBtn = wrapper.querySelector('.project-filter-clear');
+            if (clearBtn) clearBtn.remove();
+        }
+      };
+      
+      updateWrapperState(); // run once on init
+
     if (projectFilterContainer) {
-      const filterProjects = [{ id: 'all', name: 'All' }, ...projects];
-      SearchableSelect.render(projectFilterContainer, filterProjects, {
+      const recentIds = [...new Set((state.timeEntries || [])
+          .filter(e => e.project_id)
+          .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
+          .map(e => String(e.project_id))
+      )].slice(0, 5);
+
+      SearchableSelect.render(projectFilterContainer, projects, {
         value: projectFilter,
+        multiple: true,
         placeholder: 'All Projects',
         allLabel: 'Filter by Project',
+        alignTarget: '#project-filter-wrapper',
+        recentIds: recentIds,
         onChange: (val) => {
           projectFilter = val;
-          localStorage.setItem('dashboard_project_filter', val);
+          localStorage.setItem('dashboard_project_filter', JSON.stringify(val));
           renderDashboardTasks();
+          updateWrapperState();
         },
         variant: 'minimal',
         size: 'small'
@@ -761,8 +813,8 @@ export async function renderDashboard(forceRefresh = false) {
     if (taskFilters.projects) {
       const spanTasks = allTasks.filter(t => t.task_type === 'project_span');
       // Apply global project filter to the timeline visualization as well
-      const filteredSpans = projectFilter !== 'all' 
-        ? spanTasks.filter(s => String(s.project_id) === String(projectFilter))
+      const filteredSpans = projectFilter.length > 0
+        ? spanTasks.filter(s => projectFilter.includes(String(s.project_id)))
         : spanTasks;
       renderSpansChart(filteredSpans);
     } else {

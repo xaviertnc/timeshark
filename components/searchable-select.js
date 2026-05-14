@@ -16,41 +16,87 @@ export const SearchableSelect = {
             recentIds = [],
             nameField = 'name',
             allLabel = 'All Items',
-            variant = 'full' // 'full' or 'minimal'
+            variant = 'full', // 'full' or 'minimal'
+            multiple = false,
+            alignTarget = null,
+            clearable = false
         } = options;
+
+        let currentValue = multiple ? (Array.isArray(value) ? [...value] : []) : String(value);
 
         const getName = (item) => item[nameField] || item.name || item.title || 'Unnamed';
 
         // Initial setup
         container.classList.add('relative', 'w-full');
 
-        const selectedItem = items.find(i => String(i.id) === String(value));
-        const initialLabel = selectedItem ? getName(selectedItem) : placeholder;
+        const getLabel = (val) => {
+            if (multiple) {
+                if (!val || val.length === 0) return placeholder;
+                if (val.length === 1) {
+                    const it = items.find(i => String(i.id) === String(val[0]));
+                    return it ? getName(it) : '1 Selected';
+                }
+                return `${val.length} Selected`;
+            } else {
+                if (!val) return placeholder;
+                const it = items.find(i => String(i.id) === String(val));
+                return it ? getName(it) : placeholder;
+            }
+        };
+
+        const initialLabel = getLabel(currentValue);
 
         const isMinimal = variant === 'minimal';
         const heightClass = options.size === 'small' ? 'h-9 rounded-lg' : 'zen-input';
         
         const triggerClasses = isMinimal
-            ? `ss-trigger ${heightClass} w-full flex items-center justify-between gap-2 text-main/60 hover:text-main outline-none transition-all tracking-widest bg-transparent border-none`
-            : `ss-trigger ${heightClass} w-full flex items-center justify-between gap-2 bg-highlight border border-soft text-main outline-none hover:border-primary/30 transition-all focus:ring-1 focus:ring-primary/20 tracking-widest`;
+            ? `ss-trigger ${heightClass} w-full flex items-center justify-between gap-2 text-main/60 hover:text-main outline-none transition-all tracking-widest bg-transparent border-none pl-2`
+            : `ss-trigger ${heightClass} w-full flex items-center justify-between gap-2 bg-highlight border border-soft text-main outline-none hover:border-primary/30 transition-all focus:ring-1 focus:ring-primary/20 tracking-widest px-3`;
+
+        const renderTriggerContent = (labelStr, val) => {
+            const hasValue = multiple ? val.length > 0 : !!val;
+            const clearHtml = (clearable && hasValue) ? `
+                <div class="ss-clear shrink-0 text-dim/30 hover:text-red-400 p-0.5 rounded cursor-pointer transition-colors mr-1" title="Clear">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </div>
+            ` : '';
+            return `
+                <span class="ss-label truncate text-left flex-grow text-[11px] font-bold tracking-widest leading-none">${escapeHTML(labelStr)}</span>
+                <div class="flex items-center">
+                    ${clearHtml}
+                    <svg class="ss-caret w-3.5 h-3.5 text-dim opacity-30 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            `;
+        };
 
         container.innerHTML = `
             <!-- Trigger Button -->
             <button type="button" class="${triggerClasses}">
-                <span class="ss-label truncate text-left flex-grow text-[11px] font-bold tracking-widest leading-none">${escapeHTML(initialLabel)}</span>
-                <svg class="ss-caret w-3.5 h-3.5 text-dim opacity-30 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                ${renderTriggerContent(initialLabel, currentValue)}
             </button>
         `;
 
         const trigger = container.querySelector('.ss-trigger');
-        const caret = container.querySelector('.ss-caret');
-        const labelText = container.querySelector('.ss-label');
+        let caret = container.querySelector('.ss-caret');
+        let labelText = container.querySelector('.ss-label');
+
+        const updateTrigger = () => {
+            trigger.innerHTML = renderTriggerContent(getLabel(currentValue), currentValue);
+            caret = container.querySelector('.ss-caret');
+            labelText = container.querySelector('.ss-label');
+            if (isOpen && caret) caret.classList.add('rotate-180');
+        };
 
         // Use central portal for the dropdown to avoid z-index clipping
         const portal = document.getElementById('modal-portal');
         if (!portal) return;
 
+        if (container.__ssDropdown) {
+            container.__ssDropdown.remove();
+        }
+
         const dropdown = document.createElement('div');
+        container.__ssDropdown = dropdown;
         dropdown.className = "ss-dropdown hidden fixed mt-1 bg-card border border-soft rounded-lg shadow-soft z-[1000] overflow-hidden transform origin-top scale-95 opacity-0 transition-all duration-200 min-w-[260px] pointer-events-auto";
         dropdown.innerHTML = `
             <div class="p-2 border-b border-subtle">
@@ -89,11 +135,11 @@ export const SearchableSelect = {
             const renderItem = (item) => {
                 const id = String(item.id);
                 filteredItems.push(item);
-                const isSelected = id === String(value);
+                const isSelected = multiple ? currentValue.includes(id) : id === String(currentValue);
                 return `
                     <div class="ss-item px-4 py-2 rounded-md text-[12px] font-bold text-main/70 hover:bg-highlight hover:text-primary cursor-pointer transition-all flex items-center justify-between group active:scale-[0.98]" data-id="${id}">
                         <span class="truncate pr-2">${escapeHTML(getName(item))}</span>
-                        ${isSelected ? '<svg class="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                        ${isSelected ? '<svg class="w-3.5 h-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
                     </div>
                 `;
             };
@@ -121,9 +167,20 @@ export const SearchableSelect = {
             isOpen = show !== undefined ? show : !isOpen;
             if (isOpen) {
                 // Calculate position relative to viewport
-                const rect = trigger.getBoundingClientRect();
-                dropdown.style.left = `${rect.left}px`;
-                dropdown.style.width = `${rect.width}px`;
+                const targetEl = (alignTarget ? document.querySelector(alignTarget) : null) || trigger;
+                const rect = targetEl.getBoundingClientRect();
+                
+                // Prevent horizontal overflow
+                const padding = 16; // Edge margin
+                let left = rect.left;
+                const dropdownWidth = Math.max(rect.width, 260); // min-w-[260px]
+                
+                if (left + dropdownWidth > window.innerWidth - padding) {
+                    left = window.innerWidth - dropdownWidth - padding;
+                }
+                
+                dropdown.style.left = `${left}px`;
+                dropdown.style.width = `${dropdownWidth}px`;
 
                 const spaceBelow = window.innerHeight - rect.bottom;
                 if (spaceBelow < 300) {
@@ -156,6 +213,13 @@ export const SearchableSelect = {
         trigger.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            if (e.target.closest('.ss-clear')) {
+                currentValue = multiple ? [] : '';
+                trigger.innerHTML = renderTriggerContent(getLabel(currentValue), currentValue);
+                onChange(multiple ? [] : '');
+                if (isOpen) updateList(searchInput.value);
+                return;
+            }
             toggleDropdown();
         };
 
@@ -169,9 +233,22 @@ export const SearchableSelect = {
                 const id = itemEl.dataset.id;
                 const item = items.find(i => String(i.id) === id);
                 if (item) {
-                    labelText.textContent = getName(item);
-                    onChange(id);
-                    toggleDropdown(false);
+                    if (multiple) {
+                        const idx = currentValue.indexOf(id);
+                        if (idx > -1) {
+                            currentValue.splice(idx, 1);
+                        } else {
+                            currentValue.push(id);
+                        }
+                        updateTrigger();
+                        onChange([...currentValue]);
+                        updateList(searchInput.value);
+                    } else {
+                        currentValue = id;
+                        updateTrigger();
+                        onChange(id);
+                        toggleDropdown(false);
+                    }
                 }
             }
         };
@@ -190,9 +267,20 @@ export const SearchableSelect = {
                 e.preventDefault();
                 if (highlightedIndex >= 0) {
                     const item = filteredItems[highlightedIndex];
-                    labelText.textContent = getName(item);
-                    onChange(String(item.id));
-                    toggleDropdown(false);
+                    const id = String(item.id);
+                    if (multiple) {
+                        const idx = currentValue.indexOf(id);
+                        if (idx > -1) currentValue.splice(idx, 1);
+                        else currentValue.push(id);
+                        updateTrigger();
+                        onChange([...currentValue]);
+                        updateList(searchInput.value);
+                    } else {
+                        currentValue = id;
+                        updateTrigger();
+                        onChange(id);
+                        toggleDropdown(false);
+                    }
                 }
             } else if (e.key === 'Escape') {
                 toggleDropdown(false);

@@ -103,7 +103,9 @@ export const TaskList = {
                 );
             }
             // Apply Project Filter from Options (if any)
-            if (options.projectFilter && options.projectFilter !== 'all') {
+            if (options.projectFilter && Array.isArray(options.projectFilter) && options.projectFilter.length > 0) {
+                groupTasks = groupTasks.filter(t => options.projectFilter.includes(String(t.project_id)));
+            } else if (options.projectFilter && typeof options.projectFilter === 'string' && options.projectFilter !== 'all') {
                 groupTasks = groupTasks.filter(t => String(t.project_id) === String(options.projectFilter));
             }
 
