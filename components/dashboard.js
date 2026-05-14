@@ -20,6 +20,8 @@ import { escapeHTML } from '../utils/dom.js';
 export async function renderDashboard(forceRefresh = false) {
   let isCompact = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
   let isHistoryCompact = localStorage.getItem('dashboard_history_compact') === 'true'; // Default to false
+  let isSearchRowVisible = localStorage.getItem('dashboard_search_visible') !== 'false';
+  let isTodosCollapsed = localStorage.getItem('dashboard_todos_collapsed') === 'true';
 
   if (forceRefresh || !store.get().tasks || store.get().tasks.length === 0) {
     await PlannerState.init();
@@ -156,7 +158,7 @@ export async function renderDashboard(forceRefresh = false) {
     </div>
 
     <!-- Decorative Divider with Glow -->
-    <div class="flex flex-col items-center justify-center relative">
+    <div id="dashboard-todos-divider" class="flex flex-col items-center justify-center relative ${isTodosCollapsed ? 'hidden' : ''}">
       <div class="absolute w-64 h-24 bg-[${pColor}] opacity-[0.07] blur-[60px] rounded-full pointer-events-none"></div>
       <div class="relative z-10 flex flex-col items-center gap-2 group cursor-default">
         <div class="w-32 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-40 group-hover:opacity-80 transition-opacity duration-700"></div>
@@ -166,16 +168,21 @@ export async function renderDashboard(forceRefresh = false) {
     </div>
 
     <!-- Todo Section -->
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
+    <div>
+      <div class="flex items-center justify-between mb-4">
         <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Todo</h3>
+        <button id="todos-collapse-toggle" class="p-1 rounded-md transition-all ${isTodosCollapsed ? 'bg-primary/20 text-primary' : 'text-dim hover:text-main hover:bg-highlight'}" title="Toggle Todo Section">
+          <svg class="w-3 h-3 transition-transform ${isTodosCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+        </button>
       </div>
+
+      <div id="dashboard-todos-content" class="space-y-4 ${isTodosCollapsed ? 'hidden' : ''}">
 
       <!-- Quick Add Container -->
       <div id="dashboard-quick-add-container"></div>
 
       <!-- Row 1: Search, Filter & Utility Toggles -->
-      <div class="flex items-center gap-3 flex-wrap mb-4">
+      <div id="dashboard-search-row" class="flex items-center gap-3 flex-wrap mb-4 ${isSearchRowVisible ? '' : 'hidden'}">
           <!-- Search Input -->
           <div class="relative flex-1 min-w-[280px]">
               <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-20">
@@ -188,14 +195,6 @@ export async function renderDashboard(forceRefresh = false) {
           <div class="flex items-center gap-3 px-3 h-9 bg-highlight border border-white/5 rounded-lg transition-all focus-within:border-primary/20">
               <span class="text-[11px] font-black text-dim/20 uppercase tracking-widest whitespace-nowrap leading-none">Project</span>
               <div id="task-project-filter-container" class="w-40 h-full"></div>
-          </div>
-
-          <div class="flex items-center gap-2">
-              <!-- Bulk Select Toggle -->
-              <button id="selection-mode-toggle" class="h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap border-soft text-dim hover:text-main hover:bg-highlight">
-                  <span class="text-[11px] leading-none" id="selection-mode-icon">⊞</span>
-                  <span class="text-[10px] font-black uppercase tracking-widest leading-none" id="selection-mode-label">Bulk Select</span>
-              </button>
           </div>
       </div>
 
@@ -214,6 +213,8 @@ export async function renderDashboard(forceRefresh = false) {
       <!-- Spans Timeline Chart -->
       <div id="dashboard-spans-chart" class="mt-4">
         <!-- Mini Gantt rendered here when Spans tab active -->
+      </div>
+
       </div>
 
       <!-- Bulk Action Toolbar -->
@@ -244,7 +245,9 @@ export async function renderDashboard(forceRefresh = false) {
           </div>
         </div>
       </div>
-    </div>
+
+      </div> <!-- End Todo space-y-4 Container (dashboard-todos-content) -->
+    </div> <!-- End Todo Section Wrapper -->
 
     <!-- Decorative Divider between Todo and History -->
     <div class="flex flex-col items-center justify-center relative py-3">
@@ -455,6 +458,29 @@ export async function renderDashboard(forceRefresh = false) {
     };
   }
 
+  const todosCollapseToggle = container.querySelector('#todos-collapse-toggle');
+  if (todosCollapseToggle) {
+    todosCollapseToggle.onclick = () => {
+      isTodosCollapsed = !isTodosCollapsed;
+      localStorage.setItem('dashboard_todos_collapsed', String(isTodosCollapsed));
+      const divider = container.querySelector('#dashboard-todos-divider');
+      const content = container.querySelector('#dashboard-todos-content');
+      if (isTodosCollapsed) {
+          divider?.classList.add('hidden');
+          content?.classList.add('hidden');
+          todosCollapseToggle.classList.add('bg-primary/20', 'text-primary');
+          todosCollapseToggle.classList.remove('text-dim', 'hover:text-main', 'hover:bg-highlight');
+          todosCollapseToggle.innerHTML = '<svg class="w-3 h-3 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>';
+      } else {
+          divider?.classList.remove('hidden');
+          content?.classList.remove('hidden');
+          todosCollapseToggle.classList.remove('bg-primary/20', 'text-primary');
+          todosCollapseToggle.classList.add('text-dim', 'hover:text-main', 'hover:bg-highlight');
+          todosCollapseToggle.innerHTML = '<svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>';
+      }
+    };
+  }
+
   const refreshView = async () => {
     // Explicitly fetch fresh data before re-rendering
     await PlannerState.init();
@@ -518,7 +544,25 @@ export async function renderDashboard(forceRefresh = false) {
         window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact: val } }));
         renderTaskToggles();
         renderDashboardTasks();
-      }
+      },
+      showSearchToggle: true,
+      isSearchVisible: isSearchRowVisible,
+      onToggleSearch: (val) => {
+        isSearchRowVisible = val;
+        localStorage.setItem('dashboard_search_visible', String(val));
+        const searchRow = container.querySelector('#dashboard-search-row');
+        if (searchRow) {
+            if (val) searchRow.classList.remove('hidden');
+            else searchRow.classList.add('hidden');
+        }
+        renderTaskToggles();
+      },
+      extraControls: `
+          <button id="selection-mode-toggle" class="h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap border-soft text-dim hover:text-main hover:bg-highlight">
+              <span class="text-[11px] leading-none" id="selection-mode-icon">⊞</span>
+              <span class="text-[10px] font-black uppercase tracking-widest leading-none" id="selection-mode-label">Bulk Select</span>
+          </button>
+      `
     });
 
     const selToggle = container.querySelector('#selection-mode-toggle');

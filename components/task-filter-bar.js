@@ -24,6 +24,9 @@ const FILTER_DEFS = [
  * @param {boolean}     [options.showCompact=true]     — Whether to show the compact toggle
  * @param {boolean}     [options.isCompact=false]      — Current compact mode state
  * @param {Function}    [options.onToggleCompact(val)] — Called when compact is toggled
+ * @param {boolean}     [options.showSearchToggle=false] — Whether to show search row toggle
+ * @param {boolean}     [options.isSearchVisible=true]   — Current search row visibility
+ * @param {Function}    [options.onToggleSearch(val)]  — Called when search visibility is toggled
  */
 export const TaskFilterBar = {
     render(container, filters, options = {}) {
@@ -33,7 +36,10 @@ export const TaskFilterBar = {
             onFilterChange,
             showCompact = true,
             isCompact = false,
-            onToggleCompact
+            onToggleCompact,
+            showSearchToggle = false,
+            isSearchVisible = true,
+            onToggleSearch
         } = options;
 
         // ── Toggle All ──
@@ -51,14 +57,25 @@ export const TaskFilterBar = {
             </button>
         `).join('');
 
-        // ── Compact toggle ──
-        if (showCompact) {
-            html += `
-                <div class="w-px h-3 bg-white/5 mx-1"></div>
-                <button class="filter-bar-compact-toggle p-1 rounded-md transition-all ${isCompact ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-highlight'}" title="Toggle Compact Mode">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </button>
-            `;
+        // ── Optional Search Toggle & Compact toggle ──
+        if (showSearchToggle || showCompact) {
+            html += `<div class="w-px h-3 bg-white/5 mx-1"></div>`;
+            
+            if (showSearchToggle) {
+                html += `
+                    <button class="filter-bar-search-toggle p-1 rounded-md transition-all mr-1 ${isSearchVisible ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-highlight'}" title="Toggle Search Bar">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </button>
+                `;
+            }
+            
+            if (showCompact) {
+                html += `
+                    <button class="filter-bar-compact-toggle p-1 rounded-md transition-all ${isCompact ? 'bg-primary/20 text-primary' : 'text-dim/50 hover:text-dim hover:bg-highlight'}" title="Toggle Compact Mode">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                `;
+            }
         }
 
         if (options.extraControls) {
@@ -86,6 +103,14 @@ export const TaskFilterBar = {
             const compactBtn = container.querySelector('.filter-bar-compact-toggle');
             if (compactBtn && onToggleCompact) {
                 compactBtn.onclick = () => onToggleCompact(!isCompact);
+            }
+        }
+
+        // ── Wire search toggle ──
+        if (showSearchToggle) {
+            const searchBtn = container.querySelector('.filter-bar-search-toggle');
+            if (searchBtn && onToggleSearch) {
+                searchBtn.onclick = () => onToggleSearch(!isSearchVisible);
             }
         }
     }
