@@ -43,6 +43,12 @@ export const TaskItem = {
 
     renderFull(t, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options = {}) {
         const isSelectionMode = !!options.selectionMode;
+        let displayTimeStr = timeStr;
+        if (isDone && t.completed_at) {
+            const comp = new Date(t.completed_at);
+            displayTimeStr = 'Done ' + comp.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + comp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
         return `
             <div class="task-item group/task relative flex items-center gap-3 p-4 rounded-xl bg-card border border-white/5 shadow-sm hover:border-primary/20 transition-all cursor-pointer" data-task-id="${t.id}">
                 <!-- Bulk Selection Checkbox -->
@@ -60,22 +66,22 @@ export const TaskItem = {
             }
 
                 <div class="flex-grow min-w-0">
-                    <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}">${t.title}</span>
+                    <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}" title="${t.title ? t.title.replace(/"/g, '&quot;') : ''}">${t.title}</span>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 opacity-40">
                         ${proj.name !== 'Unassigned' ? `
                         <div class="flex items-center gap-1 shrink-0 min-w-0 max-w-[200px]">
                             <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${proj.color}"></span>
-                            <span class="text-sm font-medium text-muted truncate">${proj.name}</span>
+                            <span class="text-sm font-medium text-muted truncate" title="${proj.name ? proj.name.replace(/"/g, '&quot;') : ''}">${proj.name}</span>
                         </div>
                         ` : ''}
                         ${displayTags.length > 0 ? `
                             <div class="flex items-center gap-1 shrink-0">
-                                ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate max-w-[60px]">${tag}</span>`).join('')}
+                                ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate max-w-[60px]" title="${tag ? tag.replace(/"/g, '&quot;') : ''}">${tag}</span>`).join('')}
                             </div>
                         ` : ''}
-                        ${timeStr ? `<div class="flex items-center gap-1 text-dim shrink-0">
-                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span class="text-xs font-bold tracking-tight">${timeStr}</span>
+                        ${displayTimeStr ? `<div class="flex items-center gap-1 ${isDone ? 'text-primary opacity-100' : 'text-dim'} shrink-0">
+                            ${isDone ? `<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>` : `<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`}
+                            <span class="text-xs font-bold tracking-tight">${displayTimeStr}</span>
                         </div>` : ''}
                         ${t.priority && t.priority !== 'low' ? `<span class="${prio.bg} ${prio.color} text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none shrink-0">${prio.label}</span>` : ''}
                         ${t.status ? `<span class="bg-white/5 text-dim text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none shrink-0 border border-white/5 uppercase">${t.status}</span>` : ''}
@@ -114,8 +120,16 @@ export const TaskItem = {
             if (t.end_date.includes('T')) endStr += ' ' + e.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
         }
 
+        let endStrClass = 'opacity-60';
+        if (isDone && t.completed_at) {
+            const comp = new Date(t.completed_at);
+            startStr = comp.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            endStr = comp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }) + ' ✓';
+            endStrClass = 'opacity-100 text-primary';
+        }
+
         return `
-            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[${isSelectionMode ? '24px_' : ''}20px_1fr_180px_60px_min-content] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
+            <div class="task-item group/task px-2 py-0.5 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[${isSelectionMode ? '24px_' : ''}20px_1fr_minmax(250px,0.8fr)_70px_min-content] gap-3 items-center min-h-[28px]" data-task-id="${t.id}">
                 <!-- Bulk Selection Checkbox -->
                 <div class="task-selector-container shrink-0 items-center justify-center w-4 h-4 ${isSelectionMode ? 'flex' : 'hidden'}">
                     <input type="checkbox" class="task-bulk-checkbox w-3.5 h-3.5 rounded border-white/10 text-primary focus:ring-primary/20 cursor-pointer accent-primary" data-task-id="${t.id}" onclick="event.stopPropagation()">
@@ -129,18 +143,18 @@ export const TaskItem = {
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
                        </button>`
             }
-                <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}">${t.title}</span>
-                <div class="flex items-center gap-1.5 min-w-0">
-                    ${proj.name !== 'Unassigned' ? `<span class="text-sm font-medium truncate shrink-0 max-w-[100px]" style="color: ${proj.color}">${proj.name}</span>` : ''}
+                <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}" title="${t.title ? t.title.replace(/"/g, '&quot;') : ''}">${t.title}</span>
+                <div class="flex flex-col justify-center gap-[3px] min-w-0 overflow-hidden py-0.5">
+                    ${proj.name !== 'Unassigned' ? `<span class="text-xs font-semibold truncate leading-none" style="color: ${proj.color}" title="${proj.name ? proj.name.replace(/"/g, '&quot;') : ''}">${proj.name}</span>` : ''}
                     ${displayTags.length > 0 ? `
-                        <div class="flex items-center gap-1 overflow-hidden shrink">
-                            ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-0.5 rounded leading-none border border-white/5 truncate">${tag}</span>`).join('')}
+                        <div class="flex items-center gap-1 overflow-hidden">
+                            ${displayTags.map(tag => `<span class="text-[7px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-[1px] rounded-sm leading-none border border-white/5 truncate max-w-[80px]" title="${tag ? tag.replace(/"/g, '&quot;') : ''}">${tag}</span>`).join('')}
                         </div>
                     ` : ''}
                 </div>
                 <div class="flex flex-col text-[9px] font-bold text-dim/50 text-left leading-[1.1] break-words">
                     <span>${startStr}</span>
-                    ${endStr ? `<span class="opacity-60">${endStr}</span>` : ''}
+                    ${endStr ? `<span class="${endStrClass}">${endStr}</span>` : ''}
                 </div>
                 <div class="flex items-center opacity-0 group-hover/task:opacity-100 transition-opacity gap-1 shrink-0">
                     <button class="track-btn h-6 px-[0.34rem] flex items-center justify-center rounded-lg text-dim/50 hover:text-primary hover:bg-primary/10 transition-all" title="Track Time" data-task-id="${t.id}">

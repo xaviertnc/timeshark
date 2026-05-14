@@ -327,15 +327,15 @@ export async function renderProjects() {
 
     // Tag rendering
     const tagsHtml = p.tags && p.tags.length > 0
-      ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`
+      ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`
       : '';
 
     // Type formatting
     let typeBadge = '';
     if (p.type === 'epic') {
-      typeBadge = '<span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>';
+      typeBadge = '<span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>';
     } else if (p.type === 'full-time') {
-      typeBadge = '<span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[8px] uppercase tracking-widest font-black mr-1 border border-blue-500/20 hover:bg-blue-500/30 transition-colors" title="Full Time">FULL TIME</span>';
+      typeBadge = '<span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[8px] uppercase tracking-widest font-black mr-1 border border-blue-500/20 hover:bg-blue-500/30 transition-colors" title="Full Time">FULL TIME</span>';
     }
 
     return `

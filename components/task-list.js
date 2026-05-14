@@ -21,7 +21,7 @@ export const TaskList = {
         const showDone = options.showDone || false;
 
         // Initialize page state in container if not present
-        if (!container._pageState) container._pageState = { completedLimit: 'today' };
+        if (!container._pageState) container._pageState = { completedLimit: localStorage.getItem('tasks_completed_limit') || 'today' };
 
         // Save focus/selection state before any DOM changes
         const activeEl = document.activeElement;
@@ -29,23 +29,29 @@ export const TaskList = {
         const selStart = searchFocused ? activeEl.selectionStart : null;
         const selEnd = searchFocused ? activeEl.selectionEnd : null;
 
-        // Initialize persistent controls if missing (Full mode only)
-        if (!container._completedControls && mode === 'full') {
+        // Initialize persistent controls if missing
+        if (!container._completedControls) {
             const controls = document.createElement('div');
-            controls.className = 'completed-controls-persistent flex items-center gap-3 ml-auto';
+            controls.className = 'completed-controls-persistent flex items-center gap-2 lg:gap-3 ml-auto';
             controls.innerHTML = `
                 <div class="relative w-48">
                     <input type="text" placeholder="Search..." class="completed-search-input w-full bg-white/5 border border-white/5 rounded-lg pl-8 pr-2 py-1 text-[11px] font-bold text-main outline-none focus:border-primary/30 transition-all placeholder:text-dim/20">
                     <svg class="w-2.5 h-2.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-dim/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <select class="completed-limit-select bg-white/5 border-none rounded-lg px-2 py-1 text-[11px] font-black text-primary outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer">
-                    <option value="today">Today Only</option>
-                    <option value="15">Show 15</option>
-                    <option value="30">Show 30</option>
-                    <option value="50">Show 50</option>
-                    <option value="100">Show 100</option>
-                    <option value="all">All History</option>
-                </select>
+                <div class="relative">
+                    <select class="completed-limit-select bg-highlight border border-white/5 rounded-md pl-2.5 pr-7 h-[24px] py-0 text-[9px] uppercase tracking-[0.2em] font-black text-primary outline-none appearance-none cursor-pointer hover:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all shadow-sm">
+                        <option value="today">Today Only</option>
+                        <option value="5">Show 5</option>
+                        <option value="7">Show 7</option>
+                        <option value="10">Show 10</option>
+                        <option value="15">Show 15</option>
+                        <option value="30">Show 30</option>
+                        <option value="50">Show 50</option>
+                        <option value="100">Show 100</option>
+                        <option value="all">All History</option>
+                    </select>
+                    <svg class="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-primary pointer-events-none opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
             `;
 
             const input = controls.querySelector('input');
@@ -57,8 +63,12 @@ export const TaskList = {
             };
             select.onchange = (e) => {
                 container._pageState.completedLimit = e.target.value;
+                localStorage.setItem('tasks_completed_limit', e.target.value);
                 this.render(container, tasks, projects, options);
             };
+
+            // Sync visual select value
+            select.value = container._pageState.completedLimit;
 
             container._completedControls = controls;
         }
@@ -117,9 +127,7 @@ export const TaskList = {
                 const search = container._pageState.completedSearch || '';
                 const limit = container._pageState.completedLimit || 'today';
 
-                if (mode === 'full') {
-                    headerAnchor = `<div class="completed-controls-anchor ml-auto"></div>`;
-                }
+                headerAnchor = `<div class="completed-controls-anchor ml-auto"></div>`;
 
                 // Apply Internal Search
                 if (search) {
@@ -148,9 +156,27 @@ export const TaskList = {
                 }
             } else if (key !== 'projects') {
                 const PAGE_SIZE = 15;
-                if (!container._pageState[key]) container._pageState[key] = PAGE_SIZE;
+                if (!container._pageState[key]) {
+                    container._pageState[key] = parseInt(localStorage.getItem(`tasks_limit_${key}`)) || PAGE_SIZE;
+                }
                 const visibleCount = container._pageState[key];
                 const totalInGroup = groupTasks.length;
+                
+                headerAnchor = `
+                    <div class="ml-auto relative">
+                        <select class="group-limit-select bg-highlight border border-white/5 rounded-md pl-2.5 pr-7 h-[24px] py-0 text-[9px] uppercase tracking-[0.2em] font-black text-primary outline-none appearance-none cursor-pointer hover:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all shadow-sm" data-group="${key}">
+                            <option value="5" ${visibleCount === 5 ? 'selected' : ''}>Show 5</option>
+                            <option value="7" ${visibleCount === 7 ? 'selected' : ''}>Show 7</option>
+                            <option value="10" ${visibleCount === 10 ? 'selected' : ''}>Show 10</option>
+                            <option value="15" ${visibleCount === 15 ? 'selected' : ''}>Show 15</option>
+                            <option value="30" ${visibleCount === 30 ? 'selected' : ''}>Show 30</option>
+                            <option value="50" ${visibleCount === 50 ? 'selected' : ''}>Show 50</option>
+                            <option value="100" ${visibleCount === 100 ? 'selected' : ''}>Show 100</option>
+                            <option value="9999" ${visibleCount >= 9999 ? 'selected' : ''}>All Tasks</option>
+                        </select>
+                        <svg class="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-primary pointer-events-none opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                `;
                 
                 if (totalInGroup > visibleCount) {
                     showMoreBtn = `
@@ -218,6 +244,18 @@ export const TaskList = {
             const anchor = listDiv.querySelector('.completed-controls-anchor');
             if (anchor && container._completedControls) {
                 anchor.appendChild(container._completedControls);
+                
+                // Adjust search input width in compact mode
+                const searchInput = container._completedControls.querySelector('.completed-search-input');
+                if (searchInput) {
+                    const totalCompleted = tasks.filter(t => t.status === 'done').length;
+                    
+                    if (mode === 'compact' && totalCompleted <= 30) {
+                        searchInput.parentElement.classList.add('hidden'); // Hide search in sidebar
+                    } else {
+                        searchInput.parentElement.classList.remove('hidden');
+                    }
+                }
             }
 
             // Restore focus and selection if search was active
@@ -237,6 +275,18 @@ export const TaskList = {
                     const groupKey = btn.dataset.group;
                     const current = container._pageState[groupKey] || 15;
                     container._pageState[groupKey] = current + 15;
+                    localStorage.setItem(`tasks_limit_${groupKey}`, container._pageState[groupKey]);
+                    this.render(container, tasks, projects, options);
+                };
+            });
+
+            // Attach handlers for standard group limit selects
+            listDiv.querySelectorAll('.group-limit-select').forEach(select => {
+                select.onchange = (e) => {
+                    const groupKey = select.dataset.group;
+                    const val = parseInt(e.target.value);
+                    container._pageState[groupKey] = val;
+                    localStorage.setItem(`tasks_limit_${groupKey}`, val);
                     this.render(container, tasks, projects, options);
                 };
             });
@@ -244,32 +294,12 @@ export const TaskList = {
     },
 
     /**
-     * COMPLETED TASK DATE LOGIC (DO NOT CHANGE):
      * Determines the effective "Display & Sort" date for a finished task.
-     * 
-     * RULE: 
-     * - We MUST use the Date (day/month/year) from the scheduled 'end_date' if it exists.
-     * - We MUST use the Time (hours/mins/secs) from the 'completed_at' timestamp.
-     * - If no 'end_date' exists, we default to the full 'completed_at' timestamp.
-     * 
-     * IMPLEMENTATION NOTE:
-     * - We construct the date using Year/Month/Day integers from the string to ensure
-     *   it matches the LOCAL calendar day exactly, avoiding timezone shifts.
+     * Using the exact completion timestamp explicitly recorded by the user.
      */
     _getCompletedDisplayDate(t) {
         if (!t.completed_at) return null;
-        const comp = new Date(t.completed_at);
-
-        if (t.end_date) {
-            // Force strict local date construction from the string
-            // Formats are typically "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss"
-            const datePart = t.end_date.split('T')[0];
-            const [y, m, d] = datePart.split('-').map(Number);
-
-            // Note: Month is 0-indexed in JS Date
-            return new Date(y, m - 1, d, comp.getHours(), comp.getMinutes(), comp.getSeconds());
-        }
-        return comp;
+        return new Date(t.completed_at);
     },
 
     getGroupedTasks(tasks) {
@@ -313,11 +343,11 @@ export const TaskList = {
             else groups.planned.tasks.push(t);
         });
 
-        // Sort Today group: earliest start_date first
+        // Sort Today group: most recent start_date first
         groups.today.tasks.sort((a, b) => {
-            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
-            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
-            return da - db;
+            const da = a.start_date ? new Date(a.start_date).getTime() : -Infinity;
+            const db = b.start_date ? new Date(b.start_date).getTime() : -Infinity;
+            return db - da;
         });
 
         // Special Sort for Completed (Newest display date first)

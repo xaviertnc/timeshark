@@ -173,6 +173,30 @@ export class TaskModal {
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Completed At (Only for Done tasks) -->
+                            <div id="completed-fields" class="${task?.status === 'done' ? 'grid' : 'hidden'} grid-cols-2 gap-4 transition-all pt-2">
+                                <div class="col-span-2 flex items-center gap-1.5 pb-1">
+                                    <div class="h-px flex-grow bg-emerald-500/20"></div>
+                                    <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    <span class="text-[9px] font-black text-emerald-500 uppercase tracking-widest text-center">Checkout Timestamp</span>
+                                    <div class="h-px flex-grow bg-emerald-500/20"></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex gap-2">
+                                        <div class="flex-1 flex gap-1 items-center">
+                                            <input type="date" name="completed_date" class="flex-1 zen-input bg-emerald-500/5 border border-emerald-500/20 focus:ring-emerald-500/20 text-emerald-400 outline-none transition-all">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex gap-2">
+                                        <div class="flex gap-1 items-center">
+                                            <input type="time" name="completed_time" class="w-24 zen-input bg-emerald-500/5 border border-emerald-500/20 focus:ring-emerald-500/20 text-emerald-400 outline-none transition-all">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Progress Section -->
@@ -312,6 +336,17 @@ export class TaskModal {
             form.end_time.value = endParts[1] ? endParts[1].substring(0, 5) : '17:00';
         }
 
+        // Completed Date Defaults
+        if (task && task.completed_at) {
+            const compParts = task.completed_at.split('T');
+            form.completed_date.value = compParts[0];
+            form.completed_time.value = compParts[1] ? compParts[1].substring(0, 5) : '17:00';
+        } else {
+            const now = new Date();
+            form.completed_date.value = now.toISOString().split('T')[0];
+            form.completed_time.value = now.toTimeString().substring(0, 5);
+        }
+
         // --- Tag Logic ---
         const tagsContainer = container.querySelector('#modal-tags-container');
         const tagInput = container.querySelector('#modal-tag-input');
@@ -403,7 +438,19 @@ export class TaskModal {
                 dateFields.classList.remove('grid');
                 statusSelect.value = 'backlog';
             }
+            statusSelect.dispatchEvent(new Event('change'));
         };
+
+        statusSelect.addEventListener('change', () => {
+             const completedContainer = container.querySelector('#completed-fields');
+             if (statusSelect.value === 'done') {
+                 completedContainer.classList.remove('hidden');
+                 completedContainer.classList.add('grid');
+             } else {
+                 completedContainer.classList.add('hidden');
+                 completedContainer.classList.remove('grid');
+             }
+        });
 
         const updateProgressUI = (val) => {
             val = Math.max(0, Math.min(100, parseInt(val) || 0));
@@ -413,8 +460,10 @@ export class TaskModal {
 
             if (val >= 100 && statusSelect.value !== 'done') {
                 statusSelect.value = 'done';
+                statusSelect.dispatchEvent(new Event('change'));
             } else if (val < 100 && statusSelect.value === 'done') {
                 statusSelect.value = val > 0 ? 'in-progress' : 'todo';
+                statusSelect.dispatchEvent(new Event('change'));
             }
 
             progressBar.className = `absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${val >= 100 ? 'bg-emerald-500' : 'bg-primary'}`;
@@ -487,8 +536,9 @@ export class TaskModal {
             data.progress = parseInt(data.progress) || 0;
 
             if (data.status === 'done') {
-                if (task && task.completed_at) {
-                    data.completed_at = task.completed_at;
+                const ct = data.completed_time || '17:00';
+                if (data.completed_date) {
+                    data.completed_at = `${data.completed_date}T${ct}:00`;
                 } else {
                     const now = new Date();
                     data.completed_at = now.toISOString();
