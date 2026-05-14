@@ -152,7 +152,7 @@ export const TaskList = {
                     });
                 } else if (limit !== 'all') {
                     const n = parseInt(limit);
-                    groupTasks = groupTasks.slice(0, n);
+                    groupTasks = groupTasks.slice(-n);
                 }
             } else if (key !== 'projects') {
                 const PAGE_SIZE = 15;
@@ -313,9 +313,9 @@ export const TaskList = {
         };
 
         const sorted = [...tasks].sort((a, b) => {
-            const da = a.start_date ? new Date(a.start_date).getTime() : -Infinity;
-            const db = b.start_date ? new Date(b.start_date).getTime() : -Infinity;
-            return db - da; // Newest first
+            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
+            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
+            return da - db; // Earliest first
         });
 
         sorted.forEach(t => {
@@ -343,18 +343,18 @@ export const TaskList = {
             else groups.planned.tasks.push(t);
         });
 
-        // Sort Today group: most recent start_date first
+        // Sort Today group: earliest start_date first
         groups.today.tasks.sort((a, b) => {
-            const da = a.start_date ? new Date(a.start_date).getTime() : -Infinity;
-            const db = b.start_date ? new Date(b.start_date).getTime() : -Infinity;
-            return db - da;
+            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
+            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
+            return da - db;
         });
 
-        // Special Sort for Completed (Newest display date first)
+        // Special Sort for Completed (Earliest display date first)
         groups.completed.tasks.sort((a, b) => {
-            const da = this._getCompletedDisplayDate(a)?.getTime() || 0;
-            const db = this._getCompletedDisplayDate(b)?.getTime() || 0;
-            return db - da;
+            const da = this._getCompletedDisplayDate(a)?.getTime() || Infinity;
+            const db = this._getCompletedDisplayDate(b)?.getTime() || Infinity;
+            return da - db;
         });
 
         return groups;

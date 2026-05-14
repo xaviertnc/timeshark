@@ -22,6 +22,9 @@ export async function renderDashboard(forceRefresh = false) {
   let isHistoryCompact = localStorage.getItem('dashboard_history_compact') === 'true'; // Default to false
   let isSearchRowVisible = localStorage.getItem('dashboard_search_visible') !== 'false';
   let isTodosCollapsed = localStorage.getItem('dashboard_todos_collapsed') === 'true';
+  let isHistoryCollapsed = localStorage.getItem('dashboard_history_collapsed') === 'true';
+  let historySearchTerm = localStorage.getItem('dashboard_history_search') || '';
+  let historyLimit = localStorage.getItem('dashboard_history_limit') || 'today';
 
   if (forceRefresh || !store.get().tasks || store.get().tasks.length === 0) {
     await PlannerState.init();
@@ -249,7 +252,7 @@ export async function renderDashboard(forceRefresh = false) {
     </div> <!-- End Todo Section Wrapper -->
 
     <!-- Decorative Divider between Todo and History -->
-    <div class="flex flex-col items-center justify-center relative py-3">
+    <div id="dashboard-history-divider" class="flex flex-col items-center justify-center relative py-3 ${isTodosCollapsed ? 'hidden' : ''}">
       <div class="absolute w-64 h-24 bg-[${pColor}] opacity-[0.05] blur-[60px] rounded-full pointer-events-none"></div>
       <div class="relative z-10 flex flex-col items-center gap-2 group cursor-default">
         <div class="w-32 h-[1px] bg-gradient-to-r from-transparent via-[${pColor}] to-transparent opacity-30"></div>
@@ -260,15 +263,100 @@ export async function renderDashboard(forceRefresh = false) {
 
     <!-- History Section -->
     <div class="space-y-3">
-      <div class="flex items-center justify-between">
-        <h3 class="text-xs font-black text-dim uppercase tracking-[0.4em]">Recent History</h3>
-        <button id="history-compact-toggle" class="p-1 rounded-md transition-all ${isHistoryCompact ? 'bg-primary/20 text-primary' : 'text-dim hover:text-main hover:bg-highlight'}" title="Toggle Compact Mode">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
+      <div class="flex flex-col md:flex-row md:items-center gap-2 mb-4 w-full">
+        <!-- Collapse Toggle -->
+        <div id="history-collapse-toggle" class="flex items-center gap-2 cursor-pointer group flex-grow" title="Toggle History Section">
+            <h3 class="text-xs font-black text-dim group-hover:text-main transition-colors uppercase tracking-[0.4em]">Recent History</h3>
+            <div class="p-1 rounded-md transition-all ${isHistoryCollapsed ? 'text-primary' : 'text-dim group-hover:text-main'}">
+              <svg class="w-3 h-3 transition-transform ${isHistoryCollapsed ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div id="history-controls-container" class="flex items-center gap-2 lg:gap-3 ml-auto ${isHistoryCollapsed ? 'hidden' : ''}">
+            <div class="relative w-48">
+                <input type="text" id="history-search-input" placeholder="Search..." value="${escapeHTML(historySearchTerm)}" class="w-full bg-white/5 border border-white/5 rounded-lg pl-8 pr-2 py-1 text-[11px] font-bold text-main outline-none focus:border-primary/30 transition-all placeholder:text-dim/20">
+                <svg class="w-2.5 h-2.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-dim/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <div class="relative flex-shrink-0">
+                <select id="history-limit-select" class="bg-highlight border border-white/5 rounded-md pl-2.5 pr-7 h-[24px] py-0 text-[9px] uppercase tracking-[0.2em] font-black text-primary outline-none appearance-none cursor-pointer hover:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all shadow-sm">
+                    <option value="today" ${historyLimit === 'today' ? 'selected' : ''}>Today Only</option>
+                    <option value="5" ${historyLimit === '5' ? 'selected' : ''}>Show 5</option>
+                    <option value="7" ${historyLimit === '7' ? 'selected' : ''}>Show 7</option>
+                    <option value="10" ${historyLimit === '10' ? 'selected' : ''}>Show 10</option>
+                    <option value="15" ${historyLimit === '15' ? 'selected' : ''}>Show 15</option>
+                    <option value="30" ${historyLimit === '30' ? 'selected' : ''}>Show 30</option>
+                    <option value="50" ${historyLimit === '50' ? 'selected' : ''}>Show 50</option>
+                    <option value="100" ${historyLimit === '100' ? 'selected' : ''}>Show 100</option>
+                    <option value="all" ${historyLimit === 'all' ? 'selected' : ''}>All History</option>
+                </select>
+                <svg class="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-primary pointer-events-none opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+            <button id="history-compact-toggle" class="p-1 rounded-md transition-all ${isHistoryCompact ? 'bg-primary/20 text-primary' : 'text-dim hover:text-main hover:bg-highlight'}" title="Toggle Compact Mode">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </div>
       </div>
 
-      <div class="${isHistoryCompact ? 'space-y-0' : 'space-y-3'}">
-        ${entries.filter(e => e.end_time).slice(0, 10).map(e => {
+      <div id="dashboard-history-content" class="${isHistoryCollapsed ? 'hidden' : ''} ${isHistoryCompact ? 'space-y-0' : 'space-y-3'}">
+        ${(() => {
+            let filteredHistory = entries.filter(e => e.end_time);
+            
+            if (historyLimit === 'today') {
+                const now = new Date();
+                const todayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                filteredHistory = filteredHistory.filter(e => {
+                    const d = new Date(e.start_time);
+                    const eDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+                    return eDay === todayMs;
+                });
+            }
+
+            if (historySearchTerm) {
+                const term = historySearchTerm.toLowerCase();
+                filteredHistory = filteredHistory.filter(e => {
+                    const desc = (e.description || '').toLowerCase();
+                    const notes = (e.notes || '').toLowerCase();
+                    const tTags = (e.tags || []).join(' ').toLowerCase();
+                    const proj = projects.find(p => String(p.id) === String(e.project_id));
+                    const projName = (proj ? proj.name : '').toLowerCase();
+                    
+                    const tsk = e.task_id ? (state.tasks || []).find(t => String(t.id) === String(e.task_id)) : null;
+                    const taskName = (tsk ? tsk.title : '').toLowerCase();
+                    const tagList = [...new Set([...(proj?.tags||[]), ...(tsk?.tags||[]), ...(e.tags||[])])].join(' ').toLowerCase();
+
+                    return desc.includes(term) || notes.includes(term) || tTags.includes(term) || projName.includes(term) || taskName.includes(term) || tagList.includes(term);
+                });
+            }
+
+            // Sort by start_time descending (newest first)
+            filteredHistory.sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
+
+            if (historyLimit !== 'all' && historyLimit !== 'today') {
+                const n = parseInt(historyLimit) || 10;
+                filteredHistory = filteredHistory.slice(0, n);
+            }
+
+            const getDayStr = (dateStr) => {
+                if (!dateStr) return 'Unknown';
+                const d = new Date(dateStr);
+                const today = new Date();
+                const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+                if (d.toDateString() === today.toDateString()) return 'Today';
+                if (d.toDateString() === yest.toDateString()) return 'Yesterday';
+                return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+            };
+
+            let currentDayStr = null;
+
+            return filteredHistory.map(e => {
+                const dayStr = getDayStr(e.start_time);
+                let dayHeader = '';
+                if (dayStr !== currentDayStr) {
+                    currentDayStr = dayStr;
+                    dayHeader = `<div class="pt-3 pb-1 mt-1 first:mt-0 first:pt-0 pointer-events-none select-none w-full"><span class="text-[9px] font-black text-dim uppercase tracking-[0.3em] bg-white/5 border border-white/5 rounded-md px-2 py-0.5">${escapeHTML(dayStr)}</span></div>`;
+                }
+
     const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
     const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
     const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
@@ -281,7 +369,7 @@ export async function renderDashboard(forceRefresh = false) {
     const displayTags = [...new Set([...projTags, ...taskTags, ...entryTags])];
 
     if (isHistoryCompact) {
-      return `
+      return dayHeader + `
             <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-subtle" data-entry-id="${e.id}">
               <div class="w-1 h-4 rounded-full" style="background-color: ${taskColor}"></div>
               <div class="min-w-0">
@@ -319,7 +407,7 @@ export async function renderDashboard(forceRefresh = false) {
           `;
     }
 
-    return `
+    return dayHeader + `
             <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main cursor-pointer" data-entry-id="${e.id}">
               <div class="flex items-center gap-4 flex-1">
                 <div class="w-1 h-10 rounded-full" style="background-color: ${taskColor}"></div>
@@ -376,7 +464,7 @@ export async function renderDashboard(forceRefresh = false) {
             </div>
           `;
 
-  }).join('')}
+  }).join(''); })()}
         ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-xs opacity-30">No history yet</p>' : ''}
       </div>
     </div>
@@ -489,11 +577,15 @@ export async function renderDashboard(forceRefresh = false) {
       if (isTodosCollapsed) {
           divider?.classList.add('hidden');
           content?.classList.add('hidden');
+          const historyDivider = container.querySelector('#dashboard-history-divider');
+          if (historyDivider) historyDivider.classList.add('hidden');
           iconContainer.className = 'p-1 rounded-md transition-all text-primary';
           svgIcon.classList.add('rotate-180');
       } else {
           divider?.classList.remove('hidden');
           content?.classList.remove('hidden');
+          const historyDivider = container.querySelector('#dashboard-history-divider');
+          if (historyDivider) historyDivider.classList.remove('hidden');
           iconContainer.className = 'p-1 rounded-md transition-all text-dim group-hover:text-main';
           svgIcon.classList.remove('rotate-180');
       }
@@ -1269,6 +1361,64 @@ export async function renderDashboard(forceRefresh = false) {
       } catch (err) { alert('Delete failed'); }
     };
   });
+
+  // History Controls
+  const historyCollapseToggle = container.querySelector('#history-collapse-toggle');
+  if (historyCollapseToggle) {
+    historyCollapseToggle.onclick = () => {
+      isHistoryCollapsed = !isHistoryCollapsed;
+      localStorage.setItem('dashboard_history_collapsed', String(isHistoryCollapsed));
+      const content = container.querySelector('#dashboard-history-content');
+      const controls = container.querySelector('#history-controls-container');
+      const iconContainer = historyCollapseToggle.querySelector('div');
+      const svgIcon = historyCollapseToggle.querySelector('svg');
+      
+      if (isHistoryCollapsed) {
+          content?.classList.add('hidden');
+          controls?.classList.add('hidden');
+          iconContainer.className = 'p-1 rounded-md transition-all text-primary';
+          svgIcon.classList.add('rotate-180');
+      } else {
+          content?.classList.remove('hidden');
+          controls?.classList.remove('hidden');
+          iconContainer.className = 'p-1 rounded-md transition-all text-dim group-hover:text-main';
+          svgIcon.classList.remove('rotate-180');
+      }
+    };
+  }
+
+  const historySearchInput = container.querySelector('#history-search-input');
+  if (historySearchInput) {
+    historySearchInput.oninput = (e) => {
+      localStorage.setItem('dashboard_history_search', e.target.value);
+      if (historySearchInput._timeout) clearTimeout(historySearchInput._timeout);
+      historySearchInput._timeout = setTimeout(() => {
+          refreshView();
+      }, 300);
+    };
+
+    setTimeout(() => {
+      if (document.activeElement?.id === 'history-search-input') return;
+      if (window._focusHistorySearch) {
+        const input = container.querySelector('#history-search-input');
+        if (input) {
+            input.focus();
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+        }
+      }
+    }, 10);
+    historySearchInput.addEventListener('focus', () => window._focusHistorySearch = true);
+    historySearchInput.addEventListener('blur', () => window._focusHistorySearch = false);
+  }
+
+  const historyLimitSelect = container.querySelector('#history-limit-select');
+  if (historyLimitSelect) {
+    historyLimitSelect.onchange = (e) => {
+      localStorage.setItem('dashboard_history_limit', e.target.value);
+      refreshView();
+    };
+  }
 
   // History Compact Toggle
   const historyToggle = container.querySelector('#history-compact-toggle');
