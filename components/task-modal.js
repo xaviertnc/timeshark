@@ -94,7 +94,7 @@ export class TaskModal {
                             <div class="bg-highlight border border-subtle rounded-xl p-3 focus-within:ring-2 focus-within:ring-primary/20 transition-all flex flex-wrap gap-2 items-center min-h-[50px] shadow-sm" id="modal-tags-container">
                                 <input type="text" id="modal-tag-input" placeholder="Type tag and press Enter..." class="bg-transparent border-none outline-none text-main font-bold text-sm flex-1 min-w-[150px] placeholder:opacity-30 placeholder:font-normal" style="border: none !important; box-shadow: none !important; background: transparent !important; outline: none !important; padding: 0;">
                             </div>
-                            <input type="hidden" name="tags" id="hidden-tags-input" value="${task && task.tags ? escapeHTML(task.tags.join(',')) : ''}">
+                            <input type="hidden" name="tags" id="hidden-tags-input" value="${task && task.tags ? (Array.isArray(task.tags) ? escapeHTML(task.tags.join(',')) : escapeHTML(String(task.tags))) : ''}">
                             <div class="mt-2 ml-1 flex flex-wrap gap-1.5" id="suggested-tags-container"></div>
                         </div>
 
@@ -353,9 +353,24 @@ export class TaskModal {
         const hiddenTagsInput = container.querySelector('#hidden-tags-input');
         const suggestedContainer = container.querySelector('#suggested-tags-container');
         
-        let currentTags = task && task.tags ? [...task.tags].map(t => t.toLowerCase()) : [];
+        let taskTagsRaw = [];
+        if (task && task.tags) {
+            taskTagsRaw = Array.isArray(task.tags) ? task.tags : (typeof task.tags === 'string' ? task.tags.split(',') : []);
+        }
+        
+        let projTagsRaw = [];
+        if (task && task.project_id) {
+            const proj = (state.projects || []).find(p => String(p.id) === String(task.project_id));
+            if (proj && proj.tags) {
+                projTagsRaw = Array.isArray(proj.tags) ? proj.tags : (typeof proj.tags === 'string' ? proj.tags.split(',') : []);
+            }
+        }
+        
+        const combinedTags = [...new Set([...taskTagsRaw, ...projTagsRaw])];
+        let currentTags = combinedTags.map(t => String(t).trim().toLowerCase()).filter(Boolean);
+        
         const existingTagsRaw = [...(state.projects || []).flatMap(p => p.tags || []), ...(state.tasks || []).flatMap(t => t.tags || [])];
-        let uniqueGlobalTags = [...new Set(existingTagsRaw.map(t => t.toLowerCase()))];
+        let uniqueGlobalTags = [...new Set(existingTagsRaw.map(t => typeof t === 'string' ? t.toLowerCase() : String(t).toLowerCase()))];
         
         const renderTags = () => {
             const badges = currentTags.map(t => `<span class="bg-primary/20 text-primary border border-primary/20 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1.5">${t} <button type="button" class="remove-tag hover:text-white" data-tag="${t}">&times;</button></span>`).join('');
