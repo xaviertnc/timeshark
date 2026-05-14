@@ -216,8 +216,15 @@ export const TaskList = {
                 if (options.isProjectGrouped) {
                     const projectBuckets = [];
                     const pMap = {};
+                    
+                    const validProjectIds = new Set(projects.map(p => String(p.id)));
+
                     groupTasks.forEach(t => {
-                        const pid = t.project_id || 'unassigned';
+                        let pid = String(t.project_id || 'unassigned');
+                        if (pid !== 'unassigned' && !validProjectIds.has(pid)) {
+                            pid = 'unassigned';
+                        }
+                        
                         if (!pMap[pid]) {
                             pMap[pid] = [];
                             projectBuckets.push({ pid, tasks: pMap[pid] });
