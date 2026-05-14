@@ -240,7 +240,7 @@ export const TaskList = {
                         return `
                         <div class="mb-5 last:mb-0 mt-2">
                             ${header}
-                            <div class="${mode === 'full' ? 'grid grid-cols-1 gap-2' : 'space-y-[3px]'} ml-[27px] border-l-[2px] relative" style="border-color: ${projColor}30;">
+                            <div class="${mode === 'full' ? 'grid grid-cols-1 gap-2' : 'space-y-[3px]'} ml-[27px] relative">
                                 ${items}
                             </div>
                         </div>
