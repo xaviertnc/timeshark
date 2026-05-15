@@ -67,9 +67,6 @@ export async function renderPlanner() {
                         return `<button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-zoom="${z}" title="${tooltips[z]}">${z}</button>`;
                     }).join('')}
                 </div>
-                <button id="toggle-spans-btn" class="px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all border ${showSpans ? 'bg-primary/15 text-primary border-primary/30' : 'bg-app/30 text-dim border-white/5 opacity-40'}">
-                    ▓ Spans
-                </button>
             </div>
         </div>
 
@@ -116,7 +113,7 @@ export async function renderPlanner() {
 
         // Render Views
         const timelineContainer = container.querySelector('#planner-timeline-container');
-        PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { showSpans });
+        PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, {});
     };
 
     const handleLaneReorder = async (move) => {
@@ -185,15 +182,14 @@ export async function renderPlanner() {
 
     container.querySelector('#project-filter').onchange = (e) => { projectFilter = e.target.value; updateUI(); };
 
-    const spansBtn = container.querySelector('#toggle-spans-btn');
-    if (spansBtn) spansBtn.onclick = () => { showSpans = !showSpans; updateUI(); };
+
 
     // Resize Observer for basic cleanup
     let resizeObserver = new ResizeObserver(() => {
         const data = PlannerState.getCombinedData(projectFilter);
         const today = new Date();
         const config = PlannerUtils.getTimelineConfig(currentScale, timeOffset, today);
-        PlannerTimeline.render(container.querySelector('#planner-timeline-container'), data, config, today, currentZoom, handleLaneReorder, { showSpans });
+        PlannerTimeline.render(container.querySelector('#planner-timeline-container'), data, config, today, currentZoom, handleLaneReorder, {});
     });
     const timelineContainer = container.querySelector('#planner-timeline-container');
     if (timelineContainer) resizeObserver.observe(timelineContainer);

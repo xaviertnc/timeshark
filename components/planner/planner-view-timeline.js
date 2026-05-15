@@ -36,6 +36,7 @@ export const PlannerTimeline = {
         if (!container) return;
         
         window.TimesharkProjectCollapsed = window.TimesharkProjectCollapsed || new Set();
+        window.TimesharkEpicCollapsed = window.TimesharkEpicCollapsed || new Set();
         window.TimesharkResourceCollapsed = window.TimesharkResourceCollapsed || new Set();
 
         container.innerHTML = '';
@@ -122,7 +123,6 @@ export const PlannerTimeline = {
         data.rows.forEach(row => {
             // Collect projects for this resource
             const tasksByProject = new Map();
-            const spansByProject = new Map();
             
             // Helper to prevent invalid projects spawning multiple "Personal" rows
             const getValidProjId = (pid) => {
@@ -135,15 +135,10 @@ export const PlannerTimeline = {
                 if (!t.start_date) return false;
                 if (t.status !== 'done') return true;
                 return isCompletedToday(t);
-            }).forEach(task => {
+            }).forEach(task => { // Treating project_spans normally
                 const projId = getValidProjId(task.project_id);
-                if (task.task_type === 'project_span') {
-                    if (!spansByProject.has(projId)) spansByProject.set(projId, []);
-                    spansByProject.get(projId).push(task);
-                } else {
-                    if (!tasksByProject.has(projId)) tasksByProject.set(projId, []);
-                    tasksByProject.get(projId).push(task);
-                }
+                if (!tasksByProject.has(projId)) tasksByProject.set(projId, []);
+                tasksByProject.get(projId).push(task);
             });
 
             const entriesByProject = new Map();
@@ -153,16 +148,16 @@ export const PlannerTimeline = {
                 entriesByProject.get(pid).push(e);
             });
 
-            const allProjectIds = new Set([...tasksByProject.keys(), ...spansByProject.keys(), ...entriesByProject.keys()]);
+            const allProjectIds = new Set([...tasksByProject.keys(), ...entriesByProject.keys()]);
             if (allProjectIds.size === 0) return; // Completely empty resource row
 
             // Sort projects: chronologically by earliest activity
-            const projectArr = Array.from(allProjectIds).map(pid => {
-                return data.projects.find(p => p.id == pid) || { id: pid, name: 'Unassigned', color: '#475569' };
+            const rawProjectArr = Array.from(allProjectIds).map(pid => {
+                return data.projects.find(p => p.id == pid) || { id: pid, name: 'Unassigned', color: '#475569', parent_id: null };
             });
 
             const getEarliest = (pid) => {
-                const pTasks = (tasksByProject.get(pid) || []).concat(spansByProject.get(pid) || []);
+                const pTasks = tasksByProject.get(pid) || [];
                 const pEntries = entriesByProject.get(pid) || [];
                 let e = Infinity;
                 pTasks.forEach(t => { if(t.start_date) { const d = new Date(t.start_date).getTime(); if(d < e) e = d; }});
@@ -170,31 +165,41 @@ export const PlannerTimeline = {
                 return e;
             };
 
-            projectArr.sort((a, b) => getEarliest(a.id) - getEarliest(b.id));
+            rawProjectArr.sort((a, b) => getEarliest(a.id) - getEarliest(b.id));
+
+            // Group by Epic
+            const epicsMap = new Map(); // epicId -> list of projects
+            const standaloneProjects = [];
+
+            rawProjectArr.forEach(proj => {
+                if (proj.parent_id) {
+                    const epic = data.projects.find(p => p.id == proj.parent_id && p.type === 'epic');
+                    if (epic) {
+                        if (!epicsMap.has(epic.id)) epicsMap.set(epic.id, { epic: epic, projList: [] });
+                        epicsMap.get(epic.id).projList.push(proj);
+                    } else standaloneProjects.push(proj);
+                } else standaloneProjects.push(proj);
+            });
 
             // 1. Add Resource
             flattenedRows.push({ type: 'resource', resource: row.resource });
 
-            // 2. Add Projects & Tasks
-            projectArr.forEach(proj => {
-                const spans = spansByProject.get(proj.id) || [];
+            // Helper to push project with Epic context
+            const pushProjectGroup = (proj, isEpicChild = false, epicId = null) => {
                 let tasks = tasksByProject.get(proj.id) || [];
                 const entries = entriesByProject.get(proj.id) || [];
+                if (tasks.length === 0 && entries.length === 0) return;
 
-                // Skip span if toggled off
-                const filteredSpans = options.showSpans === false ? [] : spans;
-
-                if (filteredSpans.length === 0 && tasks.length === 0 && entries.length === 0) return;
-
-                // Sort tasks chronologically
                 tasks.sort((a,b) => new Date(a.start_date) - new Date(b.start_date));
 
                 flattenedRows.push({
                     type: 'project',
                     project: proj,
-                    spans: filteredSpans,
                     entries: entries,
-                    resource: row.resource
+                    tasks: tasks,
+                    resource: row.resource,
+                    isEpicChild: isEpicChild,
+                    epicId: epicId
                 });
 
                 tasks.forEach(task => {
@@ -202,15 +207,25 @@ export const PlannerTimeline = {
                         const taskDays = task.end_date ? (new Date(task.end_date) - new Date(task.start_date)) / (24 * 60 * 60 * 1000) : 0;
                         if (taskDays < 3) return;
                     }
-
                     flattenedRows.push({
                         type: 'task',
                         task: task,
                         project: proj,
-                        resource: row.resource
+                        resource: row.resource,
+                        isEpicChild: isEpicChild,
+                        epicId: epicId
                     });
                 });
+            };
+
+            // 2. Add Epics and their projects
+            Array.from(epicsMap.values()).forEach(group => {
+                flattenedRows.push({ type: 'epic', epic: group.epic, resource: row.resource });
+                group.projList.forEach(p => pushProjectGroup(p, true, group.epic.id));
             });
+
+            // 3. Add standalone projects
+            standaloneProjects.forEach(p => pushProjectGroup(p, false, null));
         });
 
         // ───── Header ─────
@@ -340,8 +355,11 @@ export const PlannerTimeline = {
         // ───── Render the Flattened Rows ─────
         flattenedRows.forEach(row => {
             const isResourceCollapsed = window.TimesharkResourceCollapsed.has(row.resource);
-            if ((row.type === 'task' || row.type === 'project') && isResourceCollapsed) return;
+            if (row.type !== 'resource' && isResourceCollapsed) return;
+
+            if (row.epicId && window.TimesharkEpicCollapsed.has(String(row.epicId))) return;
             if (row.type === 'task' && window.TimesharkProjectCollapsed.has(String(row.project.id))) return;
+
 
             const rowEl = document.createElement('div');
             // Base class for all rows
@@ -353,7 +371,7 @@ export const PlannerTimeline = {
             // Gantt View Column (Right)
             let rightHtml = '';
 
-            const renderBar = (task, proj, isSpan = false) => {
+            const renderBar = (task, proj) => {
                 const x = getX(task.start_date);
                 const w = Math.max(10, getWidth(task.start_date, task.end_date));
                 if (x + w < 0 || x > totalWidth) return '';
@@ -363,57 +381,34 @@ export const PlannerTimeline = {
                 const status = task.status || 'todo';
                 const isDone = status === 'done';
 
-                const tooltipText = `${task.title} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
+                const tags = task.tags ? (Array.isArray(task.tags) ? task.tags : task.tags.split(',').filter(Boolean)) : [];
+                const tagLabels = tags.length > 0 ? ` [${tags.join(', ')}] ` : '';
+                const tooltipText = `${task.title}${tagLabels} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
 
-                if (isSpan) {
-                    const spanH = Math.max(zp.barH * 0.8, zp.spanFontSize + 4);
-                    const spanTop = (zp.rowH - spanH) / 2;
-                    const projProgress = getProjectProgress(proj.id);
-                    
-                    const progressW = (w * projProgress) / 100;
-                    const progressStartX = x;
-                    const progressEndX = progressStartX + progressW;
-                    const visibleProgressStartX = Math.max(0, progressStartX);
-                    const visibleProgressEndX = Math.min(totalWidth, progressEndX);
-                    const visibleProgressW = Math.max(0, visibleProgressEndX - visibleProgressStartX);
-                    const gradientProgressPercent = renderW <= 0 ? 0 : (visibleProgressW / renderW) * 100;
+                const barTop = (zp.rowH - zp.barH) / 2;
+                const taskProgress = task.progress || 0;
+                const progressHtml = (!proj.continuous && taskProgress) ? `
+                    <div class="absolute inset-0 bg-black/20 pointer-events-none" style="width: ${taskProgress}%"></div>
+                ` : '';
+                const doneOverlay = isDone ? `
+                    <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 5px); z-index: 0;"></div>
+                ` : '';
 
-                    const spanTitle = showText && renderW > 50
-                        ? `<span class="flex items-center justify-center gap-2 px-2 pointer-events-none whitespace-nowrap overflow-hidden h-full"><span class="text-[${zp.spanFontSize}px] font-black text-white/90 truncate">${task.title}</span><span class="text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0">${projProgress}%</span></span>`
-                        : '';
-                        
-                    return `
-                        <div class="task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden shadow-sm"
-                             style="left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${gradientProgressPercent}%, ${proj.color}44 ${gradientProgressPercent}%); border: 1px solid ${proj.color}88;"
-                             data-task-id="${task.id}"
-                             title="${tooltipText} • ${projProgress}% complete">
-                             ${spanTitle}
-                        </div>
-                    `;
-                } else {
-                    const barTop = (zp.rowH - zp.barH) / 2;
-                    const taskProgress = task.progress || 0;
-                    const progressHtml = (!proj.continuous && taskProgress) ? `
-                        <div class="absolute inset-0 bg-black/20 pointer-events-none" style="width: ${taskProgress}%"></div>
-                    ` : '';
-                    const doneOverlay = isDone ? `
-                        <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 5px); z-index: 0;"></div>
-                    ` : '';
+                const taskBg = isDone ? proj.color : `linear-gradient(to right, ${proj.color}22, ${proj.color}44)`;
+                const borderStyle = isDone ? 'border border-white/10' : '';
 
-                    const taskBg = isDone ? proj.color : `linear-gradient(to right, ${proj.color}22, ${proj.color}44)`;
-                    const borderStyle = isDone ? 'border border-white/10' : '';
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1 py-0.5 rounded bg-black/40 border border-white/10 text-[7px] text-white/80 uppercase tracking-widest pointer-events-none ml-1">${t}</span>`).join('');
 
-                    return `
-                        <div class="task-bar absolute rounded shadow-sm ${borderStyle} hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all cursor-pointer overflow-hidden ${isDone ? 'opacity-90' : 'opacity-100 shadow-inner'}"
-                             style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${taskBg}; ${!isDone ? `border: 1px solid ${proj.color};` : ''}"
-                             data-task-id="${task.id}"
-                             title="${tooltipText}">
-                             ${progressHtml}
-                             ${doneOverlay}
-                             <span class="block relative text-[${zp.fontSize}px] font-bold ${isDone ? 'text-white' : 'text-white/90'} truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}</span>
-                        </div>
-                    `;
-                }
+                return `
+                    <div class="task-bar absolute rounded shadow-sm ${borderStyle} hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all cursor-pointer overflow-hidden ${isDone ? 'opacity-90' : 'opacity-100 shadow-inner'}"
+                         style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${taskBg}; ${!isDone ? `border: 1px solid ${proj.color};` : ''}"
+                         data-task-id="${task.id}"
+                         title="${tooltipText}">
+                         ${progressHtml}
+                         ${doneOverlay}
+                         <span class="flex items-center relative text-[${zp.fontSize}px] font-bold ${isDone ? 'text-white' : 'text-white/90'} truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}${showText && renderW > 60 ? tagBadges : ''}</span>
+                    </div>
+                `;
             };
 
             if (row.type === 'resource') {
@@ -431,25 +426,68 @@ export const PlannerTimeline = {
                         <span class="text-[12px] font-black text-white/90 tracking-tight opacity-100">${row.resource}</span>
                     </div>
                 `;
-            } 
-            else if (row.type === 'project') {
-                rowEl.classList.add('bg-card/20');
-                const spanLabel = row.spans.length === 0 ? '' : (row.spans.length === 1 ? '1 Span' : `${row.spans.length} Spans`);
-                const isCollapsed = window.TimesharkProjectCollapsed.has(String(row.project.id));
-                const chevron = `<button class="collapse-toggle ml-1 p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-proj="${row.project.id}">
+            }
+            else if (row.type === 'epic') {
+                rowEl.classList.add('bg-card/40');
+                const isCollapsed = window.TimesharkEpicCollapsed.has(String(row.epic.id));
+                const chevron = `<button class="collapse-toggle-epic ml-3 p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-epic="${row.epic.id}">
                     <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                 </button>`;
+                
                 leftHtml = `
-                    <div class="proj-row w-full h-full flex items-center pl-6 pr-2 gap-1.5 cursor-pointer hover:bg-white/5 transition-colors border-t border-white/5" data-project-id="${row.project.id}">
+                    <div class="w-full h-full flex items-center pr-2 gap-1.5 cursor-pointer hover:bg-white/5 transition-colors border-t border-white/5 relative">
+                        <div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
+                        <div class="absolute left-6 top-1/2 w-2 h-px bg-white/5"></div>
+                        ${chevron}
+                        <span class="px-1 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[8px] uppercase tracking-widest font-black shrink-0 shadow-inner">EPIC</span>
+                        <span class="text-[11px] font-bold text-white opacity-100 truncate flex-grow">${row.epic.name}</span>
+                    </div>
+                `;
+            }
+            else if (row.type === 'project') {
+                rowEl.classList.add('bg-card/20');
+                const isCollapsed = window.TimesharkProjectCollapsed.has(String(row.project.id));
+                const chevron = `<button class="collapse-toggle p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-proj="${row.project.id}">
+                    <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                </button>`;
+                
+                const pl = row.isEpicChild ? 'pl-10' : 'pl-6';
+                const treeLines = row.isEpicChild ? `
+                    <div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
+                    <div class="absolute left-10 top-0 bottom-0 w-px bg-white/5"></div>
+                    <div class="absolute left-10 top-1/2 w-1.5 h-px bg-white/5"></div>
+                ` : `<div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div><div class="absolute left-6 top-1/2 w-1.5 h-px bg-white/5"></div>`;
+                
+                const tags = row.project.tags ? (Array.isArray(row.project.tags) ? row.project.tags : row.project.tags.split(',').filter(Boolean)) : [];
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1 py-px rounded bg-white/5 border border-white/5 text-[7px] text-white/50 uppercase tracking-widest ml-1 shadow-inner">${t}</span>`).join('');
+
+                leftHtml = `
+                    <div class="proj-row w-full h-full flex items-center pr-2 gap-1.5 cursor-pointer hover:bg-white/5 transition-colors border-t border-white/5 relative ${pl}" data-project-id="${row.project.id}">
+                        ${treeLines}
                         ${chevron}
                         <div class="w-1.5 h-1.5 rounded-sm shrink-0 shadow-sm" style="background-color: ${row.project.color}"></div>
-                        <span class="text-[11px] font-bold text-white/90 opacity-100 truncate">${row.project.name}</span>
-                        <div class="ml-auto text-[9px] font-black tracking-widest text-[#888] uppercase">${spanLabel}</div>
+                        <span class="text-[11px] font-bold text-white/90 opacity-100 truncate">${row.project.name}</span>${tagBadges}
                     </div>
                 `;
 
-                // Render all spans for this project
-                row.spans.forEach(span => rightHtml += renderBar(span, row.project, true));
+                // Calculate and Render Dynamic Project Envelope
+                let boundaryStartX = null;
+                let boundaryEndX = null;
+                row.tasks.forEach(t => {
+                    const sX = getX(t.start_date);
+                    const eX = sX + getWidth(t.start_date, t.end_date);
+                    if (boundaryStartX === null || sX < boundaryStartX) boundaryStartX = sX;
+                    if (boundaryEndX === null || eX > boundaryEndX) boundaryEndX = eX;
+                });
+                
+                if (boundaryStartX !== null && boundaryEndX !== null) {
+                    const bw = Math.max(10, boundaryEndX - boundaryStartX);
+                    const projProgress = getProjectProgress(row.project.id);
+                    rightHtml += `<div class="absolute rounded-sm pointer-events-none transition-all shadow-sm flex items-center px-1.5 overflow-hidden border"
+                            style="left: ${Math.max(0, boundaryStartX)}px; width: ${Math.min(totalWidth - boundaryStartX, bw)}px; top: 4px; bottom: 8px; background: linear-gradient(90deg, ${row.project.color}33 ${projProgress}%, ${row.project.color}11 ${projProgress}%); border-color: ${row.project.color}44;">
+                            ${showText && bw > 60 && projProgress > 0 ? `<span class="text-[8px] font-black text-white/40 leading-none">${projProgress}%</span>` : ''}
+                    </div>`;
+                }
 
                 // Render time entries natively on the project row bottom edge (similar to original look)
                 if (config.type !== 'year') {
@@ -483,15 +521,26 @@ export const PlannerTimeline = {
                 }
             } 
             else if (row.type === 'task') {
-                leftHtml = `
-                    <div class="task-item relative w-full h-full flex items-center pl-16 pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-l-primary/30" data-task-id="${row.task.id}">
-                        <div class="absolute left-9 top-0 bottom-1/2 w-4 border-l border-b border-white/10 rounded-bl" style="border-bottom-left-radius: 4px;"></div>
-                        <div class="w-1 h-1 rounded-full flex items-center justify-center shrink-0 ${row.task.status === 'done' ? 'bg-primary/50' : 'bg-dim/30'}"></div>
-                        <span class="text-[10px] text-white/80 ${row.task.status === 'done' ? 'line-through opacity-50' : 'opacity-100'} truncate">${row.task.title}</span>
-                    </div>
+                const isDone = row.task.status === 'done';
+                const pl = row.isEpicChild ? 'pl-[60px]' : 'pl-16';
+                const leftLine = row.isEpicChild ? `
+                    <div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
+                    <div class="absolute left-10 top-0 bottom-1/2 w-4 border-l border-b border-white/10 rounded-bl" style="border-bottom-left-radius: 4px;"></div>
+                ` : `
+                    <div class="absolute left-9 top-0 bottom-1/2 w-4 border-l border-b border-white/10 rounded-bl" style="border-bottom-left-radius: 4px;"></div>
                 `;
 
-                rightHtml += renderBar(row.task, row.project, false);
+                const tags = row.task.tags ? (Array.isArray(row.task.tags) ? row.task.tags : row.task.tags.split(',').filter(Boolean)) : [];
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1 py-px rounded bg-white/5 border border-white/5 text-[7px] text-white/50 uppercase tracking-widest pointer-events-none ml-1 shadow-inner shrink-0">${t}</span>`).join('');
+
+                leftHtml = `
+                    <div class="task-item relative w-full h-full flex items-center pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-l-primary/30 ${pl}" data-task-id="${row.task.id}">
+                        ${leftLine}
+                        <div class="w-1 h-1 rounded-full flex items-center justify-center shrink-0 ${isDone ? 'bg-primary/50' : 'bg-dim/30'}"></div>
+                        <span class="text-[10px] text-white/80 ${isDone ? 'line-through opacity-50' : 'opacity-100'} truncate">${row.task.title}</span>${tagBadges}
+                    </div>
+                `;
+                rightHtml += renderBar(row.task, row.project);
             }
 
             // Assemble row
@@ -527,6 +576,15 @@ export const PlannerTimeline = {
         if (!container.dataset.timelineEventsBound) {
             container.dataset.timelineEventsBound = "true";
             container.addEventListener('click', (e) => {
+                const toggleEpicBtn = e.target.closest('.collapse-toggle-epic');
+                if (toggleEpicBtn) {
+                    e.stopPropagation();
+                    const eid = toggleEpicBtn.dataset.toggleEpic;
+                    if (window.TimesharkEpicCollapsed.has(eid)) window.TimesharkEpicCollapsed.delete(eid);
+                    else window.TimesharkEpicCollapsed.add(eid);
+                    PlannerTimeline.render(container, data, config, today, currentZoom, onReorder, options);
+                }
+
                 const toggleBtn = e.target.closest('.collapse-toggle');
                 const toggleResBtn = e.target.closest('.collapse-toggle-res');
                 if (toggleBtn) {
