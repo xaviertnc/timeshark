@@ -2,85 +2,31 @@
  * components/planner/planner-view-timeline.js
  * 
  * Renders the Gantt-style timeline view with 3 zoom levels.
- * Tasks are grouped into per-project lanes within each resource row.
- * A lane legend (project color + name) shows on wider screens.
- * Time entries use project colors.
+ * Rebuilt using a flattened Tree Row structure.
  */
 
 import { PlannerUtils } from './planner-utils.js';
 
-/**
- * ZOOM — Master layout configuration for every scale × density combination.
- *
- * Structure:  ZOOM[scale][density] → preset object
- *   Scales:    'day' | 'week' | 'month' | 'year'
- *   Densities: 'compact' | 'regular' | 'relaxed'
- *
- * Preset properties:
- * ─────────────────────────────────────────────────────────────────────────────
- * @property {number}  colWidth      — Minimum pixels-per-day for week/month.
- *                                     In week/month views, each day column is
- *                                     at least this wide (px). Ignored in day
- *                                     view (uses hoursToShow) and year view
- *                                     (fits to viewport). If colsInView is set,
- *                                     colWidth acts as a floor only.
- *
- * @property {number}  colsInView    — (week/month only, optional) Target number
- *                                     of date columns visible in the viewport
- *                                     at once. When set, pxPerDay is computed as
- *                                     availableWidth / colsInView. The resulting
- *                                     value is still clamped to colWidth minimum.
- *                                     Omit or set to 0 to use the default
- *                                     colWidth-based calculation.
- *
- * @property {number}  hoursToShow   — (day view only) How many hours fit in the
- *                                     visible viewport width. Lower = more zoomed
- *                                     in, higher = more compressed.
- *
- * @property {number}  rowH          — Base row height (px) for each resource.
- *                                     Rows dynamically grow taller when a resource
- *                                     has many project lanes, so this is a minimum.
- *
- * @property {number}  barH          — Height of each task bar (px).
- *
- * @property {number}  laneGap       — Vertical gap (px) between project lanes
- *                                     inside a resource row. Smaller = lanes sit
- *                                     closer together. Controls row density.
- *
- * @property {number}  rowPadTop     — Top padding (px) inside each resource row,
- *                                     above the first lane.
- *
- * @property {number}  rowPadBottom  — Bottom padding (px) inside each resource
- *                                     row, below the time-entry strip.
- *
- * @property {number}  timeEntryH    — Height (px) of the time-entry strip at the
- *                                     bottom of each resource row.
- *
- * @property {number}  fontSize      — Font size (px) for task bar titles.
- *
- * @property {number}  spanFontSize  — Font size (px) for project-span bar titles.
- * ─────────────────────────────────────────────────────────────────────────────
- */
 const ZOOM = {
     day: {
-        compact: { colWidth: 20, rowH: 36, barH: 14, hoursToShow: 24, laneGap: 3, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 20, rowH: 42, barH: 27, hoursToShow: 24, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 16, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 120, rowH: 48, barH: 30, hoursToShow: 12, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 18, fontSize: 10, spanFontSize: 11 },
+        compact: { colWidth: 20, rowH: 32, barH: 14, hoursToShow: 24, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 20, rowH: 36, barH: 20, hoursToShow: 24, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 120, rowH: 44, barH: 26, hoursToShow: 12, fontSize: 10, spanFontSize: 12 },
     },
     week: {
-        compact: { colWidth: 30, rowH: 36, barH: 14, colsInView: 9, laneGap: 3, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 80, rowH: 42, barH: 27, colsInView: 7, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 60, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 120, rowH: 48, barH: 30, colsInView: 5, laneGap: 2, rowPadTop: 4, rowPadBottom: 6, timeEntryH: 18, fontSize: 10, spanFontSize: 11 },
+        compact: { colWidth: 30, rowH: 32, barH: 14, colsInView: 9, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 80, rowH: 36, barH: 20, colsInView: 7, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 120, rowH: 44, barH: 26, colsInView: 5, fontSize: 10, spanFontSize: 12 },
     },
     month: {
-        compact: { colWidth: 20, rowH: 36, barH: 14, colsInView: 31, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 40, rowH: 42, barH: 27, colsInView: 0, laneGap: 2, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 16, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 80, rowH: 48, barH: 30, colsInView: 0, laneGap: 2, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 18, fontSize: 10, spanFontSize: 11 },
+        compact: { colWidth: 20, rowH: 32, barH: 14, colsInView: 31, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 40, rowH: 36, barH: 20, colsInView: 0, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 80, rowH: 44, barH: 26, colsInView: 0, fontSize: 10, spanFontSize: 12 },
     },
     year: {
-        compact: { colWidth: 6, rowH: 36, barH: 14, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 14, fontSize: 7, spanFontSize: 8 },
-        regular: { colWidth: 12, rowH: 42, barH: 27, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 16, fontSize: 8, spanFontSize: 10 },
-        relaxed: { colWidth: 24, rowH: 48, barH: 30, laneGap: 3, rowPadTop: 3, rowPadBottom: 3, timeEntryH: 18, fontSize: 15, spanFontSize: 11 },
+        compact: { colWidth: 6, rowH: 32, barH: 14, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 12, rowH: 36, barH: 20, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 24, rowH: 44, barH: 26, fontSize: 10, spanFontSize: 12 },
     }
 };
 
@@ -95,12 +41,8 @@ export const PlannerTimeline = {
         const zp = ZOOM[scaleKey]?.[zoom] || ZOOM[scaleKey]?.regular || ZOOM.week.regular;
         const showText = zoom !== 'compact';
 
-        // Responsive resource column
-        const isWide = container.offsetWidth > 900;
-        const resourceWidth = isWide ? 140 : 90;
-        const isYearRelaxed = config.type === 'year' && zoom === 'relaxed';
-        const legendWidth = isWide ? (isYearRelaxed ? 210 : 140) : 0; // legend only on wide screens
-        const leftWidth = resourceWidth + legendWidth;
+        // Static Tree View left width
+        const leftWidth = 320;
 
         // Calculate dimensions
         const startTime = config.startDate.getTime();
@@ -117,7 +59,6 @@ export const PlannerTimeline = {
         } else {
             totalDays = config.dates.length;
             if (config.type === 'year') {
-                // Year view: compact/regular fit to viewport, relaxed stretches wider
                 if (zoom === 'relaxed') {
                     pxPerDay = Math.max(availableWidth / totalDays, 5);
                 } else {
@@ -126,7 +67,6 @@ export const PlannerTimeline = {
             } else {
                 const minPxPerDay = zp.colWidth || 100;
                 if (zp.colsInView && zp.colsInView > 0) {
-                    // colsInView: compute px/day so exactly N columns fit in view
                     pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / zp.colsInView));
                 } else {
                     pxPerDay = Math.max(minPxPerDay, Math.floor(availableWidth / totalDays));
@@ -149,7 +89,7 @@ export const PlannerTimeline = {
             return (diff / (24 * 60 * 60 * 1000)) * pxPerDay;
         };
 
-        // ───── Group tasks by project for lane allocation ─────
+        // ───── Group tasks & build flattened rows ─────
         const nowDate = new Date();
         const todayMidnight = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
         const tomorrowMidnight = new Date(todayMidnight); tomorrowMidnight.setDate(todayMidnight.getDate() + 1);
@@ -162,69 +102,106 @@ export const PlannerTimeline = {
             return cd >= todayMidnight && cd < tomorrowMidnight;
         };
 
-        const getProjectLanes = (tasks) => {
-            const lanesByProject = new Map(); // project_id -> { project, tasks[] }
-
-            tasks.filter(t => {
-                if (!t.start_date) return false;
-                if (t.status !== 'done') return true;
-                return isCompletedToday(t);
-            }).forEach(task => {
-                const projId = task.project_id || 'personal';
-                if (!lanesByProject.has(projId)) {
-                    const proj = data.projects.find(p => p.id == projId) || { id: projId, name: 'Personal', color: '#64748b' };
-                    lanesByProject.set(projId, { project: proj, tasks: [] });
-                }
-                lanesByProject.get(projId).tasks.push(task);
-            });
-
-            // ── Two-tier lane sort (see .notes/timeline_lane_sorting.md) ──
-            // 1. Span lanes FIRST — these use lane_order from drag-and-drop reordering.
-            //    The drag-and-drop system in the lane legend exists specifically for this.
-            //    Do NOT override lane_order for span lanes with date-based sorting.
-            // 2. Regular lanes AFTER — sorted by earliest task start_date (chronological).
-            //    This prevents a scattered layout for non-span tasks.
-            const allLanes = Array.from(lanesByProject.values());
-            const spanLanes = allLanes.filter(l => l.tasks.some(t => t.task_type === 'project_span'));
-            const regularLanes = allLanes.filter(l => !l.tasks.some(t => t.task_type === 'project_span'));
-
-            spanLanes.sort((a, b) => (a.project.lane_order ?? 999) - (b.project.lane_order ?? 999));
-            regularLanes.sort((a, b) => {
-                const earliestA = a.tasks.reduce((min, t) => {
-                    const d = new Date(t.start_date).getTime();
-                    return d < min ? d : min;
-                }, Infinity);
-                const earliestB = b.tasks.reduce((min, t) => {
-                    const d = new Date(t.start_date).getTime();
-                    return d < min ? d : min;
-                }, Infinity);
-                return earliestA - earliestB;
-            });
-
-            return [...spanLanes, ...regularLanes];
-        };
-
-        // ───── Compute project-level progress for span tasks ─────
         const getProjectProgress = (projectId) => {
-            // First: use the project's own progress field (authoritative source)
             const proj = data.projects.find(p => p.id == projectId);
             if (proj && proj.progress !== undefined && proj.progress !== null) {
                 return parseInt(proj.progress) || 0;
             }
-            // Fallback: compute average from non-span tasks
             const allTasks = data.rows.flatMap(r => r.tasks);
-            const projectTasks = allTasks.filter(t =>
-                (t.project_id || 'personal') == projectId &&
-                t.task_type !== 'project_span'
-            );
+            const projectTasks = allTasks.filter(t => (t.project_id || 'personal') == projectId && t.task_type !== 'project_span');
             if (projectTasks.length === 0) return 0;
             const total = projectTasks.reduce((sum, t) => sum + (t.progress || 0), 0);
             return Math.round(total / projectTasks.length);
         };
 
+        const flattenedRows = [];
+
+        data.rows.forEach(row => {
+            // Collect projects for this resource
+            const tasksByProject = new Map();
+            const spansByProject = new Map();
+            
+            row.tasks.filter(t => {
+                if (!t.start_date) return false;
+                if (t.status !== 'done') return true;
+                return isCompletedToday(t);
+            }).forEach(task => {
+                const projId = task.project_id || 'personal';
+                if (task.task_type === 'project_span') {
+                    if (!spansByProject.has(projId)) spansByProject.set(projId, []);
+                    spansByProject.get(projId).push(task);
+                } else {
+                    if (!tasksByProject.has(projId)) tasksByProject.set(projId, []);
+                    tasksByProject.get(projId).push(task);
+                }
+            });
+
+            const entriesByProject = new Map();
+            row.entries.forEach(e => {
+                const pid = e.project_id || 'personal';
+                if (!entriesByProject.has(pid)) entriesByProject.set(pid, []);
+                entriesByProject.get(pid).push(e);
+            });
+
+            const allProjectIds = new Set([...tasksByProject.keys(), ...spansByProject.keys(), ...entriesByProject.keys()]);
+            if (allProjectIds.size === 0) return; // Completely empty resource row
+
+            // Sort projects: spans first based on lane_order, then chronological
+            const projectArr = Array.from(allProjectIds).map(pid => {
+                return data.projects.find(p => p.id == pid) || { id: pid, name: 'Personal', color: '#64748b' };
+            });
+
+            projectArr.sort((a, b) => {
+                const hasSpanA = spansByProject.has(a.id);
+                const hasSpanB = spansByProject.has(b.id);
+                if (hasSpanA && hasSpanB) return (a.lane_order ?? 999) - (b.lane_order ?? 999);
+                if (hasSpanA) return -1;
+                if (hasSpanB) return 1;
+                return 0; // fallback order
+            });
+
+            // 1. Add Resource
+            flattenedRows.push({ type: 'resource', resource: row.resource });
+
+            // 2. Add Projects & Tasks
+            projectArr.forEach(proj => {
+                const spans = spansByProject.get(proj.id) || [];
+                let tasks = tasksByProject.get(proj.id) || [];
+                const entries = entriesByProject.get(proj.id) || [];
+
+                // Skip span if toggled off
+                const filteredSpans = options.showSpans === false ? [] : spans;
+
+                if (filteredSpans.length === 0 && tasks.length === 0 && entries.length === 0) return;
+
+                // Sort tasks chronologically
+                tasks.sort((a,b) => new Date(a.start_date) - new Date(b.start_date));
+
+                flattenedRows.push({
+                    type: 'project',
+                    project: proj,
+                    spans: filteredSpans,
+                    entries: entries
+                });
+
+                tasks.forEach(task => {
+                    if (config.type === 'year') {
+                        const taskDays = task.end_date ? (new Date(task.end_date) - new Date(task.start_date)) / (24 * 60 * 60 * 1000) : 0;
+                        if (taskDays < 3) return;
+                    }
+
+                    flattenedRows.push({
+                        type: 'task',
+                        task: task,
+                        project: proj
+                    });
+                });
+            });
+        });
+
         // ───── Header ─────
         const header = document.createElement('div');
-        header.className = 'flex sticky top-0 z-40 bg-app border-b border-white/2';
+        header.className = 'flex sticky top-0 z-40 bg-app border-b border-white/5';
         header.style.width = `${leftWidth + totalWidth}px`;
         header.style.minWidth = `${leftWidth + totalWidth}px`;
 
@@ -245,7 +222,6 @@ export const PlannerTimeline = {
                 `;
             }
         } else if (config.type === 'year') {
-            // Year view: one column per month
             let monthOffset = 0;
             const thisMonth = today.getMonth();
             const thisYear = config.startDate.getFullYear();
@@ -278,12 +254,9 @@ export const PlannerTimeline = {
 
         const headerHeight = zoom === 'compact' ? 'h-10' : 'h-14';
         header.innerHTML = `
-            <div class="flex-shrink-0 p-3 font-black text-dim text-[9px] uppercase tracking-[0.2em] border-r border-white/2 bg-app sticky left-0 z-50 flex items-center" style="width: ${resourceWidth}px">
-                Resource
+            <div class="flex-shrink-0 px-4 flex items-center font-black text-dim text-[10px] uppercase tracking-[0.2em] border-r border-white/5 bg-app/80 backdrop-blur sticky left-0 z-50" style="width: ${leftWidth}px">
+                PLANNING TREE
             </div>
-            ${legendWidth > 0 ? `<div class="flex-shrink-0 border-r border-white/2 bg-app sticky z-50 flex items-center px-2" style="width: ${legendWidth}px; left: ${resourceWidth}px">
-                <span class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">Project</span>
-            </div>` : ''}
             <div class="relative ${headerHeight}" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
                 ${headerCols}
             </div>
@@ -292,263 +265,162 @@ export const PlannerTimeline = {
 
         // ───── Body ─────
         const body = document.createElement('div');
-        body.className = 'relative';
+        body.className = 'relative flex flex-col min-h-0';
         body.style.width = `${leftWidth + totalWidth}px`;
         body.style.minWidth = `${leftWidth + totalWidth}px`;
 
-        // Grid Lines
+        // Background Grid (Behind all rows)
         const gridLines = document.createElement('div');
-        gridLines.className = 'absolute inset-0 pointer-events-none';
+        gridLines.className = 'absolute inset-0 pointer-events-none z-0';
         gridLines.style.left = `${leftWidth}px`;
         gridLines.style.width = `${totalWidth}px`;
 
         if (config.isDayView) {
             const hourWidth = pxPerDay / 24;
             gridLines.innerHTML = Array.from({ length: 24 }).map((_, h) => `
-                <div class="absolute top-0 bottom-0"
-                     style="left: ${h * hourWidth}px; width: ${hourWidth}px; border-right: 1px solid #222; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}">
-                </div>
+                <div class="absolute top-0 bottom-0 border-r border-[#222]" style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}"></div>
             `).join('');
         } else if (config.type === 'year') {
-            // Year view: grid lines per month boundary only
             let monthOffset = 0;
             const thisMonth = today.getMonth();
             const isCurrentYear = config.startDate.getFullYear() === today.getFullYear();
             gridLines.innerHTML = config.groups.map(g => {
                 const monthWidth = g.count * pxPerDay;
                 const isCurrent = isCurrentYear && g.month === thisMonth;
-                const col = `
-                    <div class="absolute top-0 bottom-0"
-                         style="left: ${monthOffset}px; width: ${monthWidth}px; border-right: 1px solid #222; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.02)' : 'transparent'}">
-                    </div>
-                `;
+                const col = `<div class="absolute top-0 bottom-0 border-r border-[#222]" style="left: ${monthOffset}px; width: ${monthWidth}px; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.02)' : 'transparent'}"></div>`;
                 monthOffset += monthWidth;
                 return col;
             }).join('');
         } else {
             gridLines.innerHTML = config.dates.map((d, i) => {
                 const isToday = d.toDateString() === today.toDateString();
-                return `
-                    <div class="absolute top-0 bottom-0"
-                         style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; border-right: 1px solid #222; background-color: ${isToday ? 'rgba(var(--color-primary), 0.01)' : 'transparent'}">
-                    </div>
-                `;
+                return `<div class="absolute top-0 bottom-0 border-r border-[#222]" style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${isToday ? 'rgba(var(--color-primary), 0.01)' : 'transparent'}"></div>`;
             }).join('');
         }
         body.appendChild(gridLines);
 
-        // ───── Today Indicator Line (vertical line marking today) ─────
+        // Today Indicator Line
         if (today >= config.startDate && today <= config.endDate) {
             const todayX = getX(today);
-            const todayLine = document.createElement('div');
-            todayLine.className = 'absolute top-0 bottom-0 z-30 pointer-events-none';
-            todayLine.style.left = `${leftWidth + todayX}px`;
-            todayLine.style.width = '2px';
-            todayLine.style.background = 'rgba(var(--color-primary), 0.6)';
-            todayLine.style.boxShadow = '0 0 8px rgba(var(--color-primary), 0.3)';
-            body.appendChild(todayLine);
+            let todayLeft = 0;
+            if (config.isDayView) {
+                const now = new Date();
+                const dailyPercent = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+                todayLeft = dailyPercent * pxPerDay;
+            } else {
+                const now = new Date();
+                const dailyPercent = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+                const todayIndex = config.dates.findIndex(d => d.toDateString() === today.toDateString());
+                if(todayIndex !== -1) todayLeft = (todayIndex + dailyPercent) * pxPerDay;
+            }
+
+            if(todayLeft > 0) {
+                const todayLine = document.createElement('div');
+                todayLine.className = 'absolute top-0 bottom-0 w-px bg-red-500 z-30 pointer-events-none drop-shadow-[0_0_3px_rgba(239,68,68,0.4)]';
+                todayLine.style.left = `${leftWidth + todayLeft}px`;
+                todayLine.innerHTML = `<div class="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>`;
+                body.appendChild(todayLine);
+            }
         }
 
-        // ───── Rows ─────
-        data.rows.forEach(row => {
-            // Get project lanes for this resource
-            let projectLanes = getProjectLanes(row.tasks);
-
-            // When spans are hidden, remove span-only lanes and strip span tasks from mixed lanes
-            if (options.showSpans === false) {
-                projectLanes = projectLanes.map(lane => ({
-                    ...lane,
-                    tasks: lane.tasks.filter(t => t.task_type !== 'project_span')
-                })).filter(lane => lane.tasks.length > 0);
-            }
-
-            // Skip resource rows that have no lanes (no tasks in this timeframe)
-            if (projectLanes.length === 0) return;
-
-            const laneCount = projectLanes.length;
-            const laneGap = zp.laneGap ?? 10;
-            const totalBarArea = laneCount * zp.barH + (laneCount - 1) * laneGap;
-            const timeEntryRowH = zp.timeEntryH ?? 14;
-            const rowPaddingTop = zp.rowPadTop ?? 6;
-            const rowPaddingBottom = zp.rowPadBottom ?? 4;
-            const dynamicRowH = Math.max(zp.rowH, rowPaddingTop + totalBarArea + timeEntryRowH + rowPaddingBottom);
-
+        // ───── Render the Flattened Rows ─────
+        flattenedRows.forEach(row => {
             const rowEl = document.createElement('div');
-            rowEl.className = `flex border-b border-white/1 hover:bg-white/[0.02] transition-all group/row relative`;
-            rowEl.style.minHeight = `${dynamicRowH}px`;
+            // Base class for all rows
+            rowEl.className = 'flex border-b border-white/5 hover:bg-white/[0.02] transition-colors group relative z-10 w-full';
+            rowEl.style.height = `${zp.rowH}px`;
 
-            // Resource Column
-            const resCompact = zoom === 'compact';
+            // Tree View Column (Left)
+            let leftHtml = '';
+            // Gantt View Column (Right)
+            let rightHtml = '';
 
-            // Lane Legend HTML (only on wide screens)
-            let legendHtml = '';
-            if (legendWidth > 0) {
-                const legendItems = projectLanes.map((lane, i) => {
-                    const topPos = rowPaddingTop + i * (zp.barH + laneGap);
+            const renderBar = (task, proj, isSpan = false) => {
+                const x = getX(task.start_date);
+                const w = Math.max(10, getWidth(task.start_date, task.end_date));
+                if (x + w < 0 || x > totalWidth) return '';
+
+                const renderX = Math.max(0, x);
+                const renderW = Math.max(10, Math.min(totalWidth - renderX, w - (renderX - x)));
+                const status = task.status || 'todo';
+                const isDone = status === 'done';
+
+                const tooltipText = `${task.title} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
+
+                if (isSpan) {
+                    const spanH = Math.max(zp.barH * 0.8, zp.spanFontSize + 4);
+                    const spanTop = (zp.rowH - spanH) / 2;
+                    const projProgress = getProjectProgress(proj.id);
+                    
+                    const progressW = (w * projProgress) / 100;
+                    const progressStartX = x;
+                    const progressEndX = progressStartX + progressW;
+                    const visibleProgressStartX = Math.max(0, progressStartX);
+                    const visibleProgressEndX = Math.min(totalWidth, progressEndX);
+                    const visibleProgressW = Math.max(0, visibleProgressEndX - visibleProgressStartX);
+                    const gradientProgressPercent = renderW <= 0 ? 0 : (visibleProgressW / renderW) * 100;
+
+                    const spanTitle = showText && renderW > 50
+                        ? `<span class="flex items-center justify-center gap-2 px-2 pointer-events-none whitespace-nowrap overflow-hidden h-full"><span class="text-[${zp.spanFontSize}px] font-black text-white/90 truncate">${task.title}</span><span class="text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0">${projProgress}%</span></span>`
+                        : '';
+                        
                     return `
-                        <div class="lane-legend-item project-legend-item absolute flex items-center gap-0.5 overflow-hidden cursor-pointer hover:bg-white/5 transition-colors group/lane" data-project-id="${lane.project.id}" data-lane-index="${i}" style="top: ${topPos}px; height: ${zp.barH}px; left: 2px; right: 2px; padding: 0 2px;">
-                            <span class="text-[8px] text-dim opacity-20 group-hover/lane:opacity-60 transition-opacity shrink-0 leading-none select-none pointer-events-none" style="letter-spacing: -1px;">⠿</span>
-                            <span class="${isYearRelaxed ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'} rounded-sm shrink-0 pointer-events-none" style="background-color: ${lane.project.color}"></span>
-                            <span class="${isYearRelaxed ? 'text-[16px]' : 'text-[11px]'} font-bold text-dim opacity-50 truncate leading-none whitespace-nowrap pointer-events-none">${lane.project.name}</span>
+                        <div class="task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden shadow-sm"
+                             style="left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${gradientProgressPercent}%, ${proj.color}44 ${gradientProgressPercent}%); border: 1px solid ${proj.color}88;"
+                             data-task-id="${task.id}"
+                             title="${tooltipText} • ${projProgress}% complete">
+                             ${spanTitle}
                         </div>
                     `;
-                }).join('');
-                legendHtml = `
-                    <div class="lane-legend-col flex-shrink-0 border-r border-white/2 bg-app sticky z-20 relative" style="width: ${legendWidth}px; left: ${resourceWidth}px; min-height: ${dynamicRowH}px">
-                        ${legendItems}
-                    </div>
-                `;
-            }
-
-            rowEl.innerHTML = `
-                <div class="flex-shrink-0 ${resCompact ? 'px-2 py-1.5' : 'px-3 py-3'} border-r border-white/2 bg-app sticky left-0 z-30 flex flex-col items-center justify-center gap-1 text-center" style="width: ${resourceWidth}px">
-                    <div class="${resCompact ? 'w-6 h-6 text-[11px]' : 'w-9 h-9 text-[14px]'} rounded-lg bg-gradient-to-br from-card to-app border border-soft shadow-inner-white flex items-center justify-center font-black text-primary shrink-0">
-                        ${row.resource.substring(0, 1).toUpperCase()}${row.resource.split(' ')[1]?.substring(0, 1).toUpperCase() || row.resource.substring(1, 2).toUpperCase()}
-                    </div>
-                    <span class="block ${resCompact ? 'text-[11px]' : 'text-[13px]'} font-black text-main truncate max-w-full">${row.resource}</span>
-                    ${resCompact ? '' : '<span class="text-[9px] font-black text-dim uppercase tracking-wider opacity-40">Member</span>'}
-                </div>
-                ${legendHtml}
-                <div class="relative flex-grow" style="width: ${totalWidth}px; min-height: ${dynamicRowH}px">
-                     <!-- Today Indicator Line -->
-                     ${(() => {
-                    const dateToCheck = config.isDayView ? config.startDate : today;
-                    if (dateToCheck.toDateString() !== today.toDateString()) return '';
-
-                    const now = new Date();
-                    const dailyPercent = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
-
-                    let left;
-                    if (config.isDayView) {
-                        left = dailyPercent * pxPerDay;
-                    } else {
-                        const todayIndex = config.dates.findIndex(d => d.toDateString() === today.toDateString());
-                        if (todayIndex === -1) return '';
-                        left = (todayIndex + dailyPercent) * pxPerDay;
-                    }
+                } else {
+                    const barTop = (zp.rowH - zp.barH) / 2;
+                    const taskProgress = task.progress || 0;
+                    const progressHtml = (!proj.continuous && taskProgress) ? `
+                        <div class="absolute inset-0 bg-black/20 pointer-events-none" style="width: ${taskProgress}%"></div>
+                    ` : '';
+                    const doneOverlay = isDone ? `
+                        <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 5px); z-index: 0;"></div>
+                    ` : '';
 
                     return `
-                            <div class="absolute top-0 bottom-0 w-px bg-red-500 z-10 pointer-events-none drop-shadow-[0_0_3px_rgba(239,68,68,0.4)]" style="left: ${left}px">
-                                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
-                            </div>
-                        `;
-                })()}
+                        <div class="task-bar absolute rounded shadow-sm border border-white/10 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all cursor-pointer overflow-hidden"
+                             style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color}; ${isDone ? 'opacity: 0.45;' : ''}"
+                             data-task-id="${task.id}"
+                             title="${tooltipText}">
+                             ${progressHtml}
+                             ${doneOverlay}
+                             <span class="block relative text-[${zp.fontSize}px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}</span>
+                        </div>
+                    `;
+                }
+            };
 
-                     <!-- Tasks grouped by project lanes -->
-                     ${(() => {
-                    let html = '';
-                    projectLanes.forEach((lane, laneIdx) => {
-                        const barTop = rowPaddingTop + laneIdx * (zp.barH + laneGap);
+            if (row.type === 'resource') {
+                rowEl.classList.add('bg-card/20'); // distinctive block background
+                leftHtml = `
+                    <div class="w-full h-full flex items-center px-4 gap-2">
+                        <div class="w-5 h-5 rounded-md bg-gradient-to-br from-card to-app border border-soft shadow-inner flex items-center justify-center font-black text-[10px] text-primary shrink-0 opacity-80">
+                            ${row.resource.substring(0, 1).toUpperCase()}
+                        </div>
+                        <span class="text-[12px] font-black text-main tracking-tight opacity-90">${row.resource}</span>
+                    </div>
+                `;
+            } 
+            else if (row.type === 'project') {
+                rowEl.classList.add('bg-app/40');
+                leftHtml = `
+                    <div class="proj-row w-full h-full flex items-center pl-10 pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors" data-project-id="${row.project.id}">
+                        <div class="w-1.5 h-1.5 rounded-sm shrink-0 shadow-sm" style="background-color: ${row.project.color}"></div>
+                        <span class="text-[11px] font-bold text-dim opacity-75 truncate">${row.project.name}</span>
+                        <div class="ml-auto text-[9px] font-black tracking-widest text-[#666] uppercase">${row.spans.length} spans</div>
+                    </div>
+                `;
 
-                        lane.tasks.forEach(task => {
-                            if (!task.start_date) return;
+                // Render all spans for this project
+                row.spans.forEach(span => rightHtml += renderBar(span, row.project, true));
 
-                            // Skip spans if toggled off
-                            const isSpanEarly = task.task_type === 'project_span';
-                            if (isSpanEarly && options.showSpans === false) return;
-
-                            // Year view: skip short tasks (< 3 days), only show spans and long tasks
-                            if (config.type === 'year' && !isSpanEarly) {
-                                const taskDays = task.end_date
-                                    ? (new Date(task.end_date) - new Date(task.start_date)) / (24 * 60 * 60 * 1000)
-                                    : 0;
-                                if (taskDays < 3) return; // too small to render at year scale
-                            }
-
-                            const x = getX(task.start_date);
-                            const w = Math.max(10, getWidth(task.start_date, task.end_date));
-
-                            if (x + w < 0 || x > totalWidth) return;
-
-                            // Clamp bar to visible timeline area
-                            const renderX = Math.max(0, x);
-                            const renderW = Math.max(10, Math.min(totalWidth - renderX, w - (renderX - x)));
-
-                            const proj = lane.project;
-                            const status = task.status || 'todo';
-                            const isSpan = task.task_type === 'project_span';
-
-                            const tooltipText = `${task.title} • ${proj.name} • ${status.toUpperCase()} • ${PlannerUtils.formatTime(new Date(task.start_date))} - ${PlannerUtils.formatTime(new Date(task.end_date))}`;
-
-                            if (isSpan) {
-                                // Project Span: flat bar with correctly calculated progress
-                                const spanH = Math.max(zp.barH * 0.67, zp.spanFontSize + 6);
-                                const spanTop = barTop + (zp.barH - spanH) / 2;
-                                // Compute progress from project's tasks
-                                const projProgress = getProjectProgress(task.project_id || 'personal');
-
-                                // CRITICAL FIX: Calculate progress based on FULL span width, not visible width
-                                // The full width of the span (even if clipped)
-                                const fullSpanW = w;
-                                // How much of the full span should be filled with progress
-                                const progressW = (fullSpanW * projProgress) / 100;
-                                // Where the progress bar starts (could be negative if span starts before visible area)
-                                const progressStartX = x;
-                                // Where the progress bar ends
-                                const progressEndX = progressStartX + progressW;
-
-                                // Clamp progress bar to visible area
-                                const visibleProgressStartX = Math.max(0, progressStartX);
-                                const visibleProgressEndX = Math.min(totalWidth, progressEndX);
-                                const visibleProgressW = Math.max(0, visibleProgressEndX - visibleProgressStartX);
-
-                                // Progress gradient calculation
-                                // We need to figure out what % of the renderW the progress occupies
-                                let gradientProgressPercent;
-                                if (renderW <= 0) {
-                                    gradientProgressPercent = 0;
-                                } else {
-                                    // The progress width as a percentage of the visible render width
-                                    gradientProgressPercent = (visibleProgressW / renderW) * 100;
-                                }
-
-                                const spanTitle = showText && renderW > 50
-                                    ? `<span class=\"flex items-center justify-center gap-2 px-2 pointer-events-none whitespace-nowrap overflow-hidden\" style=\"height:100%;line-height:${spanH}px\"><span class=\"text-[${zp.spanFontSize}px] font-black text-white/90 truncate\" style=\"line-height:${spanH}px\">${task.title}</span><span class=\"text-[${Math.max(7, zp.spanFontSize - 1)}px] font-black bg-white/20 text-white/80 rounded px-1 py-px leading-none shrink-0\">${projProgress}%</span></span>`
-                                    : '';
-                                html += `
-                                    <div class=\"task-bar absolute rounded-sm hover:shadow-lg hover:z-20 transition-all cursor-pointer overflow-hidden\"
-                                         style=\"left: ${renderX}px; width: ${renderW}px; height: ${spanH}px; top: ${spanTop}px; background: linear-gradient(90deg, ${proj.color} ${gradientProgressPercent}%, ${proj.color}44 ${gradientProgressPercent}%); border: 2px solid ${proj.color};\"
-                                         data-task-id=\"${task.id}\"
-                                         title=\"${tooltipText} • ${projProgress}% complete\">
-                                         ${spanTitle}
-                                    </div>
-                                `;
-                            } else {
-                                // Normal task bar
-
-                                // Progress overlay (skip for continuous projects)
-                                const taskProgress = task.progress || 0;
-                                const progressHtml = (!proj.continuous && taskProgress) ? `
-                                    <div class="absolute inset-0 bg-black/15 pointer-events-none" style="width: ${taskProgress}%"></div>
-                                ` : '';
-
-                                const isDone = status === 'done';
-
-                                // Hatched overlay for done tasks — rendered behind text via z-index
-                                const doneOverlay = isDone ? `
-                                    <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 5px); z-index: 0;"></div>
-                                ` : '';
-
-                                html += `
-                                    <div class="task-bar absolute rounded shadow-sm border border-white/5 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all group/task cursor-pointer overflow-hidden"
-                                         style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color}; ${isDone ? 'opacity: 0.45;' : ''}"
-                                         data-task-id="${task.id}"
-                                         title="${tooltipText}">
-                                         ${progressHtml}
-                                         ${doneOverlay}
-                                         <span class="block relative text-[${zp.fontSize}px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}</span>
-                                    </div>
-                                `;
-                            }
-                        });
-                    });
-                    return html;
-                })()}
-
-                     <!-- Time Entries (Actuals) — skip in year view -->
-                     ${(() => {
-                    if (config.type === 'year') return ''; // Too many tiny rects at year scale
-                    let html = '';
+                // Render time entries natively on the project row bottom edge (similar to original look)
+                if (config.type !== 'year') {
                     row.entries.forEach(entry => {
                         if (!entry.start_time) return;
                         const s = new Date(entry.start_time);
@@ -561,167 +433,47 @@ export const PlannerTimeline = {
                         const dayW = getWidth(s, e);
                         const renderX = Math.max(0, dayX);
                         const renderW = Math.max(4, dayW - (renderX - dayX));
-
-                        const proj = data.projects.find(p => p.id == entry.project_id);
-                        const entryColor = proj ? proj.color : null;
+                        const entryColor = row.project.color;
 
                         const duration = Math.round((e - s) / 1000);
                         const durationStr = PlannerUtils.formatDuration(duration);
                         const timeStr = `${PlannerUtils.formatTime(s)} - ${isActive ? 'Present' : PlannerUtils.formatTime(e)}`;
-                        const entryTitle = `${entry.description || 'No description'} • ${proj ? proj.name : 'Unassigned'} • ${timeStr} (${durationStr})`;
+                        const entryTitle = `${entry.description || 'No description'} • ${row.project.name} • ${timeStr} (${durationStr})`;
 
-                        if (isActive) {
-                            html += `
-                                <div class="time-entry absolute h-2.5 rounded-full animate-pulse border border-white/10 backdrop-blur-sm cursor-pointer hover:z-30 transition-all"
-                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; background-color: ${entryColor || 'rgba(var(--color-primary), 0.8)'}; opacity: 0.8;"
-                                     data-entry-id="${entry.id}"
-                                     title="${entryTitle}">
-                                </div>
-                            `;
-                        } else {
-                            html += `
-                                <div class="time-entry absolute h-2 rounded-full border border-white/5 backdrop-blur-sm cursor-pointer hover:z-30 transition-all hover:opacity-100"
-                                     style="left: ${renderX}px; width: ${renderW}px; bottom: ${rowPaddingBottom}px; ${entryColor ? `background-color: ${entryColor}; opacity: 0.45;` : 'background-color: rgba(255,255,255,0.12);'}"
-                                     data-entry-id="${entry.id}"
-                                     title="${entryTitle}">
-                                </div>
-                            `;
-                        }
+                        rightHtml += `
+                            <div class="time-entry absolute ${isActive ? 'h-1.5 animate-pulse opacity-80' : 'h-1 opacity-40 hover:opacity-100'} rounded-full cursor-pointer hover:z-30 transition-all"
+                                 style="left: ${renderX}px; width: ${renderW}px; bottom: 2px; background-color: ${entryColor};"
+                                 data-entry-id="${entry.id}"
+                                 title="${entryTitle}">
+                            </div>
+                        `;
                     });
-                    return html;
-                })()}
+                }
+            } 
+            else if (row.type === 'task') {
+                leftHtml = `
+                    <div class="task-item w-full h-full flex items-center pl-14 pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-l-primary/30" data-task-id="${row.task.id}">
+                        <div class="w-1.5 h-1.5 rounded-full border border-dim/30 flex items-center justify-center shrink-0 ${row.task.status === 'done' ? 'bg-primary/50 border-primary' : ''}"></div>
+                        <span class="text-[10px] text-dim ${row.task.status === 'done' ? 'line-through opacity-40' : 'opacity-80'} truncate">${row.task.title}</span>
+                    </div>
+                `;
+
+                rightHtml += renderBar(row.task, row.project, false);
+            }
+
+            // Assemble row
+            rowEl.innerHTML = `
+                <div class="flex-shrink-0 bg-app/80 backdrop-blur sticky left-0 z-30 border-r border-white/5" style="width: ${leftWidth}px">
+                    ${leftHtml}
+                </div>
+                <div class="relative flex-grow pointer-events-auto" style="width: ${totalWidth}px">
+                    ${rightHtml}
                 </div>
             `;
             body.appendChild(rowEl);
         });
 
         container.appendChild(body);
-
-        // ───── Custom mouse-based lane reordering (HTML5 DnD broken with sticky positioning) ─────
-        if (onLaneReorder && legendWidth > 0) {
-            // Clean up previous document-level listeners if any
-            if (window._laneDragAbort) window._laneDragAbort.abort();
-            const ac = new AbortController();
-            window._laneDragAbort = ac;
-
-            // Inject styles
-            if (!document.getElementById('lane-drag-styles')) {
-                const style = document.createElement('style');
-                style.id = 'lane-drag-styles';
-                style.textContent = `
-                    .lane-legend-item.drag-over-top { box-shadow: 0 -2px 0 0 var(--primary), 0 -4px 8px -2px var(--primary); }
-                    .lane-legend-item.drag-over-bottom { box-shadow: 0 2px 0 0 var(--primary), 0 4px 8px -2px var(--primary); }
-                    .lane-legend-item.lane-dragging { opacity: 0.3; }
-                `;
-                document.head.appendChild(style);
-            }
-
-            let dragState = null;
-
-            // Attach mousedown directly to each legend item (avoids any delegation issues)
-            container.querySelectorAll('.lane-legend-item').forEach(item => {
-                item.addEventListener('mousedown', (e) => {
-                    if (e.button !== 0) return;
-                    e.preventDefault();
-                    e.stopPropagation(); // Don't let the container scroll
-                    console.log('[LaneDrag] mousedown on', item.dataset.projectId);
-                    dragState = {
-                        projectId: item.dataset.projectId,
-                        el: item,
-                        startX: e.clientX,
-                        startY: e.clientY,
-                        started: false
-                    };
-                });
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!dragState) return;
-
-                // Start drag after 3px movement threshold
-                if (!dragState.started) {
-                    const dx = e.clientX - dragState.startX;
-                    const dy = e.clientY - dragState.startY;
-                    if (Math.abs(dx) + Math.abs(dy) < 3) return;
-                    dragState.started = true;
-                    dragState.el.classList.add('lane-dragging');
-                    document.body.style.cursor = 'grabbing';
-                    console.log('[LaneDrag] drag started for', dragState.projectId);
-                }
-
-                // Find which legend item is under the cursor using visual hit-testing
-                const els = document.elementsFromPoint(e.clientX, e.clientY);
-                const target = els.find(el => el.classList?.contains('lane-legend-item') && el !== dragState.el) || null;
-
-                // Clear old highlights
-                container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
-                    if (el !== target) el.classList.remove('drag-over-top', 'drag-over-bottom');
-                });
-
-                if (!target) return;
-
-                console.log('[LaneDrag] hovering over', target.dataset.projectId);
-                const rect = target.getBoundingClientRect();
-                const isTop = e.clientY < rect.top + rect.height / 2;
-                if (isTop) {
-                    target.classList.remove('drag-over-bottom');
-                    target.classList.add('drag-over-top');
-                } else {
-                    target.classList.remove('drag-over-top');
-                    target.classList.add('drag-over-bottom');
-                }
-            }, { signal: ac.signal });
-
-            document.addEventListener('mouseup', (e) => {
-                if (!dragState) return;
-                const { projectId, started } = dragState;
-                dragState = null;
-                document.body.style.cursor = '';
-
-                if (!started) {
-                    console.log('[LaneDrag] mouseup without drag start (click)');
-                    return;
-                }
-
-                console.log('[LaneDrag] mouseup - looking for drop target');
-                // Find drop target
-                const els = document.elementsFromPoint(e.clientX, e.clientY);
-                console.log('[LaneDrag] elements at point:', els.map(el => el.className?.substring(0, 40)));
-                const target = els.find(el => el.classList?.contains('lane-legend-item')) || null;
-
-                // Cleanup
-                container.querySelectorAll('.lane-dragging, .drag-over-top, .drag-over-bottom').forEach(el => {
-                    el.classList.remove('lane-dragging', 'drag-over-top', 'drag-over-bottom');
-                });
-
-                if (!target || target.dataset.projectId === projectId) {
-                    console.log('[LaneDrag] no valid target, cancelled');
-                    return;
-                }
-
-                console.log('[LaneDrag] dropping on', target.dataset.projectId);
-                // Get canonical order from first legend column
-                const firstCol = container.querySelector('.lane-legend-col');
-                if (!firstCol) return;
-                const items = [...firstCol.querySelectorAll('.lane-legend-item')];
-                const projectIds = items.map(el => el.dataset.projectId);
-
-                const rect = target.getBoundingClientRect();
-                const isBottom = e.clientY > rect.top + rect.height / 2;
-
-                const dragIdx = projectIds.indexOf(projectId);
-                let dropIdx = projectIds.indexOf(target.dataset.projectId);
-                if (dragIdx === -1 || dropIdx === -1) return;
-
-                if (isBottom) dropIdx++;
-                if (dragIdx < dropIdx) dropIdx--;
-                if (dragIdx === dropIdx) return;
-
-                // Just tell the backend which project moved and where
-                console.log('[LaneDrag] moving', projectId, 'to position', dropIdx + 1);
-                onLaneReorder({ id: projectId, lane_order: dropIdx + 1 });
-            }, { signal: ac.signal });
-        }
 
         // Center scroll on today/current time on initial render
         const scrollParent = container.closest('.overflow-x-auto') || container;
@@ -740,4 +492,3 @@ export const PlannerTimeline = {
         }
     }
 };
-
