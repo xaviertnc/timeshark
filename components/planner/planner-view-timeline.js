@@ -185,18 +185,34 @@ export const PlannerTimeline = {
                 } else standaloneProjects.push(proj);
             });
 
-            // 1. Add Resource
-            flattenedRows.push({ type: 'resource', resource: row.resource });
+            // Build rows for this resource temporarily
+            const resourceRows = [];
 
             // Helper to push project with Epic context
-            const pushProjectGroup = (proj, isEpicChild = false, epicId = null) => {
+            const pushProjectGroup = (proj, isEpicChild = false, epicId = null, targetArray) => {
                 let tasks = tasksByProject.get(proj.id) || [];
-                const entries = entriesByProject.get(proj.id) || [];
-                if (tasks.length === 0 && entries.length === 0) return;
+                let entries = entriesByProject.get(proj.id) || [];
+
+                // Hide tasks and entries that don't overlap with the current visible time frame
+                const cStart = config.startDate.getTime();
+                const cEnd = config.endDate.getTime();
+                tasks = tasks.filter(t => {
+                    const tStart = new Date(t.start_date).getTime();
+                    const tEnd = t.end_date ? new Date(t.end_date).getTime() : tStart + (30 * 60 * 1000);
+                    return (tStart < cEnd && tEnd > cStart);
+                });
+                
+                const validEntries = entries.filter(e => {
+                    const eStart = new Date(e.start_time).getTime();
+                    const eEnd = e.end_time ? new Date(e.end_time).getTime() : eStart + (30 * 60 * 1000);
+                    return (eStart < cEnd && eEnd > cStart);
+                });
+
+                if (tasks.length === 0 && validEntries.length === 0) return 0;
 
                 tasks.sort((a,b) => new Date(a.start_date) - new Date(b.start_date));
 
-                flattenedRows.push({
+                targetArray.push({
                     type: 'project',
                     project: proj,
                     entries: entries,
@@ -205,13 +221,15 @@ export const PlannerTimeline = {
                     isEpicChild: isEpicChild,
                     epicId: epicId
                 });
+                
+                let count = 1;
 
                 tasks.forEach(task => {
                     if (config.type === 'year') {
                         const taskDays = task.end_date ? (new Date(task.end_date) - new Date(task.start_date)) / (24 * 60 * 60 * 1000) : 0;
                         if (taskDays < 3) return;
                     }
-                    flattenedRows.push({
+                    targetArray.push({
                         type: 'task',
                         task: task,
                         project: proj,
@@ -219,19 +237,36 @@ export const PlannerTimeline = {
                         isEpicChild: isEpicChild,
                         epicId: epicId
                     });
+                    count++;
                 });
+                
+                return count;
             };
 
             // 2. Add Epics and their projects
             Array.from(epicsMap.values()).forEach(group => {
-                const epicTasks = group.projList.flatMap(p => tasksByProject.get(p.id) || []);
-                const epicEntries = group.projList.flatMap(p => entriesByProject.get(p.id) || []);
-                flattenedRows.push({ type: 'epic', epic: group.epic, resource: row.resource, tasks: epicTasks, entries: epicEntries });
-                group.projList.forEach(p => pushProjectGroup(p, true, group.epic.id));
+                const epicProjectRows = [];
+                let hasChildren = false;
+                group.projList.forEach(p => {
+                    if (pushProjectGroup(p, true, group.epic.id, epicProjectRows) > 0) hasChildren = true;
+                });
+                
+                if (hasChildren) {
+                    const epicTasks = group.projList.flatMap(p => tasksByProject.get(p.id) || []);
+                    const epicEntries = group.projList.flatMap(p => entriesByProject.get(p.id) || []);
+                    resourceRows.push({ type: 'epic', epic: group.epic, resource: row.resource, tasks: epicTasks, entries: epicEntries });
+                    resourceRows.push(...epicProjectRows);
+                }
             });
 
             // 3. Add standalone projects
-            standaloneProjects.forEach(p => pushProjectGroup(p, false, null));
+            standaloneProjects.forEach(p => pushProjectGroup(p, false, null, resourceRows));
+            
+            // 4. If resource actually generated any child rows, include it
+            if (resourceRows.length > 0) {
+                flattenedRows.push({ type: 'resource', resource: row.resource });
+                flattenedRows.push(...resourceRows);
+            }
         });
 
         // ───── Header ─────
