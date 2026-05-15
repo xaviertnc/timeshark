@@ -9,6 +9,9 @@ import { api } from '../utils/api.js';
 import { PlannerState } from './planner/planner-state.js';
 import { PlannerUtils } from './planner/planner-utils.js';
 import { PlannerTimeline } from './planner/planner-view-timeline.js';
+import { PlannerKanban } from './planner/planner-view-kanban.js';
+import { PlannerHeatmap } from './planner/planner-view-heatmap.js';
+import { PlannerAnalytics } from './planner/planner-view-analytics.js';
 import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { ProjectModal } from './project-modal.js';
@@ -18,6 +21,7 @@ let currentZoom = 'regular';  // 'compact', 'regular', 'relaxed'
 let timeOffset = 0;           // 0 = today/start, +/- to move
 let projectFilter = 'all';
 let showSpans = true;
+let currentView = 'timeline'; // 'timeline', 'kanban', 'heatmap', 'analytics'
 
 export async function renderPlanner() {
     await PlannerState.init();
@@ -54,14 +58,23 @@ export async function renderPlanner() {
                 </select>
             </div>
 
-            <div class="flex items-center gap-1.5 flex-wrap">
-                <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
+            <div class="flex items-center gap-3 flex-wrap">
+                <div id="view-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
+                    ${['timeline', 'kanban', 'heatmap', 'analytics'].map(v => {
+                        const labels = { timeline: 'Roadmap', kanban: 'Board', heatmap: 'Workload', analytics: 'Analytics' };
+                        return `<button class="view-toggle px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-view="${v}">${labels[v]}</button>`;
+                    }).join('')}
+                </div>
+
+                <div class="w-px h-5 bg-white/10"></div>
+
+                <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView !== 'timeline' && currentView !== 'heatmap' ? 'hidden' : ''}">
                     ${['day', 'week', 'month', 'year'].map(s => {
                         const tooltips = { day: 'Tactical execution & time logging', week: 'Operational planning & sprint tracking', month: 'Strategic milestones & bottlenecks', year: 'Executive roadmap' };
                         return `<button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-scale="${s}" title="${tooltips[s]}">${s}</button>`;
                     }).join('')}
                 </div>
-                <div id="zoom-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
+                <div id="zoom-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView !== 'timeline' ? 'hidden' : ''}">
                     ${['compact', 'regular', 'relaxed'].map(z => {
                         const tooltips = { compact: 'High density for pattern recognition & heat-mapping', regular: 'Standard view for daily work', relaxed: 'Presentation sizing' };
                         return `<button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-zoom="${z}" title="${tooltips[z]}">${z}</button>`;
@@ -94,6 +107,23 @@ export async function renderPlanner() {
         }
 
         // Toggles classes
+        container.querySelectorAll('.view-toggle').forEach(btn => {
+            const active = btn.dataset.view === currentView;
+            btn.classList.toggle('bg-card', active);
+            btn.classList.toggle('text-primary', active);
+            btn.classList.toggle('shadow-sm', active);
+            btn.classList.toggle('ring-1', active);
+            btn.classList.toggle('ring-white/10', active);
+            btn.classList.toggle('text-dim', !active);
+            btn.classList.toggle('opacity-40', !active);
+        });
+
+        // Hide toggle groups if irrelevant
+        const scaleGroup = container.querySelector('#scale-toggle-container');
+        const zoomGroup = container.querySelector('#zoom-toggle-container');
+        if (scaleGroup) scaleGroup.classList.toggle('hidden', currentView !== 'timeline' && currentView !== 'heatmap');
+        if (zoomGroup) zoomGroup.classList.toggle('hidden', currentView !== 'timeline');
+
         container.querySelectorAll('.scale-toggle').forEach(btn => {
             const active = btn.dataset.scale === currentScale;
             btn.classList.toggle('bg-card', active);
@@ -113,7 +143,15 @@ export async function renderPlanner() {
 
         // Render Views
         const timelineContainer = container.querySelector('#planner-timeline-container');
-        PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, {});
+        if (currentView === 'timeline') {
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, {});
+        } else if (currentView === 'kanban') {
+            PlannerKanban.render(timelineContainer, data, config, today, projectFilter);
+        } else if (currentView === 'heatmap') {
+            PlannerHeatmap.render(timelineContainer, data, config, today, currentScale);
+        } else if (currentView === 'analytics') {
+            PlannerAnalytics.render(timelineContainer, data, config, today, projectFilter);
+        }
     };
 
     const handleLaneReorder = async (move) => {
@@ -178,6 +216,9 @@ export async function renderPlanner() {
 
         const zoomBtn = e.target.closest('.zoom-toggle');
         if (zoomBtn) { currentZoom = zoomBtn.dataset.zoom; updateUI(); return; }
+
+        const viewBtn = e.target.closest('.view-toggle');
+        if (viewBtn) { currentView = viewBtn.dataset.view; updateUI(); return; }
     });
 
     container.querySelector('#project-filter').onchange = (e) => { projectFilter = e.target.value; updateUI(); };
@@ -189,7 +230,18 @@ export async function renderPlanner() {
         const data = PlannerState.getCombinedData(projectFilter);
         const today = new Date();
         const config = PlannerUtils.getTimelineConfig(currentScale, timeOffset, today);
-        PlannerTimeline.render(container.querySelector('#planner-timeline-container'), data, config, today, currentZoom, handleLaneReorder, {});
+        const timelineContainer = container.querySelector('#planner-timeline-container');
+        if (!timelineContainer) return;
+
+        if (currentView === 'timeline') {
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, {});
+        } else if (currentView === 'kanban') {
+            PlannerKanban.render(timelineContainer, data, config, today, projectFilter);
+        } else if (currentView === 'heatmap') {
+            PlannerHeatmap.render(timelineContainer, data, config, today, currentScale);
+        } else if (currentView === 'analytics') {
+            PlannerAnalytics.render(timelineContainer, data, config, today, projectFilter);
+        }
     });
     const timelineContainer = container.querySelector('#planner-timeline-container');
     if (timelineContainer) resizeObserver.observe(timelineContainer);
