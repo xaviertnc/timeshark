@@ -225,7 +225,8 @@ export const PlannerTimeline = {
             // 2. Add Epics and their projects
             Array.from(epicsMap.values()).forEach(group => {
                 const epicTasks = group.projList.flatMap(p => tasksByProject.get(p.id) || []);
-                flattenedRows.push({ type: 'epic', epic: group.epic, resource: row.resource, tasks: epicTasks });
+                const epicEntries = group.projList.flatMap(p => entriesByProject.get(p.id) || []);
+                flattenedRows.push({ type: 'epic', epic: group.epic, resource: row.resource, tasks: epicTasks, entries: epicEntries });
                 group.projList.forEach(p => pushProjectGroup(p, true, group.epic.id));
             });
 
@@ -249,7 +250,7 @@ export const PlannerTimeline = {
                 const isCurrentHour = now.getHours() === h && config.startDate.toDateString() === now.toDateString();
 
                 headerCols += `
-                    <div class="absolute top-0 bottom-0 border-r border-white/2 flex items-center justify-center transition-colors px-0.5"
+                    <div class="absolute top-0 bottom-0 border-r border-black/5 dark:border-white/5 flex items-center justify-center transition-colors px-0.5"
                          style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${isCurrentHour ? 'rgba(var(--color-primary), 0.1)' : isWorkHour ? 'transparent' : 'rgba(0,0,0,0.05)'}">
                          <span class="text-[9px] font-black ${isCurrentHour ? 'text-primary' : 'text-main/60'} tracking-tighter">${label}</span>
                     </div>
@@ -264,7 +265,7 @@ export const PlannerTimeline = {
                 const monthWidth = g.count * pxPerDay;
                 const isCurrent = isCurrentYear && g.month === thisMonth;
                 const col = `
-                    <div class="absolute top-0 bottom-0 border-r border-white/3 flex flex-col items-center justify-center transition-colors"
+                    <div class="absolute top-0 bottom-0 border-r border-black/5 dark:border-white/5 flex flex-col items-center justify-center transition-colors"
                          style="left: ${monthOffset}px; width: ${monthWidth}px; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.1)' : 'transparent'}">
                          <span class="text-[10px] font-black ${isCurrent ? 'text-primary' : 'text-main'} tracking-wider">${g.label}</span>
                     </div>
@@ -277,7 +278,7 @@ export const PlannerTimeline = {
                 const isToday = d.toDateString() === today.toDateString();
                 const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                 return `
-                    <div class="absolute top-0 bottom-0 border-r border-white/2 flex flex-col items-center justify-center transition-colors"
+                    <div class="absolute top-0 bottom-0 border-r border-black/5 dark:border-white/5 flex flex-col items-center justify-center transition-colors"
                          style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${isToday ? 'rgba(var(--color-primary), 0.1)' : isWeekend ? 'rgba(0,0,0,0.02)' : 'transparent'}">
                          <span class="text-[11px] font-black ${isToday ? 'text-primary' : 'text-main'} tracking-tight">${d.getDate()}</span>
                          <span class="text-[8px] font-black uppercase ${isToday ? 'text-primary' : 'text-dim/60'}">${d.toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
@@ -288,7 +289,7 @@ export const PlannerTimeline = {
 
         const headerHeight = zoom === 'compact' ? 'h-10' : 'h-14';
         header.innerHTML = `
-            <div class="flex-shrink-0 px-4 flex items-center font-black text-dim text-[10px] uppercase tracking-[0.2em] border-r border-white/5 bg-app/80 backdrop-blur sticky left-0 z-50" style="width: ${leftWidth}px">
+            <div class="flex-shrink-0 px-4 flex items-center font-black text-dim text-[10px] uppercase tracking-[0.2em] border-r border-white/5 bg-app sticky left-0 z-[60]" style="width: ${leftWidth}px">
                 PLANNING TREE
             </div>
             <div class="relative ${headerHeight}" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
@@ -312,7 +313,7 @@ export const PlannerTimeline = {
         if (config.isDayView) {
             const hourWidth = pxPerDay / 24;
             gridLines.innerHTML = Array.from({ length: 24 }).map((_, h) => `
-                <div class="absolute top-0 bottom-0 border-r border-[#222]" style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}"></div>
+                <div class="absolute top-0 bottom-0 border-r border-black/5 dark:border-white/5" style="left: ${h * hourWidth}px; width: ${hourWidth}px; background-color: ${h >= 8 && h <= 18 ? 'transparent' : 'rgba(0,0,0,0.01)'}"></div>
             `).join('');
         } else if (config.type === 'year') {
             let monthOffset = 0;
@@ -321,19 +322,20 @@ export const PlannerTimeline = {
             gridLines.innerHTML = config.groups.map(g => {
                 const monthWidth = g.count * pxPerDay;
                 const isCurrent = isCurrentYear && g.month === thisMonth;
-                const col = `<div class="absolute top-0 bottom-0 border-r border-[#222]" style="left: ${monthOffset}px; width: ${monthWidth}px; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.02)' : 'transparent'}"></div>`;
+                const col = `<div class="absolute top-0 bottom-0 border-r border-black/5 dark:border-white/5" style="left: ${monthOffset}px; width: ${monthWidth}px; background-color: ${isCurrent ? 'rgba(var(--color-primary), 0.02)' : 'transparent'}"></div>`;
                 monthOffset += monthWidth;
                 return col;
             }).join('');
         } else {
             gridLines.innerHTML = config.dates.map((d, i) => {
                 const isToday = d.toDateString() === today.toDateString();
-                return `<div class="absolute top-0 bottom-0 border-r border-[#222]" style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${isToday ? 'rgba(var(--color-primary), 0.01)' : 'transparent'}"></div>`;
+                return `<div class="absolute top-0 bottom-0 border-r border-black/5 dark:border-white/5" style="left: ${i * pxPerDay}px; width: ${pxPerDay}px; background-color: ${isToday ? 'rgba(var(--color-primary), 0.01)' : 'transparent'}"></div>`;
             }).join('');
         }
         body.appendChild(gridLines);
 
-        // Today Indicator Line
+        // Add today line to a container that overlays both header and body.
+        // Wait, body and header are separate elements. It's easiest to add the line to body, and the dot to header.
         if (today >= config.startDate && today <= config.endDate) {
             const todayX = getX(today);
             let todayLeft = 0;
@@ -349,10 +351,16 @@ export const PlannerTimeline = {
             }
 
             if(todayLeft > 0) {
+                // Add the red dot to the header
+                const headerDot = document.createElement('div');
+                headerDot.className = 'absolute bottom-0 translate-y-1/2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] z-50 pointer-events-none';
+                headerDot.style.left = `${leftWidth + todayLeft}px`;
+                header.appendChild(headerDot);
+
+                // Add the line to the body
                 const todayLine = document.createElement('div');
                 todayLine.className = 'absolute top-0 bottom-0 w-px bg-red-500 z-30 pointer-events-none drop-shadow-[0_0_3px_rgba(239,68,68,0.4)]';
                 todayLine.style.left = `${leftWidth + todayLeft}px`;
-                todayLine.innerHTML = `<div class="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>`;
                 body.appendChild(todayLine);
             }
         }
@@ -368,10 +376,10 @@ export const PlannerTimeline = {
 
             const rowEl = document.createElement('div');
             // Base class for all rows
-            rowEl.className = 'flex border-b border-white/5 hover:bg-white/[0.02] transition-colors group relative z-10 w-full';
+            rowEl.className = 'flex hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group relative w-full';
             rowEl.style.height = `${zp.rowH}px`;
-
-            // Tree View Column (Left)
+            
+            // ... (rest uses the existing logic until Assemble row)
             let leftHtml = '';
             // Gantt View Column (Right)
             let rightHtml = '';
@@ -393,76 +401,111 @@ export const PlannerTimeline = {
                 const barTop = (zp.rowH - zp.barH) / 2;
                 const taskProgress = task.progress || 0;
                 const progressHtml = (!proj.continuous && taskProgress) ? `
-                    <div class="absolute inset-0 bg-black/20 pointer-events-none" style="width: ${taskProgress}%"></div>
+                    <div class="absolute inset-y-0 left-0 pointer-events-none transition-all rounded-l" style="width: ${taskProgress}%; background-color: var(--item-color); opacity: 0.45;"></div>
                 ` : '';
                 const doneOverlay = isDone ? `
                     <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 5px); z-index: 0;"></div>
                 ` : '';
 
-                const taskBg = isDone ? proj.color : `linear-gradient(to right, ${proj.color}22, ${proj.color}44)`;
-                const borderStyle = isDone ? 'border border-white/10' : '';
-
-                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1 py-0.5 rounded bg-black/40 border border-white/10 text-[7px] text-white/80 uppercase tracking-widest pointer-events-none ml-1">${t}</span>`).join('');
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1.5 py-px rounded-sm bg-black/10 dark:bg-black/40 border border-black/10 dark:border-white/10 text-[7px] text-main/80 dark:text-white/80 uppercase tracking-widest pointer-events-none shrink-0">${t}</span>`).join('');
+                const isDark = document.body.classList.contains('dark');
+                // tBorder and text color handled by CSS
+                const titleClasses = isDone ? 'font-medium text-white' : 'task-title-dynamic';
 
                 return `
-                    <div class="task-bar absolute rounded shadow-sm ${borderStyle} hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all cursor-pointer overflow-hidden ${isDone ? 'opacity-90' : 'opacity-100 shadow-inner'}"
-                         style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${taskBg}; ${!isDone ? `border: 1px solid ${proj.color};` : ''}"
+                    <div class="task-bar absolute rounded shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all cursor-pointer overflow-hidden ${isDone ? 'opacity-90' : 'opacity-100 shadow-inner'} ${!isDone ? 'dynamic-border-item border' : ''}"
+                         style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; --item-color: ${proj.color};"
                          data-task-id="${task.id}"
                          title="${tooltipText}">
+                         <div class="absolute inset-0 transition-opacity ${!isDone ? 'dynamic-bg-item' : 'opacity-100'}" style="${isDone ? `background-color: ${proj.color};` : ''}"></div>
                          ${progressHtml}
                          ${doneOverlay}
-                         <span class="flex items-center h-full relative text-[${zp.fontSize}px] font-bold ${isDone ? 'text-white' : 'text-white/90'} truncate px-1.5 pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}${showText && renderW > 60 ? tagBadges : ''}</span>
+                         <div class="flex items-center h-full relative text-[${zp.fontSize}px] px-1.5 pointer-events-none w-full gap-1.5" style="z-index: 1;">
+                             ${showText && renderW > 30 ? `<div class="truncate flex-1 min-w-0 ${titleClasses}">${task.title}</div>` : ''}
+                         </div>
                     </div>
                 `;
             };
 
             if (row.type === 'resource') {
                 rowEl.classList.add('bg-card'); // solid block background
+                rowEl.style.height = `${zp.rowH + 10}px`; // Increase row height 
+                
+                // Push a slight highlight onto the right track background
+                rightHtml += `<div class="absolute inset-0 bg-black/[0.03] dark:bg-white/5 pointer-events-none z-0"></div>`;
+
                 const isCollapsed = window.TimesharkResourceCollapsed.has(row.resource);
                 const chevron = `<button class="collapse-toggle-res p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-res="${row.resource}">
                     <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                 </button>`;
+                let rName = row.resource;
+                if (rName.toLowerCase() === 'me') rName = 'Me';
+                
                 leftHtml = `
-                    <div class="w-full h-full flex items-center px-4 gap-2 border-t border-black/5 dark:border-white/5">
+                    <div class="w-full h-full flex items-center px-4 gap-2 border-t border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/5">
                         ${chevron}
-                        <div class="w-5 h-5 rounded-md bg-gradient-to-br from-card to-app border border-soft shadow-inner flex items-center justify-center font-black text-[10px] text-primary shrink-0 opacity-80">
-                            ${row.resource.substring(0, 1).toUpperCase()}
+                        <div class="w-6 h-6 rounded-md bg-gradient-to-br from-card to-app border border-soft shadow-inner flex items-center justify-center font-black text-[16px] leading-none text-primary shrink-0 opacity-80">
+                            ${rName.substring(0, 1).toUpperCase()}
                         </div>
-                        <span class="text-[12px] font-black opacity-90 tracking-tight">${row.resource}</span>
+                        <span class="text-[14px] font-black opacity-90 tracking-tight">${rName}</span>
                     </div>
                 `;
             }
             else if (row.type === 'epic') {
                 rowEl.classList.add('bg-card/40');
                 const isCollapsed = window.TimesharkEpicCollapsed.has(String(row.epic.id));
+                const epicProgress = getProjectProgress(row.epic.id);
                 const chevron = `<button class="collapse-toggle-epic p-0.5 hover:bg-black/5 dark:hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-epic="${row.epic.id}">
                     <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                 </button>`;
                 
                 leftHtml = `
-                    <div class="w-full h-full flex items-center pr-2 pl-4 gap-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t border-black/5 dark:border-white/5 relative">
+                    <div class="proj-row w-full h-full flex items-center pr-2 pl-4 gap-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t border-black/5 dark:border-white/5 relative" data-project-id="${row.epic.id}">
                         ${chevron}
                         <span class="px-1.5 py-0.5 rounded-sm bg-black/10 dark:bg-white/10 opacity-50 text-[7px] uppercase tracking-widest font-black shrink-0">EPIC</span>
                         <span class="text-[11px] font-bold opacity-100 truncate flex-grow">${row.epic.name}</span>
+                        <span class="text-[9px] font-black opacity-40 shrink-0 tabular-nums">${epicProgress}%</span>
                     </div>
                 `;
 
                 // Calculate and Render Dynamic Epic Envelope
-                let boundaryStartX = null;
-                let boundaryEndX = null;
+                let epicStartX = row.epic.started_at ? getX(row.epic.started_at) : null;
+                let epicEndX = row.epic.completed_at ? getX(row.epic.completed_at) + pxPerDay : null;
+                let dynStartX = null;
+                let dynEndX = null;
+
+                const checkEpicBounds = (sX, eX) => {
+                     if (dynStartX === null || sX < dynStartX) dynStartX = sX;
+                     if (dynEndX === null || eX > dynEndX) dynEndX = eX;
+                };
+
                 (row.tasks || []).forEach(t => {
-                    const sX = getX(t.start_date);
-                    const eX = sX + getWidth(t.start_date, t.end_date);
-                    if (boundaryStartX === null || sX < boundaryStartX) boundaryStartX = sX;
-                    if (boundaryEndX === null || eX > boundaryEndX) boundaryEndX = eX;
+                    if (!t.start_date) return;
+                    checkEpicBounds(getX(t.start_date), getX(t.start_date) + getWidth(t.start_date, t.end_date));
                 });
-                
+
+                (row.entries || []).forEach(e => {
+                    if (!e.start_time) return;
+                    checkEpicBounds(getX(e.start_time), getX(e.start_time) + getWidth(e.start_time, e.end_time || new Date()));
+                });
+
+                let boundaryStartX = epicStartX !== null ? epicStartX : dynStartX;
+                let boundaryEndX = epicEndX !== null ? epicEndX : dynEndX;
+
+                const PADDING = 6;
+                if (boundaryStartX !== null) boundaryStartX -= PADDING;
+                if (boundaryEndX !== null) boundaryEndX += PADDING;
+
                 if (boundaryStartX !== null && boundaryEndX !== null) {
                     const bw = Math.max(10, boundaryEndX - boundaryStartX);
                     const eColor = row.epic.color || '#475569';
                     const envelopeTop = (zp.rowH - (zp.barH * 0.4)) / 2;
-                    rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm border"
-                            style="left: ${Math.max(0, boundaryStartX)}px; width: ${Math.min(totalWidth - boundaryStartX, bw)}px; top: ${envelopeTop}px; height: ${zp.barH * 0.4}px; background: ${eColor}22; border-color: ${eColor}44;">
+                    let finalStartX = Math.max(0, boundaryStartX);
+                    let finalW = Math.min(totalWidth - finalStartX, Math.max(2, boundaryEndX - boundaryStartX));
+                    
+                    rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm border border-black/10 dark:border-transparent dynamic-border-item overflow-hidden"
+                            style="left: ${finalStartX}px; width: ${finalW}px; top: ${envelopeTop}px; height: ${zp.barH * 0.4}px; --item-color: ${eColor};">
+                            <div class="absolute opacity-40 dark:opacity-50" style="left: ${boundaryStartX - finalStartX}px; width: ${bw}px; top: 0; bottom: 0; background: linear-gradient(90deg, ${eColor} ${epicProgress}%, transparent ${epicProgress}%);"></div>
                     </div>`;
                 }
             }
@@ -488,23 +531,79 @@ export const PlannerTimeline = {
                 `;
 
                 // Calculate and Render Dynamic Project Envelope
-                let boundaryStartX = null;
-                let boundaryEndX = null;
+                let plannedStartX = row.project.started_at ? getX(row.project.started_at) : null;
+                let plannedEndX = row.project.completed_at ? getX(row.project.completed_at) + pxPerDay : null;
+                let actualStartX = null;
+                let actualEndX = null;
+
                 row.tasks.forEach(t => {
+                    if (!t.start_date) return;
                     const sX = getX(t.start_date);
                     const eX = sX + getWidth(t.start_date, t.end_date);
-                    if (boundaryStartX === null || sX < boundaryStartX) boundaryStartX = sX;
-                    if (boundaryEndX === null || eX > boundaryEndX) boundaryEndX = eX;
+                    if (row.project.type === 'ops' && (eX < 0 || sX > totalWidth)) return;
+                    if (plannedStartX === null || sX < plannedStartX) plannedStartX = sX;
+                    if (plannedEndX === null || eX > plannedEndX) plannedEndX = eX;
                 });
+
+                row.entries.forEach(e => {
+                    if (!e.start_time) return;
+                    const sX = getX(e.start_time);
+                    const endT = e.end_time || new Date();
+                    const eX = sX + getWidth(e.start_time, endT);
+                    if (row.project.type === 'ops' && (eX < 0 || sX > totalWidth)) return;
+                    if (actualStartX === null || sX < actualStartX) actualStartX = sX;
+                    if (actualEndX === null || eX > actualEndX) actualEndX = eX;
+                });
+
+                let boundaryStartX = plannedStartX;
+                let boundaryEndX = plannedEndX;
+
+                if (actualStartX !== null && (boundaryStartX === null || actualStartX < boundaryStartX)) boundaryStartX = actualStartX;
+                if (actualEndX !== null && (boundaryEndX === null || actualEndX > boundaryEndX)) boundaryEndX = actualEndX;
                 
+                // Fallback missing bounds
+                if (plannedStartX === null) plannedStartX = boundaryStartX;
+                if (plannedEndX === null) plannedEndX = boundaryEndX;
+
+                // Apply visual padding so curved boundaries don't clip time entries
+                const PADDING = 6;
+                if (boundaryStartX !== null) boundaryStartX -= PADDING;
+                if (boundaryEndX !== null) boundaryEndX += PADDING;
+                
+                if (plannedStartX !== null) plannedStartX -= PADDING;
+                if (plannedEndX !== null) plannedEndX += PADDING;
+
                 if (boundaryStartX !== null && boundaryEndX !== null) {
                     const bw = Math.max(10, boundaryEndX - boundaryStartX);
                     const projProgress = getProjectProgress(row.project.id);
                     const envelopeTop = (zp.rowH - (zp.barH * 0.8)) / 2;
-                    rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm flex items-center px-2 overflow-hidden border"
-                            style="left: ${Math.max(0, boundaryStartX)}px; width: ${Math.min(totalWidth - boundaryStartX, bw)}px; top: ${envelopeTop}px; height: ${zp.barH * 0.8}px; background: linear-gradient(90deg, ${row.project.color}33 ${projProgress}%, ${row.project.color}11 ${projProgress}%); border-color: ${row.project.color}33;">
-                            ${showText && bw > 60 && projProgress > 0 ? `<span class="text-[7.5px] font-black text-white/40 leading-none">${projProgress}%</span>` : ''}
-                    </div>`;
+                    const pColor = row.project.color;
+                    const isDark = document.body.classList.contains('dark');
+                    // pBorder handled by CSS (.dynamic-border-item)
+                    
+                if ((row.project.name || '').toLowerCase() !== 'unassigned') {
+                    // SOLID box representing the PLANNED explicit bounds
+                    let finalPlannedStartX = Math.max(0, plannedStartX);
+                    let finalPlannedW = Math.min(totalWidth - finalPlannedStartX, Math.max(2, plannedEndX - plannedStartX));
+                    let plannedBW = Math.max(2, plannedEndX - plannedStartX);
+
+                    if (row.project.type !== 'ops') {
+                        rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm flex items-center px-2 border dynamic-border-item overflow-hidden"
+                                style="left: ${finalPlannedStartX}px; width: ${finalPlannedW}px; top: ${envelopeTop}px; height: ${zp.barH * 0.8}px; --item-color: ${pColor};">
+                                <div class="absolute opacity-40 dark:opacity-50" style="left: ${plannedStartX - finalPlannedStartX}px; width: ${plannedBW}px; top: 0; bottom: 0; background: linear-gradient(90deg, ${pColor} ${projProgress}%, transparent ${projProgress}%);"></div>
+                        </div>`;
+                    }
+
+                    // DASHED box representing the DYNAMIC bounding overflow (actuals)
+                    const dynamicDiffers = Math.abs(plannedStartX - boundaryStartX) > 1 || Math.abs(plannedEndX - boundaryEndX) > 1;
+                    if (row.project.type === 'ops' || dynamicDiffers) {
+                         let finalBoundaryStartX = Math.max(0, boundaryStartX);
+                         let finalBoundaryW = Math.min(totalWidth - finalBoundaryStartX, Math.max(2, boundaryEndX - boundaryStartX));
+                         
+                         rightHtml += `<div class="absolute rounded-full pointer-events-none border border-dashed opacity-50 dark:opacity-70 dynamic-border-item" 
+                                style="left: ${finalBoundaryStartX}px; width: ${finalBoundaryW}px; top: ${envelopeTop}px; height: ${zp.barH * 0.8}px; --item-color: ${pColor}; background-color: transparent;"></div>`;
+                    }
+                }
                 }
 
                 // Render time entries natively on the project row bottom edge (similar to original look)
@@ -541,6 +640,17 @@ export const PlannerTimeline = {
                         `;
                     });
                 }
+
+                if (boundaryStartX !== null && boundaryEndX !== null) {
+                    const bw = Math.max(10, boundaryEndX - boundaryStartX);
+                    const projProgress = getProjectProgress(row.project.id);
+                    const envelopeTop = (zp.rowH - (zp.barH * 0.8)) / 2;
+                    if (showText && bw > 60 && projProgress > 0) {
+                        rightHtml += `<div class="absolute pointer-events-none transition-all flex items-center px-2 z-20" style="left: ${Math.max(0, boundaryStartX)}px; width: ${Math.min(totalWidth - boundaryStartX, bw)}px; top: ${envelopeTop}px; height: ${zp.barH * 0.8}px;">
+                            <span class="text-[7.5px] font-black leading-none drop-shadow-md text-main dark:text-white/80 opacity-90 backdrop-blur-sm bg-app/30 px-1 py-0.5 rounded">${projProgress}%</span>
+                        </div>`;
+                    }
+                }
             } 
             else if (row.type === 'task') {
                 const isDone = row.task.status === 'done';
@@ -561,10 +671,10 @@ export const PlannerTimeline = {
 
             // Assemble row
             rowEl.innerHTML = `
-                <div class="flex-shrink-0 bg-card sticky left-0 z-30 border-r border-[#ffffff11] dark:border-white/5 overflow-hidden" style="width: ${leftWidth}px">
+                <div class="flex-shrink-0 bg-card sticky left-0 z-40 border-r border-b border-[#ffffff11] border-b-black/5 dark:border-white/5 overflow-hidden" style="width: ${leftWidth}px">
                     ${leftHtml}
                 </div>
-                <div class="relative flex-grow pointer-events-auto" style="width: ${totalWidth}px">
+                <div class="relative pointer-events-auto border-b border-black/5 dark:border-white/5 overflow-hidden shrink-0" style="width: ${totalWidth}px">
                     ${rightHtml}
                 </div>
             `;

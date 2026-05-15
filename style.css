@@ -48,6 +48,32 @@
     --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
+/* Dynamic Gantt border colors based on CSS variables */
+.dynamic-border-item {
+    border-color: color-mix(in srgb, var(--item-color) 25%, white) !important;
+}
+.dark .dynamic-border-item {
+    border-color: color-mix(in srgb, var(--item-color) 25%, black) !important;
+}
+
+/* Dynamic Gantt Background colors */
+.dynamic-bg-item {
+    background-color: transparent !important;
+}
+.dark .dynamic-bg-item {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--item-color) 30%, black) 0%, transparent 45%, transparent 55%, color-mix(in srgb, var(--item-color) 30%, black) 100%) !important;
+}
+
+/* Dynamic Gantt Task Text coloring */
+.task-title-dynamic {
+    color: color-mix(in srgb, var(--item-color) 50%, black);
+    font-weight: 600;
+}
+.dark .task-title-dynamic {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+}
+
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
