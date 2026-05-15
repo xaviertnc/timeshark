@@ -56,14 +56,16 @@ export async function renderPlanner() {
 
             <div class="flex items-center gap-1.5 flex-wrap">
                 <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
-                    ${['day', 'week', 'month', 'year'].map(s => `
-                        <button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-scale="${s}">${s}</button>
-                    `).join('')}
+                    ${['day', 'week', 'month', 'year'].map(s => {
+                        const tooltips = { day: 'Tactical execution & time logging', week: 'Operational planning & sprint tracking', month: 'Strategic milestones & bottlenecks', year: 'Executive roadmap' };
+                        return `<button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-scale="${s}" title="${tooltips[s]}">${s}</button>`;
+                    }).join('')}
                 </div>
                 <div id="zoom-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
-                    ${['compact', 'regular', 'relaxed'].map(z => `
-                        <button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-zoom="${z}">${z}</button>
-                    `).join('')}
+                    ${['compact', 'regular', 'relaxed'].map(z => {
+                        const tooltips = { compact: 'High density for pattern recognition & heat-mapping', regular: 'Standard view for daily work', relaxed: 'Presentation sizing' };
+                        return `<button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-zoom="${z}" title="${tooltips[z]}">${z}</button>`;
+                    }).join('')}
                 </div>
                 <button id="toggle-spans-btn" class="px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all border ${showSpans ? 'bg-primary/15 text-primary border-primary/30' : 'bg-app/30 text-dim border-white/5 opacity-40'}">
                     ▓ Spans

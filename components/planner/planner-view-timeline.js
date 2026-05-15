@@ -9,24 +9,24 @@ import { PlannerUtils } from './planner-utils.js';
 
 const ZOOM = {
     day: {
-        compact: { colWidth: 20, rowH: 32, barH: 14, hoursToShow: 24, fontSize: 8, spanFontSize: 10 },
-        regular: { colWidth: 20, rowH: 36, barH: 20, hoursToShow: 24, fontSize: 9, spanFontSize: 11 },
-        relaxed: { colWidth: 120, rowH: 44, barH: 26, hoursToShow: 12, fontSize: 10, spanFontSize: 12 },
+        compact: { colWidth: 20, rowH: 26, barH: 14, hoursToShow: 24, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 20, rowH: 28, barH: 18, hoursToShow: 24, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 120, rowH: 36, barH: 24, hoursToShow: 12, fontSize: 10, spanFontSize: 12 },
     },
     week: {
-        compact: { colWidth: 30, rowH: 32, barH: 14, colsInView: 9, fontSize: 8, spanFontSize: 10 },
-        regular: { colWidth: 80, rowH: 36, barH: 20, colsInView: 7, fontSize: 9, spanFontSize: 11 },
-        relaxed: { colWidth: 120, rowH: 44, barH: 26, colsInView: 5, fontSize: 10, spanFontSize: 12 },
+        compact: { colWidth: 30, rowH: 26, barH: 14, colsInView: 9, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 80, rowH: 28, barH: 18, colsInView: 7, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 120, rowH: 36, barH: 24, colsInView: 5, fontSize: 10, spanFontSize: 12 },
     },
     month: {
-        compact: { colWidth: 20, rowH: 32, barH: 14, colsInView: 31, fontSize: 8, spanFontSize: 10 },
-        regular: { colWidth: 40, rowH: 36, barH: 20, colsInView: 0, fontSize: 9, spanFontSize: 11 },
-        relaxed: { colWidth: 80, rowH: 44, barH: 26, colsInView: 0, fontSize: 10, spanFontSize: 12 },
+        compact: { colWidth: 20, rowH: 26, barH: 14, colsInView: 31, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 40, rowH: 28, barH: 18, colsInView: 0, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 80, rowH: 36, barH: 24, colsInView: 0, fontSize: 10, spanFontSize: 12 },
     },
     year: {
-        compact: { colWidth: 6, rowH: 32, barH: 14, fontSize: 8, spanFontSize: 10 },
-        regular: { colWidth: 12, rowH: 36, barH: 20, fontSize: 9, spanFontSize: 11 },
-        relaxed: { colWidth: 24, rowH: 44, barH: 26, fontSize: 10, spanFontSize: 12 },
+        compact: { colWidth: 6, rowH: 26, barH: 14, fontSize: 8, spanFontSize: 10 },
+        regular: { colWidth: 12, rowH: 28, barH: 18, fontSize: 9, spanFontSize: 11 },
+        relaxed: { colWidth: 24, rowH: 36, barH: 24, fontSize: 10, spanFontSize: 12 },
     }
 };
 
@@ -34,6 +34,9 @@ export const PlannerTimeline = {
     render(container, data, config, today, zoom = 'regular', onLaneReorder = null, options = {}) {
         if (typeof container === 'string') container = document.getElementById(container);
         if (!container) return;
+        
+        window.TimesharkProjectCollapsed = window.TimesharkProjectCollapsed || new Set();
+        window.TimesharkResourceCollapsed = window.TimesharkResourceCollapsed || new Set();
 
         container.innerHTML = '';
 
@@ -121,12 +124,19 @@ export const PlannerTimeline = {
             const tasksByProject = new Map();
             const spansByProject = new Map();
             
+            // Helper to prevent invalid projects spawning multiple "Personal" rows
+            const getValidProjId = (pid) => {
+                if (!pid) return 'unassigned';
+                const exists = data.projects.some(p => p.id == pid);
+                return exists ? pid : 'unassigned';
+            };
+
             row.tasks.filter(t => {
                 if (!t.start_date) return false;
                 if (t.status !== 'done') return true;
                 return isCompletedToday(t);
             }).forEach(task => {
-                const projId = task.project_id || 'personal';
+                const projId = getValidProjId(task.project_id);
                 if (task.task_type === 'project_span') {
                     if (!spansByProject.has(projId)) spansByProject.set(projId, []);
                     spansByProject.get(projId).push(task);
@@ -138,7 +148,7 @@ export const PlannerTimeline = {
 
             const entriesByProject = new Map();
             row.entries.forEach(e => {
-                const pid = e.project_id || 'personal';
+                const pid = getValidProjId(e.project_id);
                 if (!entriesByProject.has(pid)) entriesByProject.set(pid, []);
                 entriesByProject.get(pid).push(e);
             });
@@ -146,19 +156,21 @@ export const PlannerTimeline = {
             const allProjectIds = new Set([...tasksByProject.keys(), ...spansByProject.keys(), ...entriesByProject.keys()]);
             if (allProjectIds.size === 0) return; // Completely empty resource row
 
-            // Sort projects: spans first based on lane_order, then chronological
+            // Sort projects: chronologically by earliest activity
             const projectArr = Array.from(allProjectIds).map(pid => {
-                return data.projects.find(p => p.id == pid) || { id: pid, name: 'Personal', color: '#64748b' };
+                return data.projects.find(p => p.id == pid) || { id: pid, name: 'Unassigned', color: '#475569' };
             });
 
-            projectArr.sort((a, b) => {
-                const hasSpanA = spansByProject.has(a.id);
-                const hasSpanB = spansByProject.has(b.id);
-                if (hasSpanA && hasSpanB) return (a.lane_order ?? 999) - (b.lane_order ?? 999);
-                if (hasSpanA) return -1;
-                if (hasSpanB) return 1;
-                return 0; // fallback order
-            });
+            const getEarliest = (pid) => {
+                const pTasks = (tasksByProject.get(pid) || []).concat(spansByProject.get(pid) || []);
+                const pEntries = entriesByProject.get(pid) || [];
+                let e = Infinity;
+                pTasks.forEach(t => { if(t.start_date) { const d = new Date(t.start_date).getTime(); if(d < e) e = d; }});
+                pEntries.forEach(en => { if(en.start_time) { const d = new Date(en.start_time).getTime(); if(d < e) e = d; }});
+                return e;
+            };
+
+            projectArr.sort((a, b) => getEarliest(a.id) - getEarliest(b.id));
 
             // 1. Add Resource
             flattenedRows.push({ type: 'resource', resource: row.resource });
@@ -181,7 +193,8 @@ export const PlannerTimeline = {
                     type: 'project',
                     project: proj,
                     spans: filteredSpans,
-                    entries: entries
+                    entries: entries,
+                    resource: row.resource
                 });
 
                 tasks.forEach(task => {
@@ -193,7 +206,8 @@ export const PlannerTimeline = {
                     flattenedRows.push({
                         type: 'task',
                         task: task,
-                        project: proj
+                        project: proj,
+                        resource: row.resource
                     });
                 });
             });
@@ -325,6 +339,10 @@ export const PlannerTimeline = {
 
         // ───── Render the Flattened Rows ─────
         flattenedRows.forEach(row => {
+            const isResourceCollapsed = window.TimesharkResourceCollapsed.has(row.resource);
+            if ((row.type === 'task' || row.type === 'project') && isResourceCollapsed) return;
+            if (row.type === 'task' && window.TimesharkProjectCollapsed.has(String(row.project.id))) return;
+
             const rowEl = document.createElement('div');
             // Base class for all rows
             rowEl.className = 'flex border-b border-white/5 hover:bg-white/[0.02] transition-colors group relative z-10 w-full';
@@ -382,37 +400,51 @@ export const PlannerTimeline = {
                         <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 5px); z-index: 0;"></div>
                     ` : '';
 
+                    const taskBg = isDone ? proj.color : `linear-gradient(to right, ${proj.color}22, ${proj.color}44)`;
+                    const borderStyle = isDone ? 'border border-white/10' : '';
+
                     return `
-                        <div class="task-bar absolute rounded shadow-sm border border-white/10 hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all cursor-pointer overflow-hidden"
-                             style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${proj.color}; ${isDone ? 'opacity: 0.45;' : ''}"
+                        <div class="task-bar absolute rounded shadow-sm ${borderStyle} hover:shadow-lg hover:-translate-y-0.5 hover:z-20 transition-all cursor-pointer overflow-hidden ${isDone ? 'opacity-90' : 'opacity-100 shadow-inner'}"
+                             style="left: ${renderX}px; width: ${renderW}px; height: ${zp.barH}px; top: ${barTop}px; background: ${taskBg}; ${!isDone ? `border: 1px solid ${proj.color};` : ''}"
                              data-task-id="${task.id}"
                              title="${tooltipText}">
                              ${progressHtml}
                              ${doneOverlay}
-                             <span class="block relative text-[${zp.fontSize}px] font-bold text-white truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}</span>
+                             <span class="block relative text-[${zp.fontSize}px] font-bold ${isDone ? 'text-white' : 'text-white/90'} truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}</span>
                         </div>
                     `;
                 }
             };
 
             if (row.type === 'resource') {
-                rowEl.classList.add('bg-card/20'); // distinctive block background
+                rowEl.classList.add('bg-card'); // solid block background
+                const isCollapsed = window.TimesharkResourceCollapsed.has(row.resource);
+                const chevron = `<button class="collapse-toggle-res p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-res="${row.resource}">
+                    <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                </button>`;
                 leftHtml = `
-                    <div class="w-full h-full flex items-center px-4 gap-2">
+                    <div class="w-full h-full flex items-center px-4 gap-2 border-t border-white/5">
+                        ${chevron}
                         <div class="w-5 h-5 rounded-md bg-gradient-to-br from-card to-app border border-soft shadow-inner flex items-center justify-center font-black text-[10px] text-primary shrink-0 opacity-80">
                             ${row.resource.substring(0, 1).toUpperCase()}
                         </div>
-                        <span class="text-[12px] font-black text-main tracking-tight opacity-90">${row.resource}</span>
+                        <span class="text-[12px] font-black text-white/90 tracking-tight opacity-100">${row.resource}</span>
                     </div>
                 `;
             } 
             else if (row.type === 'project') {
-                rowEl.classList.add('bg-app/40');
+                rowEl.classList.add('bg-card/20');
+                const spanLabel = row.spans.length === 0 ? '' : (row.spans.length === 1 ? '1 Span' : `${row.spans.length} Spans`);
+                const isCollapsed = window.TimesharkProjectCollapsed.has(String(row.project.id));
+                const chevron = `<button class="collapse-toggle ml-1 p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-proj="${row.project.id}">
+                    <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                </button>`;
                 leftHtml = `
-                    <div class="proj-row w-full h-full flex items-center pl-10 pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors" data-project-id="${row.project.id}">
+                    <div class="proj-row w-full h-full flex items-center pl-6 pr-2 gap-1.5 cursor-pointer hover:bg-white/5 transition-colors border-t border-white/5" data-project-id="${row.project.id}">
+                        ${chevron}
                         <div class="w-1.5 h-1.5 rounded-sm shrink-0 shadow-sm" style="background-color: ${row.project.color}"></div>
-                        <span class="text-[11px] font-bold text-dim opacity-75 truncate">${row.project.name}</span>
-                        <div class="ml-auto text-[9px] font-black tracking-widest text-[#666] uppercase">${row.spans.length} spans</div>
+                        <span class="text-[11px] font-bold text-white/90 opacity-100 truncate">${row.project.name}</span>
+                        <div class="ml-auto text-[9px] font-black tracking-widest text-[#888] uppercase">${spanLabel}</div>
                     </div>
                 `;
 
@@ -452,9 +484,10 @@ export const PlannerTimeline = {
             } 
             else if (row.type === 'task') {
                 leftHtml = `
-                    <div class="task-item w-full h-full flex items-center pl-14 pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-l-primary/30" data-task-id="${row.task.id}">
-                        <div class="w-1.5 h-1.5 rounded-full border border-dim/30 flex items-center justify-center shrink-0 ${row.task.status === 'done' ? 'bg-primary/50 border-primary' : ''}"></div>
-                        <span class="text-[10px] text-dim ${row.task.status === 'done' ? 'line-through opacity-40' : 'opacity-80'} truncate">${row.task.title}</span>
+                    <div class="task-item relative w-full h-full flex items-center pl-16 pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-l-primary/30" data-task-id="${row.task.id}">
+                        <div class="absolute left-9 top-0 bottom-1/2 w-4 border-l border-b border-white/10 rounded-bl" style="border-bottom-left-radius: 4px;"></div>
+                        <div class="w-1 h-1 rounded-full flex items-center justify-center shrink-0 ${row.task.status === 'done' ? 'bg-primary/50' : 'bg-dim/30'}"></div>
+                        <span class="text-[10px] text-white/80 ${row.task.status === 'done' ? 'line-through opacity-50' : 'opacity-100'} truncate">${row.task.title}</span>
                     </div>
                 `;
 
@@ -463,7 +496,7 @@ export const PlannerTimeline = {
 
             // Assemble row
             rowEl.innerHTML = `
-                <div class="flex-shrink-0 bg-app/80 backdrop-blur sticky left-0 z-30 border-r border-white/5" style="width: ${leftWidth}px">
+                <div class="flex-shrink-0 bg-[#0f1115] sticky left-0 z-30 border-r border-white/5" style="width: ${leftWidth}px">
                     ${leftHtml}
                 </div>
                 <div class="relative flex-grow pointer-events-auto" style="width: ${totalWidth}px">
@@ -489,6 +522,28 @@ export const PlannerTimeline = {
                     scrollParent.scrollLeft = Math.max(0, leftWidth + todayX - scrollParent.clientWidth / 2);
                 }
             }
+        }
+
+        if (!container.dataset.timelineEventsBound) {
+            container.dataset.timelineEventsBound = "true";
+            container.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('.collapse-toggle');
+                const toggleResBtn = e.target.closest('.collapse-toggle-res');
+                if (toggleBtn) {
+                    e.stopPropagation();
+                    const pid = toggleBtn.dataset.toggleProj;
+                    if (window.TimesharkProjectCollapsed.has(pid)) window.TimesharkProjectCollapsed.delete(pid);
+                    else window.TimesharkProjectCollapsed.add(pid);
+                    PlannerTimeline.render(container, data, config, today, zoom, onLaneReorder, options);
+                }
+                if (toggleResBtn) {
+                    e.stopPropagation();
+                    const rid = toggleResBtn.dataset.toggleRes;
+                    if (window.TimesharkResourceCollapsed.has(rid)) window.TimesharkResourceCollapsed.delete(rid);
+                    else window.TimesharkResourceCollapsed.add(rid);
+                    PlannerTimeline.render(container, data, config, today, zoom, onLaneReorder, options);
+                }
+            });
         }
     }
 };
