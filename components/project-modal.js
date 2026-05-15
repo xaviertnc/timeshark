@@ -97,9 +97,9 @@ export class ProjectModal {
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Type</label>
                                         <div class="relative group">
                                             <select name="type" id="modal-type-select" class="w-full bg-app border-none rounded-xl py-2.5 px-4 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20 transition-all uppercase text-[10px] tracking-widest outline-none">
-                                                <option value="project" ${!project || (project.type !== 'epic' && project.type !== 'full-time') ? 'selected' : ''}>Project</option>
+                                                <option value="project" ${!project || (project.type !== 'epic' && project.type !== 'ops') ? 'selected' : ''}>Project</option>
                                                 <option value="epic" ${project && project.type === 'epic' ? 'selected' : ''}>Epic</option>
-                                                <option value="full-time" ${project && project.type === 'full-time' ? 'selected' : ''}>Full Time</option>
+                                                <option value="ops" ${project && project.type === 'ops' ? 'selected' : ''}>Ops</option>
                                             </select>
                                             <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
@@ -330,10 +330,10 @@ export class ProjectModal {
         const progressContainer = projectForm.querySelector('#project-progress-container');
         if (typeSelect) {
             typeSelect.onchange = (e) => {
-                const isFullTime = e.target.value === 'full-time';
-                if (parentContainer) parentContainer.style.display = (e.target.value === 'epic' || isFullTime) ? 'none' : 'block';
-                dateContainers.forEach(c => c.style.display = isFullTime ? 'none' : 'block');
-                if (progressContainer) progressContainer.style.display = isFullTime ? 'none' : 'block';
+                const isOps = e.target.value === 'ops';
+                if (parentContainer) parentContainer.style.display = (e.target.value === 'epic' || isOps) ? 'none' : 'block';
+                dateContainers.forEach(c => c.style.display = isOps ? 'none' : 'block');
+                if (progressContainer) progressContainer.style.display = isOps ? 'none' : 'block';
             };
             typeSelect.dispatchEvent(new Event('change'));
         }

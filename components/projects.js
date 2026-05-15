@@ -163,7 +163,7 @@ export async function renderProjects() {
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-4">
+        <div class="flex flex-wrap items-center justify-end gap-4 w-full lg:w-auto">
             <label class="flex items-center gap-3 cursor-pointer group">
                 <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Tag</span>
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
@@ -171,7 +171,6 @@ export async function renderProjects() {
                     <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByTag ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
-            <div class="w-px h-4 bg-white/10 hidden sm:block"></div>
             <label class="flex items-center gap-3 cursor-pointer group">
                 <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Org</span>
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
@@ -179,7 +178,6 @@ export async function renderProjects() {
                     <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByOrg ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
-            <div class="w-px h-4 bg-white/10 hidden sm:block"></div>
             <label class="flex items-center gap-3 cursor-pointer group">
                 <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
@@ -334,8 +332,8 @@ export async function renderProjects() {
     let typeBadge = '';
     if (p.type === 'epic') {
       typeBadge = '<span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[8px] uppercase tracking-widest font-black mr-1 border border-primary/20">EPIC</span>';
-    } else if (p.type === 'full-time') {
-      typeBadge = '<span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[8px] uppercase tracking-widest font-black mr-1 border border-blue-500/20 hover:bg-blue-500/30 transition-colors" title="Full Time">FULL TIME</span>';
+    } else if (p.type === 'ops') {
+      typeBadge = '<span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[8px] uppercase tracking-widest font-black mr-1 border border-blue-500/20 hover:bg-blue-500/30 transition-colors" title="Operations">OPS</span>';
     }
 
     return `
