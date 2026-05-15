@@ -54,12 +54,11 @@ Every task is a flat JSON object. Here's the full schema derived from real data:
 | `notes` | `string` | No | Free-text notes |
 | `completed_at` | `string\|null` | No | ISO timestamp of when task was marked done |
 | `slots` | `string` | Legacy | Comma-separated hour slots (e.g. `"9,15"`) — legacy field |
-| `continuous` | `bool` | No | Used with `project_span` to indicate ongoing work |
+| `progress` | `int` | `0` | `0-100` completion indicator |
 
 **Two task types:**
 
 - **`task`** — A normal todo with its own progress bar (0–100%)
-- **`project_span`** — A milestone/epic bar that spans across the timeline. Progress is **computed automatically** from all child tasks in the same project, not set manually.
 
 ---
 
@@ -169,7 +168,6 @@ Shows **all tasks** (scheduled + backlog), with a **list/grid toggle**. Complete
 Only **scheduled tasks** (those with `start_date`) appear as horizontal bars. Positioned by date/time on the X-axis, grouped into per-project **lanes** within resource rows.
 
 - **`task` type** → Normal colored bar with progress fill
-- **`project_span` type** → Spanning bar with aggregate progress computed from all tasks in that project
 
 #### Dashboard
 
@@ -192,7 +190,6 @@ The `PlannerModal` singleton manages all task CRUD UI:
 | **Member** | Dropdown populated from [team.json](cci:7://file:///c:/laragon/www/timeshark/data/team.json:0:0-0:0) + `"General"` fallback |
 | **Project** | Dropdown from [projects.json](cci:7://file:///c:/laragon/www/timeshark/data/projects.json:0:0-0:0) |
 | **Status** | `todo` / `in-progress` / `done` — auto-synced with progress |
-| **Type** | `task` or `project_span` — hides progress section for spans |
 | **Priority** | `low` 🟢 / `medium` 🟡 / `high` 🔴 |
 | **Notes** | Multi-line textarea |
 | **Schedule toggle** | Enables/disables date fields; clearing toggle removes dates entirely |

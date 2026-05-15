@@ -17,7 +17,6 @@
 
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { syncProjectToSpan } from '../utils/project-span-sync.js';
 import { ProjectModal } from './project-modal.js';
 
 const applyAlpha = (color, alpha) => {

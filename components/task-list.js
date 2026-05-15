@@ -375,7 +375,6 @@ export const TaskList = {
                 groups.backlog.tasks.push(t);
                 return;
             }
-            if (t.task_type === 'project_span') return;
             if (!t.start_date) {
                 groups.backlog.tasks.push(t);
                 return;

@@ -8,7 +8,6 @@
 import { api } from '../utils/api.js';
 import { store } from '../utils/store.js';
 import { SearchableSelect } from './searchable-select.js';
-import { syncSpanToProject } from '../utils/project-span-sync.js';
 import { escapeHTML } from '../utils/dom.js';
 
 export class TaskModal {
@@ -79,16 +78,7 @@ export class TaskModal {
                             </div>
                         </div>
 
-                        <!-- Row: Type -->
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Type</label>
-                            <select name="task_type" id="modal-task-type" class="w-full zen-input bg-highlight border border-subtle text-main cursor-pointer appearance-none outline-none">
-                                <option value="task" ${task?.task_type === 'task' ? 'selected' : ''}>📋 Task</option>
-                                <option value="project_span" ${task?.task_type === 'project_span' ? 'selected' : ''}>🎯 Project Span</option>
-                            </select>
-                        </div>
-
-                        <!-- Row: Tags -->
+                        <!-- Row: Status -->
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Tags</label>
                             <div class="bg-highlight border border-subtle rounded-xl p-3 focus-within:ring-2 focus-within:ring-primary/20 transition-all flex flex-wrap gap-2 items-center min-h-[50px] shadow-sm" id="modal-tags-container">
@@ -564,15 +554,6 @@ export class TaskModal {
 
             try {
                 await api.post('planner.php', data);
-
-                // Project Span Sync
-                if (data.task_type === 'project_span' && data.project_id) {
-                    const tasks = await api.get('planner.php');
-                    store.update('tasks', tasks);
-                    const saved = tasks.find(t => String(t.id) === String(data.id || 'new'));
-                    if (saved) await syncSpanToProject(saved);
-                }
-
                 onSave();
                 close();
             } catch (err) {

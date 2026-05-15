@@ -89,7 +89,7 @@ Below the timer widget, there's a filterable task list with 4 toggle buttons:
 | **Today** | ☀ | Tasks intersecting today's date or unscheduled |
 | **Completed** | ✓ | Tasks with `status: 'done'` |
 | **Planned** | 📅 | Scheduled tasks not intersecting today |
-| **Projects** | ▓ | Project span tasks (shows mini-Gantt chart) |
+| **Projects** | ▓ | Projects timeline (shows mini-Gantt chart) |
 
 Filter state persists in `localStorage` as `dashboard_task_filters`.
 
@@ -108,37 +108,13 @@ When the **Projects** filter is active, a **mini-Gantt chart** replaces the task
 
 **Purpose**: Visualizes all project timelines in a compact horizontal bar chart:
 
-- Each project has a span task (`task_type: 'project_span'`) that represents the project timeline
+- Projects with valid `started_at` and `completed_at` dates are mapped to the timeline.
 - Bars are color-coded to project colors
-- Shows progress percentage calculated from **all non-span tasks** in that project
+- Shows progress percentage from the project's native `progress` field.
 - "Today" indicator with red vertical line
 - Month tick marks for time context
 
-**Progress Calculation** (lines 452-459):
-
-```javascript
-const progress = (s) => {
-  // Find all tasks for this project (excluding spans)
-  const allProjectTasks = allTasks.filter(t =>
-    String(t.project_id) === String(s.project_id) && t.task_type !== 'project_span'
-  );
-  if (allProjectTasks.length === 0) return 0;
-  // Average progress of all tasks
-  const totalProgress = allProjectTasks.reduce((sum, t) => sum + (t.progress || 0), 0);
-  return Math.round(totalProgress / allProjectTasks.length);
-};
-```
-
-**Visual Features**:
-
-- Horizontal bars with project color + opacity for background
-- Progress fill overlay (opacity 0.5)
-- Past projects are dimmed (opacity-40)
-- Current projects (start ≤ today ≤ end) have shadow emphasis
-- Click any span to open `PlannerModal` for editing dates
-
-**Relationship to Span Tasks**:
-> **Note:** Span tasks and projects are now bidirectionally synchronized. Editing span task dates/progress automatically updates the parent project, and vice versa. The dashboard displays the synced project progress field. See [walkthrough](file:///C:/Users/xavie/.gemini/antigravity/brain/11b4e2d2-d7a0-4028-adc0-f75a94ff481f/walkthrough.md) for implementation details.
+> **Note:** Projects track their own `started_at` and `completed_at` dates alongside a native `progress` field. The dashboard displays these synced project fields.
 
 ---
 

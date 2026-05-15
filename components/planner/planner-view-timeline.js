@@ -112,7 +112,7 @@ export const PlannerTimeline = {
                 return parseInt(proj.progress) || 0;
             }
             const allTasks = data.rows.flatMap(r => r.tasks);
-            const projectTasks = allTasks.filter(t => (t.project_id || 'personal') == projectId && t.task_type !== 'project_span');
+            const projectTasks = allTasks.filter(t => (t.project_id || 'personal') == projectId);
             if (projectTasks.length === 0) return 0;
             const total = projectTasks.reduce((sum, t) => sum + (t.progress || 0), 0);
             return Math.round(total / projectTasks.length);
@@ -135,7 +135,7 @@ export const PlannerTimeline = {
                 if (!t.start_date) return false;
                 if (t.status !== 'done') return true;
                 return isCompletedToday(t);
-            }).forEach(task => { // Treating project_spans normally
+            }).forEach(task => { 
                 const projId = getValidProjId(task.project_id);
                 if (!tasksByProject.has(projId)) tasksByProject.set(projId, []);
                 tasksByProject.get(projId).push(task);
@@ -172,7 +172,11 @@ export const PlannerTimeline = {
             const standaloneProjects = [];
 
             rawProjectArr.forEach(proj => {
-                if (proj.parent_id) {
+                if (proj.type === 'epic') {
+                    if (!epicsMap.has(proj.id)) epicsMap.set(proj.id, { epic: proj, projList: [] });
+                    // Provide the epic itself a standard project row strictly under its own header to hold direct tasks
+                    epicsMap.get(proj.id).projList.unshift(proj);
+                } else if (proj.parent_id) {
                     const epic = data.projects.find(p => p.id == proj.parent_id && p.type === 'epic');
                     if (epic) {
                         if (!epicsMap.has(epic.id)) epicsMap.set(epic.id, { epic: epic, projList: [] });
@@ -220,7 +224,8 @@ export const PlannerTimeline = {
 
             // 2. Add Epics and their projects
             Array.from(epicsMap.values()).forEach(group => {
-                flattenedRows.push({ type: 'epic', epic: group.epic, resource: row.resource });
+                const epicTasks = group.projList.flatMap(p => tasksByProject.get(p.id) || []);
+                flattenedRows.push({ type: 'epic', epic: group.epic, resource: row.resource, tasks: epicTasks });
                 group.projList.forEach(p => pushProjectGroup(p, true, group.epic.id));
             });
 
@@ -406,7 +411,7 @@ export const PlannerTimeline = {
                          title="${tooltipText}">
                          ${progressHtml}
                          ${doneOverlay}
-                         <span class="flex items-center relative text-[${zp.fontSize}px] font-bold ${isDone ? 'text-white' : 'text-white/90'} truncate px-1.5 leading-[${zp.barH}px] pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}${showText && renderW > 60 ? tagBadges : ''}</span>
+                         <span class="flex items-center h-full relative text-[${zp.fontSize}px] font-bold ${isDone ? 'text-white' : 'text-white/90'} truncate px-1.5 pointer-events-none whitespace-nowrap overflow-hidden" style="z-index: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${showText && renderW > 30 ? task.title : ''}${showText && renderW > 60 ? tagBadges : ''}</span>
                     </div>
                 `;
             };
@@ -418,55 +423,67 @@ export const PlannerTimeline = {
                     <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                 </button>`;
                 leftHtml = `
-                    <div class="w-full h-full flex items-center px-4 gap-2 border-t border-white/5">
+                    <div class="w-full h-full flex items-center px-4 gap-2 border-t border-black/5 dark:border-white/5">
                         ${chevron}
                         <div class="w-5 h-5 rounded-md bg-gradient-to-br from-card to-app border border-soft shadow-inner flex items-center justify-center font-black text-[10px] text-primary shrink-0 opacity-80">
                             ${row.resource.substring(0, 1).toUpperCase()}
                         </div>
-                        <span class="text-[12px] font-black text-white/90 tracking-tight opacity-100">${row.resource}</span>
+                        <span class="text-[12px] font-black opacity-90 tracking-tight">${row.resource}</span>
                     </div>
                 `;
             }
             else if (row.type === 'epic') {
                 rowEl.classList.add('bg-card/40');
                 const isCollapsed = window.TimesharkEpicCollapsed.has(String(row.epic.id));
-                const chevron = `<button class="collapse-toggle-epic ml-3 p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-epic="${row.epic.id}">
+                const chevron = `<button class="collapse-toggle-epic p-0.5 hover:bg-black/5 dark:hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-epic="${row.epic.id}">
                     <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                 </button>`;
                 
                 leftHtml = `
-                    <div class="w-full h-full flex items-center pr-2 gap-1.5 cursor-pointer hover:bg-white/5 transition-colors border-t border-white/5 relative">
-                        <div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
-                        <div class="absolute left-6 top-1/2 w-2 h-px bg-white/5"></div>
+                    <div class="w-full h-full flex items-center pr-2 pl-4 gap-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t border-black/5 dark:border-white/5 relative">
                         ${chevron}
-                        <span class="px-1 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[8px] uppercase tracking-widest font-black shrink-0 shadow-inner">EPIC</span>
-                        <span class="text-[11px] font-bold text-white opacity-100 truncate flex-grow">${row.epic.name}</span>
+                        <span class="px-1.5 py-0.5 rounded-sm bg-black/10 dark:bg-white/10 opacity-50 text-[7px] uppercase tracking-widest font-black shrink-0">EPIC</span>
+                        <span class="text-[11px] font-bold opacity-100 truncate flex-grow">${row.epic.name}</span>
                     </div>
                 `;
+
+                // Calculate and Render Dynamic Epic Envelope
+                let boundaryStartX = null;
+                let boundaryEndX = null;
+                (row.tasks || []).forEach(t => {
+                    const sX = getX(t.start_date);
+                    const eX = sX + getWidth(t.start_date, t.end_date);
+                    if (boundaryStartX === null || sX < boundaryStartX) boundaryStartX = sX;
+                    if (boundaryEndX === null || eX > boundaryEndX) boundaryEndX = eX;
+                });
+                
+                if (boundaryStartX !== null && boundaryEndX !== null) {
+                    const bw = Math.max(10, boundaryEndX - boundaryStartX);
+                    const eColor = row.epic.color || '#475569';
+                    const envelopeTop = (zp.rowH - (zp.barH * 0.4)) / 2;
+                    rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm border"
+                            style="left: ${Math.max(0, boundaryStartX)}px; width: ${Math.min(totalWidth - boundaryStartX, bw)}px; top: ${envelopeTop}px; height: ${zp.barH * 0.4}px; background: ${eColor}22; border-color: ${eColor}44;">
+                    </div>`;
+                }
             }
             else if (row.type === 'project') {
-                rowEl.classList.add('bg-card/20');
+                rowEl.classList.add('bg-card/10');
                 const isCollapsed = window.TimesharkProjectCollapsed.has(String(row.project.id));
                 const chevron = `<button class="collapse-toggle p-0.5 hover:bg-white/10 rounded text-dim/60 hover:text-white transition-colors" data-toggle-proj="${row.project.id}">
                     <svg class="w-2.5 h-2.5 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                 </button>`;
                 
-                const pl = row.isEpicChild ? 'pl-10' : 'pl-6';
-                const treeLines = row.isEpicChild ? `
-                    <div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
-                    <div class="absolute left-10 top-0 bottom-0 w-px bg-white/5"></div>
-                    <div class="absolute left-10 top-1/2 w-1.5 h-px bg-white/5"></div>
-                ` : `<div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div><div class="absolute left-6 top-1/2 w-1.5 h-px bg-white/5"></div>`;
+                const pl = row.isEpicChild ? 'pl-8' : 'pl-4';
+                const ml = '';
                 
                 const tags = row.project.tags ? (Array.isArray(row.project.tags) ? row.project.tags : row.project.tags.split(',').filter(Boolean)) : [];
-                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1 py-px rounded bg-white/5 border border-white/5 text-[7px] text-white/50 uppercase tracking-widest ml-1 shadow-inner">${t}</span>`).join('');
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1.5 py-px rounded-sm bg-black/5 dark:bg-white/5 text-[7px] opacity-40 uppercase tracking-widest ml-1">${t}</span>`).join('');
 
                 leftHtml = `
-                    <div class="proj-row w-full h-full flex items-center pr-2 gap-1.5 cursor-pointer hover:bg-white/5 transition-colors border-t border-white/5 relative ${pl}" data-project-id="${row.project.id}">
-                        ${treeLines}
+                    <div class="proj-row w-full h-full flex items-center pr-2 gap-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t border-black/5 dark:border-white/5 ${pl} ${ml}" data-project-id="${row.project.id}">
                         ${chevron}
                         <div class="w-1.5 h-1.5 rounded-sm shrink-0 shadow-sm" style="background-color: ${row.project.color}"></div>
-                        <span class="text-[11px] font-bold text-white/90 opacity-100 truncate">${row.project.name}</span>${tagBadges}
+                        <span class="text-[11px] font-bold opacity-90 truncate">${row.project.name}</span>${tagBadges}
                     </div>
                 `;
 
@@ -483,14 +500,19 @@ export const PlannerTimeline = {
                 if (boundaryStartX !== null && boundaryEndX !== null) {
                     const bw = Math.max(10, boundaryEndX - boundaryStartX);
                     const projProgress = getProjectProgress(row.project.id);
-                    rightHtml += `<div class="absolute rounded-sm pointer-events-none transition-all shadow-sm flex items-center px-1.5 overflow-hidden border"
-                            style="left: ${Math.max(0, boundaryStartX)}px; width: ${Math.min(totalWidth - boundaryStartX, bw)}px; top: 4px; bottom: 8px; background: linear-gradient(90deg, ${row.project.color}33 ${projProgress}%, ${row.project.color}11 ${projProgress}%); border-color: ${row.project.color}44;">
-                            ${showText && bw > 60 && projProgress > 0 ? `<span class="text-[8px] font-black text-white/40 leading-none">${projProgress}%</span>` : ''}
+                    const envelopeTop = (zp.rowH - (zp.barH * 0.8)) / 2;
+                    rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm flex items-center px-2 overflow-hidden border"
+                            style="left: ${Math.max(0, boundaryStartX)}px; width: ${Math.min(totalWidth - boundaryStartX, bw)}px; top: ${envelopeTop}px; height: ${zp.barH * 0.8}px; background: linear-gradient(90deg, ${row.project.color}33 ${projProgress}%, ${row.project.color}11 ${projProgress}%); border-color: ${row.project.color}33;">
+                            ${showText && bw > 60 && projProgress > 0 ? `<span class="text-[7.5px] font-black text-white/40 leading-none">${projProgress}%</span>` : ''}
                     </div>`;
                 }
 
                 // Render time entries natively on the project row bottom edge (similar to original look)
                 if (config.type !== 'year') {
+                    const envelopeTop = (zp.rowH - (zp.barH * 0.8)) / 2;
+                    const entryH = Math.max(4, (zp.barH * 0.8) - 4);
+                    const entryTop = envelopeTop + ((zp.barH * 0.8) - entryH) / 2;
+                    
                     row.entries.forEach(entry => {
                         if (!entry.start_time) return;
                         const s = new Date(entry.start_time);
@@ -511,8 +533,8 @@ export const PlannerTimeline = {
                         const entryTitle = `${entry.description || 'No description'} • ${row.project.name} • ${timeStr} (${durationStr})`;
 
                         rightHtml += `
-                            <div class="time-entry absolute ${isActive ? 'h-1.5 animate-pulse opacity-80' : 'h-1 opacity-40 hover:opacity-100'} rounded-full cursor-pointer hover:z-30 transition-all"
-                                 style="left: ${renderX}px; width: ${renderW}px; bottom: 2px; background-color: ${entryColor};"
+                            <div class="time-entry absolute ${isActive ? 'animate-pulse opacity-100 z-10 box-shadow' : 'opacity-80 hover:opacity-100 hover:-translate-y-px z-10'} rounded-sm cursor-pointer hover:z-30 transition-all border border-black/10"
+                                 style="left: ${renderX}px; width: ${renderW}px; top: ${entryTop}px; height: ${entryH}px; background-color: ${entryColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"
                                  data-entry-id="${entry.id}"
                                  title="${entryTitle}">
                             </div>
@@ -522,22 +544,16 @@ export const PlannerTimeline = {
             } 
             else if (row.type === 'task') {
                 const isDone = row.task.status === 'done';
-                const pl = row.isEpicChild ? 'pl-[60px]' : 'pl-16';
-                const leftLine = row.isEpicChild ? `
-                    <div class="absolute left-6 top-0 bottom-0 w-px bg-white/5"></div>
-                    <div class="absolute left-10 top-0 bottom-1/2 w-4 border-l border-b border-white/10 rounded-bl" style="border-bottom-left-radius: 4px;"></div>
-                ` : `
-                    <div class="absolute left-9 top-0 bottom-1/2 w-4 border-l border-b border-white/10 rounded-bl" style="border-bottom-left-radius: 4px;"></div>
-                `;
+                const pl = row.isEpicChild ? 'pl-[52px]' : 'pl-10';
+                const ml = 'border-l-[2px] border-transparent hover:border-l-primary/30';
 
                 const tags = row.task.tags ? (Array.isArray(row.task.tags) ? row.task.tags : row.task.tags.split(',').filter(Boolean)) : [];
-                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1 py-px rounded bg-white/5 border border-white/5 text-[7px] text-white/50 uppercase tracking-widest pointer-events-none ml-1 shadow-inner shrink-0">${t}</span>`).join('');
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1.5 py-px rounded-sm bg-black/5 dark:bg-white/5 text-[7px] opacity-40 uppercase tracking-widest pointer-events-none ml-1 shrink-0">${t}</span>`).join('');
 
                 leftHtml = `
-                    <div class="task-item relative w-full h-full flex items-center pr-2 gap-2 cursor-pointer hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-l-primary/30 ${pl}" data-task-id="${row.task.id}">
-                        ${leftLine}
+                    <div class="task-item relative w-full h-full flex items-center pr-2 gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${pl} ${ml}" data-task-id="${row.task.id}">
                         <div class="w-1 h-1 rounded-full flex items-center justify-center shrink-0 ${isDone ? 'bg-primary/50' : 'bg-dim/30'}"></div>
-                        <span class="text-[10px] text-white/80 ${isDone ? 'line-through opacity-50' : 'opacity-100'} truncate">${row.task.title}</span>${tagBadges}
+                        <span class="text-[10px] ${isDone ? 'line-through opacity-40' : 'opacity-80'} font-medium truncate">${row.task.title}</span>${tagBadges}
                     </div>
                 `;
                 rightHtml += renderBar(row.task, row.project);
@@ -545,7 +561,7 @@ export const PlannerTimeline = {
 
             // Assemble row
             rowEl.innerHTML = `
-                <div class="flex-shrink-0 bg-[#0f1115] sticky left-0 z-30 border-r border-white/5" style="width: ${leftWidth}px">
+                <div class="flex-shrink-0 bg-card sticky left-0 z-30 border-r border-[#ffffff11] dark:border-white/5 overflow-hidden" style="width: ${leftWidth}px">
                     ${leftHtml}
                 </div>
                 <div class="relative flex-grow pointer-events-auto" style="width: ${totalWidth}px">
@@ -582,7 +598,7 @@ export const PlannerTimeline = {
                     const eid = toggleEpicBtn.dataset.toggleEpic;
                     if (window.TimesharkEpicCollapsed.has(eid)) window.TimesharkEpicCollapsed.delete(eid);
                     else window.TimesharkEpicCollapsed.add(eid);
-                    PlannerTimeline.render(container, data, config, today, currentZoom, onReorder, options);
+                    PlannerTimeline.render(container, data, config, today, zoom, onLaneReorder, options);
                 }
 
                 const toggleBtn = e.target.closest('.collapse-toggle');

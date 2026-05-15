@@ -18,7 +18,6 @@ export const TaskItem = {
         const mode = options.mode || 'full'; // 'full' or 'compact'
         const proj = projects.find(p => p.id == task.project_id) || { name: 'Unassigned', color: '#64748b' };
         const isDone = task.status === 'done';
-        const isSpan = task.task_type === 'project_span';
         const progress = task.progress || 0;
         
         const taskTags = task.tags || [];
@@ -36,12 +35,12 @@ export const TaskItem = {
         const timeStr = this.formatTime(task);
 
         if (mode === 'compact') {
-            return this.renderCompact(task, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options);
+            return this.renderCompact(task, proj, isDone, progress, prio, timeStr, displayTags, options);
         }
-        return this.renderFull(task, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options);
+        return this.renderFull(task, proj, isDone, progress, prio, timeStr, displayTags, options);
     },
 
-    renderFull(t, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options = {}) {
+    renderFull(t, proj, isDone, progress, prio, timeStr, displayTags, options = {}) {
         const isSelectionMode = !!options.selectionMode;
         let displayTimeStr = timeStr;
         if (isDone && t.completed_at) {
@@ -56,14 +55,9 @@ export const TaskItem = {
                     <input type="checkbox" class="task-bulk-checkbox w-4 h-4 rounded border-white/10 text-primary focus:ring-primary/20 cursor-pointer accent-primary" data-task-id="${t.id}" onclick="event.stopPropagation()">
                 </div>
 
-                ${isSpan
-                ? `<div class="shrink-0 w-5 h-5 rounded-sm bg-primary flex items-center justify-center">
-                        <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                       </div>`
-                : `<button class="toggle-status-btn shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
-                       </button>`
-            }
+                <button class="toggle-status-btn shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                </button>
 
                 <div class="flex-grow min-w-0">
                     <span class="text-base font-bold transition-all truncate leading-snug block ${isDone ? 'text-dim line-through opacity-50' : 'text-main group-hover/task:text-primary'}" title="${t.title ? t.title.replace(/"/g, '&quot;') : ''}">${t.title}</span>
@@ -102,7 +96,7 @@ export const TaskItem = {
         `;
     },
 
-    renderCompact(t, proj, isDone, isSpan, progress, prio, timeStr, displayTags, options = {}) {
+    renderCompact(t, proj, isDone, progress, prio, timeStr, displayTags, options = {}) {
         const isSelectionMode = !!options.selectionMode;
         // High-density grid layout (the "perfect" original compact view)
         let startStr = '';
@@ -135,14 +129,9 @@ export const TaskItem = {
                     <input type="checkbox" class="task-bulk-checkbox w-3.5 h-3.5 rounded border-white/10 text-primary focus:ring-primary/20 cursor-pointer accent-primary" data-task-id="${t.id}" onclick="event.stopPropagation()">
                 </div>
 
-                ${isSpan
-                ? `<div class="shrink-0 w-4 h-4 rounded-sm bg-primary flex items-center justify-center">
-                            <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                       </div>`
-                : `<button class="toggle-status-btn shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
-                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
-                       </button>`
-            }
+                <button class="toggle-status-btn shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? 'bg-primary border-primary text-white' : 'border-dim/40 hover:border-primary/60 text-transparent hover:text-primary/40'}" data-task-id="${t.id}">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                </button>
                 <span class="text-sm font-bold truncate ${isDone ? 'text-dim line-through opacity-50' : 'text-main'}" title="${t.title ? t.title.replace(/"/g, '&quot;') : ''}">${t.title}</span>
                 <div class="flex flex-col justify-center gap-[3px] min-w-0 overflow-hidden py-0.5">
                     ${!options.hideProjectName && proj.name !== 'Unassigned' ? `<span class="text-xs font-semibold truncate leading-none" style="color: ${proj.color}" title="${proj.name ? proj.name.replace(/"/g, '&quot;') : ''}">${proj.name}</span>` : ''}

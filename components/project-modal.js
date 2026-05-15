@@ -1,6 +1,5 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { syncProjectToSpan } from '../utils/project-span-sync.js';
 
 /**
  * components/project-modal.js
@@ -362,9 +361,6 @@ export class ProjectModal {
 
             try {
                 await api.post('projects.php', data);
-                if (data.started_at && data.completed_at) {
-                    await syncProjectToSpan(data);
-                }
                 store.update('projects', await api.get('projects.php'));
                 closeModal();
                 onSave(data);

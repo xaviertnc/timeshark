@@ -5,7 +5,6 @@ import { PlannerState } from './planner/planner-state.js';
 import { TaskList } from './task-list.js';
 import { TaskQuickAdd } from './task-quick-add.js';
 import { SearchableSelect } from './searchable-select.js';
-import { syncSpanToProject } from '../utils/project-span-sync.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { TaskFilterBar } from './task-filter-bar.js';
 import { escapeHTML } from '../utils/dom.js';
@@ -912,11 +911,10 @@ export async function renderDashboard(forceRefresh = false) {
 
     // 1. Handle Gantt Chart (Timeline) logic - tied to 'projects' filter
     if (taskFilters.projects) {
-      const spanTasks = allTasks.filter(t => t.task_type === 'project_span');
-      // Apply global project filter to the timeline visualization as well
+      const activeProjectsWithDates = projects.filter(p => p.started_at && p.completed_at);
       const filteredSpans = projectFilter.length > 0
-        ? spanTasks.filter(s => projectFilter.includes(String(s.project_id)))
-        : spanTasks;
+        ? activeProjectsWithDates.filter(p => projectFilter.includes(String(p.id)))
+        : activeProjectsWithDates;
       renderSpansChart(filteredSpans);
     } else {
       const spansChartEl = container.querySelector('#dashboard-spans-chart');
@@ -993,12 +991,10 @@ export async function renderDashboard(forceRefresh = false) {
     chartEl.classList.remove('hidden');
 
     // Parse dates and filter out spans without valid dates or missing/archived projects
-    const parsed = spans.map(s => {
-      const proj = projects.find(p => String(p.id) === String(s.project_id));
-      if (!proj) return null; // Skip if project is deleted or archived
-      const startDate = s.start_date ? new Date(s.start_date) : null;
-      const endDate = s.end_date ? new Date(s.end_date) : null;
-      return { ...s, proj, startDate, endDate };
+    const parsed = spans.map(p => {
+      const startDate = p.started_at ? new Date(p.started_at) : null;
+      const endDate = p.completed_at ? new Date(p.completed_at) : null;
+      return { project_id: p.id, proj: p, startDate, endDate };
     }).filter(s => s && s.startDate && s.endDate);
 
     if (parsed.length === 0) {
@@ -1117,26 +1113,8 @@ export async function renderDashboard(forceRefresh = false) {
       </div>
     `;
 
-    // Click handler: open span task in TaskModal for editing
     chartEl.addEventListener('click', (e) => {
-      const el = e.target.closest('[data-span-project-id]');
-      if (!el) return;
-      const projectId = el.dataset.spanProjectId;
-      const spanTask = allTasks.find(t => t.task_type === 'project_span' && String(t.project_id) === String(projectId));
-      if (spanTask) {
-        TaskModal.open(spanTask, {
-          onSave: async () => {
-            // Trigger sync after span task save
-            const tasks = await api.get('planner.php');
-            const updatedSpan = tasks.find(t => String(t.id) === String(spanTask.id));
-            if (updatedSpan) {
-              await syncSpanToProject(updatedSpan);
-            }
-            store.update({ tasks });
-            renderDashboardTasks();
-          }
-        });
-      }
+      // Future feature: open project modal instead of span task
     });
   };
 
