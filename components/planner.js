@@ -54,7 +54,7 @@ export async function renderPlanner() {
                 <span id="period-label" class="text-[10px] font-black uppercase tracking-widest text-muted whitespace-nowrap shrink-0"></span>
                 <select id="project-filter" class="h-7 min-w-[120px] bg-app/60 border border-black/5 dark:border-white/5 rounded-lg px-2 text-[10px] font-black uppercase tracking-widest text-main appearance-none cursor-pointer outline-none shadow-sm">
                     <option value="all">Global View</option>
-                    ${projects.map(p => `<option value="${p.id}" ${projectFilter == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                    ${projects.filter(p => !p.hide_from_gantt || projectFilter == p.id).map(p => `<option value="${p.id}" ${projectFilter == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
                 </select>
             </div>
 

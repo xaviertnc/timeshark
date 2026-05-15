@@ -17,8 +17,11 @@ let dailyReportDate = new Date().toLocaleDateString('en-CA');
 
 export async function renderReports() {
   const state = store.get();
-  const entries = state.timeEntries || [];
+  const rawEntries = state.timeEntries || [];
   const projects = state.projects || [];
+  
+  const hiddenProjectIds = new Set(projects.filter(p => p.hide_from_gantt == 1 && String(p.id) !== selectedProject).map(p => String(p.id)));
+  const entries = rawEntries.filter(e => !hiddenProjectIds.has(String(e.project_id)));
 
   const formatDuration = (secs) => {
     const h = Math.floor(secs / 3600);
@@ -130,7 +133,7 @@ export async function renderReports() {
             <div class="flex items-center gap-3">
               <select id="filter-project" class="bg-card border border-soft rounded-lg py-1.5 px-3 text-[9px] font-black text-dim uppercase tracking-widest appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
                 <option value="">All Projects</option>
-                ${projects.map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                ${projects.filter(p => !p.hide_from_gantt || selectedProject == p.id).map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
               </select>
               ${totalPages > 1 ? `
                 <div class="flex items-center gap-1 bg-card rounded-lg p-0.5 border border-soft">

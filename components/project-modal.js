@@ -137,6 +137,17 @@ export class ProjectModal {
                                             <span id="project-progress-val" class="text-xs font-black text-primary tabular-nums w-8 text-right">${project ? project.progress || 0 : 0}%</span>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Hide from Gantt Toggle -->
+                                    <div class="space-y-1.5 md:col-span-3 mt-0.5">
+                                        <label class="flex items-center gap-3 bg-app rounded-xl py-2.5 px-4 cursor-pointer hover:bg-app/80 transition-colors">
+                                            <input type="checkbox" name="hide_from_gantt" class="w-4 h-4 rounded border-soft bg-card text-primary focus:ring-primary/20" ${project && project.hide_from_gantt ? 'checked' : ''}>
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] font-black text-main uppercase tracking-[0.2em]">Hide from Planner & Reports</span>
+                                                <span class="text-[8px] font-medium text-dim/60 uppercase tracking-widest mt-0.5">Keeps project active but removes it from global audience views.</span>
+                                            </div>
+                                        </label>
+                                    </div>
 
                                     <!-- Notes -->
                                     <div class="space-y-1.5 md:col-span-3">
@@ -355,6 +366,7 @@ export class ProjectModal {
 
             const data = Object.fromEntries(new FormData(projectForm).entries());
             
+            data.hide_from_gantt = projectForm.querySelector('[name="hide_from_gantt"]').checked ? 1 : 0;
             data.tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
             if (data.type === 'epic') data.parent_id = null;
             if (!data.parent_id) data.parent_id = null;
