@@ -23,9 +23,9 @@ export const PlannerKanban = {
 
         // Define columns
         const columns = [
-            { id: 'backlog', title: 'Backlog', status: 'backlog', borderColor: 'border-white/10' },
             { id: 'todo', title: 'To Do', status: 'todo', borderColor: 'border-white/10' },
             { id: 'doing', title: 'In Progress', status: 'doing', borderColor: 'border-primary/50' },
+            { id: 'backlog', title: 'Backlog', status: 'backlog', borderColor: 'border-white/10' },
             { id: 'done', title: 'Done', status: 'done', borderColor: 'border-green-500/50' }
         ];
 
