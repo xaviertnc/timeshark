@@ -278,24 +278,60 @@ export async function renderProjects() {
     }
 
     if (groupByTag) {
-      const groups = {};
+      const tree = {};
       items.forEach(p => {
         const pTags = p.tags && p.tags.length > 0 ? p.tags : ['Untagged'];
-        pTags.forEach(t => {
-          if (!groups[t]) groups[t] = [];
-          groups[t].push(p);
+        let currentLevel = tree;
+        pTags.forEach((t, i) => {
+          if (!currentLevel[t]) {
+            currentLevel[t] = { _projects: [], _children: {} };
+          }
+          if (i === pTags.length - 1) {
+            currentLevel[t]._projects.push(p);
+          }
+          currentLevel = currentLevel[t]._children;
         });
       });
 
-      return Object.entries(groups).sort(([a], [b]) => a === 'Untagged' ? 1 : b === 'Untagged' ? -1 : a.localeCompare(b)).map(([tag, groupProjects]) => `
+      function countProjects(node) {
+        let count = node._projects.length;
+        for (const child in node._children) {
+          count += countProjects(node._children[child]);
+        }
+        return count;
+      }
+
+      function renderNode(nodes, level) {
+        let html = '';
+        const sortedTags = Object.keys(nodes).sort((a, b) => a === 'Untagged' ? 1 : b === 'Untagged' ? -1 : a.localeCompare(b));
+        
+        sortedTags.forEach(tag => {
+          const node = nodes[tag];
+          const totalProjects = countProjects(node);
+          
+          if (totalProjects > 0) {
+            const paddingLeft = 1.25 + (level * 1.5);
+            html += `
             <tr class="bg-app/40">
-                <td colspan="7" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
-                    <span class="opacity-50 mr-2">#</span> ${tag} 
-                    <span class="text-dim/40 ml-2 font-black tabular-nums">[${groupProjects.length}]</span>
+                <td colspan="7" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5" style="padding-left: ${paddingLeft}rem;">
+                    <span class="opacity-50 mr-2">${'#'.repeat(level + 1)}</span> ${tag} 
+                    <span class="text-dim/40 ml-2 font-black tabular-nums">[${totalProjects}]</span>
                 </td>
             </tr>
-            ${groupProjects.map(p => renderProjectRow(p, customers, false)).join('')}
-        `).join('');
+            `;
+            
+            node._projects.forEach(p => {
+              html += renderProjectRow(p, customers, false);
+            });
+            
+            html += renderNode(node._children, level + 1);
+          }
+        });
+        
+        return html;
+      }
+
+      return renderNode(tree, 0);
     }
 
     const groups = items.reduce((acc, p) => {
