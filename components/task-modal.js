@@ -271,7 +271,13 @@ export class TaskModal {
 
         const memberContainer = form.querySelector('#modal-member-select-container');
         const memberInput = form.querySelector('#modal-resource-input');
-        const initialMember = task?.resource_id || defaults.resource_id || 'me';
+        
+        // Find default member
+        const defaultMember = (state.team || []).find(m => m.is_default);
+        let defaultResourceId = 'me';
+        if (defaultMember) defaultResourceId = defaultMember.name;
+
+        const initialMember = task?.resource_id || defaults.resource_id || defaultResourceId;
         memberInput.value = initialMember;
 
         SearchableSelect.render(memberContainer, resources, {

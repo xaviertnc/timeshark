@@ -23,6 +23,26 @@ try {
 
             debug_log('team', 'POST received', $data);
 
+            // Handle is_default: ensure only one member is default
+            if (!empty($data['is_default']) && filter_var($data['is_default'], FILTER_VALIDATE_BOOLEAN)) {
+                $allTeam = $store->get($file);
+                $updatedAny = false;
+                foreach ($allTeam as &$m) {
+                    if (!empty($m['is_default']) && $m['id'] !== ($data['id'] ?? null)) {
+                        $m['is_default'] = false;
+                        $updatedAny = true;
+                    }
+                }
+                if ($updatedAny) {
+                    $store->save($file, $allTeam);
+                }
+                $data['is_default'] = true;
+            } else {
+                if (isset($data['is_default'])) {
+                    $data['is_default'] = false;
+                }
+            }
+
             if (!empty($data['id'])) {
                 // Update — must find existing record
                 if (!$store->find($file, $data['id'])) {

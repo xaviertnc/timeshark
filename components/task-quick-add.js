@@ -89,6 +89,10 @@ export const TaskQuickAdd = {
             const tags = tagInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
 
             try {
+                const state = store.get();
+                const team = state.team || [];
+                const defaultMember = team.find(m => m.is_default);
+
                 const data = {
                     title,
                     project_id: selectedProjectId,
@@ -96,7 +100,8 @@ export const TaskQuickAdd = {
                     tags,
                     status: 'todo',
                     priority: 'low',
-                    progress: 0
+                    progress: 0,
+                    resource_id: defaultMember ? defaultMember.name : 'me'
                 };
 
                 await api.post('planner.php?action=add_task', data);
