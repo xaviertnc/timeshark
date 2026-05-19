@@ -63,7 +63,13 @@ export class TimeEntryModal {
                                 <input type="hidden" name="project_id" value="${entry.project_id || ''}">
                             </div>
                             <div class="space-y-2 text-left">
-                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Linked Todo</label>
+                                <div class="flex items-center justify-between ml-1 mb-0.5">
+                                    <label class="text-[10px] font-black text-dim uppercase tracking-widest block leading-none">Linked Todo</label>
+                                    <button type="button" id="modal-auto-create-task-btn" class="text-[9px] font-black text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 px-1.5 py-0.5 rounded tracking-widest transform transition-transform active:scale-95 flex items-center gap-1 leading-none" title="Auto-create a linked task from this description">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                        NEW
+                                    </button>
+                                </div>
                                 <div id="modal-task-select-container"></div>
                                 <input type="hidden" name="task_id" value="${entry.task_id || ''}">
                             </div>
@@ -130,6 +136,51 @@ export class TimeEntryModal {
         const projectInput = overlay.querySelector('input[name="project_id"]');
         const taskInput = overlay.querySelector('input[name="task_id"]');
 
+        const autoCreateBtn = overlay.querySelector('#modal-auto-create-task-btn');
+        if (autoCreateBtn) {
+            autoCreateBtn.onclick = async (e) => {
+                e.preventDefault();
+                const descInput = overlay.querySelector('input[name="description"]');
+                if (!descInput.value.trim()) {
+                    alert('Please enter a description first so we can name the Task.');
+                    return;
+                }
+                const taskData = {
+                    title: descInput.value.trim(),
+                    project_id: projectInput.value || null,
+                    resource_id: 'me',
+                    tags: overlay.querySelector('#hidden-tags-input').value.split(',').filter(Boolean) || [],
+                    notes: '',
+                    status: 'todo',
+                    priority: 'medium',
+                    progress: 0,
+                    start_date: null,
+                    end_date: null,
+                    completed_at: null
+                };
+                
+                try {
+                    const originalText = autoCreateBtn.innerHTML;
+                    autoCreateBtn.innerHTML = '<span class="animate-pulse">...</span>';
+                    
+                    const newTask = await api.post('planner.php', taskData);
+                    const tasks = store.get().tasks || [];
+                    store.update('tasks', [...tasks, newTask]);
+                    
+                    // Automatically select it in the dropdown
+                    taskInput.value = newTask.id;
+                    renderTaskSelect(projectInput.value);
+                    
+                    autoCreateBtn.innerHTML = `✓ CREATED`;
+                    setTimeout(() => autoCreateBtn.style.opacity = '0', 2000);
+                } catch (err) {
+                    console.error(err);
+                    alert('Failed to auto-create task.');
+                    autoCreateBtn.innerHTML = 'ERROR';
+                }
+            };
+        }
+
         const recentProjectIds = [...new Set(entries
             .filter(e => e.project_id)
             .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
@@ -147,16 +198,9 @@ export class TimeEntryModal {
         let uniqueGlobalTags = [...new Set(existingTagsRaw.map(t => t.toLowerCase()))];
 
         const renderTaskSelect = (pid) => {
-            const tasks = (state.tasks || []).filter(t => {
+            const tasks = (store.get().tasks || []).filter(t => {
                 // If project is set, task must match it. If not set, show all projects' tasks.
                 if (pid && String(t.project_id) !== String(pid)) return false;
-                
-                // If tags are defined, task must have at least one of the tags.
-                if (currentTags && currentTags.length > 0) {
-                    const taskTags = t.tags ? t.tags.map(x => x.toLowerCase()) : [];
-                    if (!currentTags.some(tag => taskTags.includes(tag))) return false;
-                }
-                
                 return true;
             }).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
 

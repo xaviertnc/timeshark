@@ -90,9 +90,11 @@ export async function renderDashboard(forceRefresh = false) {
         ${activeTimer ? `
           <div class="flex flex-col md:flex-row items-center justify-between gap-8 pb-4">
             <div id="active-task-display" class="flex-1 cursor-pointer group/task relative py-3 rounded-xl hover:bg-primary/5 transition-all">
-              <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-3" style="background-color: ${pColor}1a; color: ${pColor}">
-                <span class="w-1 h-1 rounded-full animate-pulse" style="background-color: ${pColor}"></span>
-                Chomping
+              <div class="flex items-center gap-3 mb-3">
+                <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest" style="background-color: ${pColor}1a; color: ${pColor}">
+                  <span class="w-1 h-1 rounded-full animate-pulse" style="background-color: ${pColor}"></span>
+                  Chomping
+                </div>
               </div>
               <h3 class="text-4xl font-bold text-main mb-1 tracking-tight transition-colors">${escapeHTML(activeTimer.description) || 'Focusing'}</h3>
               <p class="text-muted font-medium text-lg leading-relaxed flex flex-wrap items-center gap-2">
@@ -104,16 +106,30 @@ export async function renderDashboard(forceRefresh = false) {
                 ` : ''}
               </p>
               ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${escapeHTML(activeTimer.notes)}</p>` : ''}
-              <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity bg-card shadow-soft rounded-full p-1.5 text-primary border border-soft">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity flex items-center gap-2">
+                ${activeTimer.task_id ? (() => {
+                   const t = (state.tasks || []).find(task => String(task.id) === String(activeTimer.task_id));
+                   return `<div class="bg-primary/20 rounded-full p-2 text-primary cursor-help shadow-sm hover:scale-110 transition-transform" title="Linked to: ${t ? escapeHTML(t.title) : 'Unknown Todo'}">
+                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                           </div>`;
+                })() : `
+                   <button type="button" class="turn-task-btn bg-white/5 hover:bg-emerald-500/10 rounded-full p-2 text-dim hover:text-emerald-500 hover:border-emerald-500/20 transition-all shadow-sm hover:scale-110" data-id="${activeTimer.id}" title="Make Task">
+                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                   </button>
+                `}
+                <div class="bg-white/5 hover:bg-highlight hover:border-soft shadow-soft rounded-full p-2 text-dim hover:text-main border border-transparent transition-all hover:scale-110" title="Edit Time Entry">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </div>
               </div>
             </div>
 
-            <div class="flex flex-col items-end gap-4">
+            <div class="flex flex-col items-end gap-3">
               <div id="active-timer-counter" class="text-5xl font-black text-main tabular-nums tracking-tighter">00:00:00</div>
-              <button id="dashboard-stop-btn" class="flex items-center justify-center min-w-[180px] h-12 bg-[#FF3B30] hover:bg-[#FF453A] text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-xl transition-all duration-150 active:scale-95 shadow-lg shadow-red-500/20">
-                Stop Tracking
-              </button>
+              <div class="flex gap-2">
+                  <button id="dashboard-stop-btn" class="flex items-center justify-center min-w-[180px] h-12 bg-[#FF3B30] hover:bg-[#FF453A] text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-xl transition-all duration-150 active:scale-95 shadow-lg shadow-red-500/20">
+                    Stop Tracking
+                  </button>
+              </div>
             </div>
           </div>
         ` : `
@@ -453,11 +469,16 @@ export async function renderDashboard(forceRefresh = false) {
                           data-task-id="${e.task_id || ''}"
                           data-tags="${e.tags ? escapeHTML(e.tags.join(',')) : ''}"
                           data-description="${escapeHTML(e.description || '')}"
-                          data-notes="${escapeHTML(e.notes || '')}">
+                          data-notes="${escapeHTML(e.notes || '')}" title="Resume">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </button>
+                  ${!e.task_id ? `
+                  <button class="turn-task-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all" data-id="${e.id}" title="Turn to Task">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                  </button>
+                  ` : ''}
                   <button class="delete-history-btn w-8 h-8 flex items-center justify-center rounded-lg text-dim/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
-                          data-id="${e.id}">
+                          data-id="${e.id}" title="Delete">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
                 </div>
@@ -1358,8 +1379,54 @@ export async function renderDashboard(forceRefresh = false) {
     };
   });
 
-  // Main Click Handler for History Entries
-  container.addEventListener('click', (e) => {
+  container.addEventListener('click', async (e) => {
+    // Turn to Task Button
+    const turnTaskBtn = e.target.closest('.turn-task-btn');
+    if (turnTaskBtn) {
+        e.stopPropagation();
+        const entryId = turnTaskBtn.dataset.id;
+        const entry = (activeTimer && String(activeTimer.id) === String(entryId)) ? activeTimer : (state.timeEntries || []).find(en => String(en.id) === String(entryId));
+        if (entry) {
+            // Create a task instantly
+            const taskData = {
+                title: entry.description || 'New Task',
+                project_id: entry.project_id || null,
+                resource_id: entry.resource_id || 'me',
+                tags: entry.tags || [],
+                notes: entry.notes || '',
+                status: 'todo',
+                priority: 'medium',
+                progress: 0,
+                start_date: null,
+                end_date: null,
+                completed_at: null
+            };
+            try {
+                const newTask = await api.post('planner.php', taskData);
+                const tasks = store.get().tasks || [];
+                store.update('tasks', [...tasks, newTask]);
+                
+                // Update time entry
+                const updatedEntry = { ...entry, task_id: newTask.id };
+                updatedEntry.project_name = projects.find(p => p.id == updatedEntry.project_id)?.name || 'Unassigned';
+                // Adjust times for server format
+                updatedEntry.start_time = new Date(entry.start_time).toISOString();
+                if (entry.end_time) updatedEntry.end_time = new Date(entry.end_time).toISOString();
+                
+                const result = await api.post('time-entries.php', updatedEntry);
+                if (!entry.end_time) {
+                    store.update('activeTimer', result);
+                }
+                store.update('timeEntries', await api.get('time-entries.php'));
+                refreshView();
+            } catch (err) {
+                console.error('Turn to task failed', err);
+                alert('Turn to task failed!');
+            }
+        }
+        return;
+    }
+
     // History Entry Row Click (Edit)
     const row = e.target.closest('[data-entry-id]');
     if (row && !e.target.closest('button')) {

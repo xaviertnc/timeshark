@@ -324,8 +324,16 @@ export const PlannerTimeline = {
 
         const headerHeight = zoom === 'compact' ? 'h-10' : 'h-14';
         header.innerHTML = `
-            <div class="flex-shrink-0 px-4 flex items-center font-black text-dim text-[10px] uppercase tracking-[0.2em] border-r border-white/5 bg-app sticky left-0 z-[60]" style="width: ${leftWidth}px">
-                PLANNING TREE
+            <div class="flex-shrink-0 px-4 flex items-center justify-between font-black text-dim text-[10px] uppercase tracking-[0.2em] border-r border-white/5 bg-app sticky left-0 z-[60]" style="width: ${leftWidth}px">
+                <span>PLANNING TREE</span>
+                <div class="flex items-center gap-1">
+                    <button class="collapse-all-btn p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded text-dim/60 hover:text-black dark:hover:text-white transition-colors" title="Collapse All">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 15l-7-7-7 7"></path></svg>
+                    </button>
+                    <button class="expand-all-btn p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded text-dim/60 hover:text-black dark:hover:text-white transition-colors" title="Expand All">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7 7"></path></svg>
+                    </button>
+                </div>
             </div>
             <div class="relative ${headerHeight}" style="width: ${totalWidth}px; min-width: ${totalWidth}px">
                 ${headerCols}
@@ -747,6 +755,29 @@ export const PlannerTimeline = {
         if (!container.dataset.timelineEventsBound) {
             container.dataset.timelineEventsBound = "true";
             container.addEventListener('click', (e) => {
+                const collapseAllBtn = e.target.closest('.collapse-all-btn');
+                const expandAllBtn = e.target.closest('.expand-all-btn');
+
+                if (collapseAllBtn) {
+                    e.stopPropagation();
+                    data.rows.forEach(r => window.TimesharkResourceCollapsed.add(r.resource));
+                    data.projects.forEach(p => {
+                       if (p.type === 'epic') window.TimesharkEpicCollapsed.add(String(p.id));
+                       window.TimesharkProjectCollapsed.add(String(p.id));
+                    });
+                    PlannerTimeline.render(container, data, config, today, zoom, onLaneReorder, options);
+                    return;
+                }
+
+                if (expandAllBtn) {
+                    e.stopPropagation();
+                    window.TimesharkResourceCollapsed.clear();
+                    window.TimesharkEpicCollapsed.clear();
+                    window.TimesharkProjectCollapsed.clear();
+                    PlannerTimeline.render(container, data, config, today, zoom, onLaneReorder, options);
+                    return;
+                }
+
                 const toggleEpicBtn = e.target.closest('.collapse-toggle-epic');
                 if (toggleEpicBtn) {
                     e.stopPropagation();
