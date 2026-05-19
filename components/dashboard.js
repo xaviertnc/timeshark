@@ -7,6 +7,7 @@ import { TaskQuickAdd } from './task-quick-add.js';
 import { SearchableSelect } from './searchable-select.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { TaskFilterBar } from './task-filter-bar.js';
+import { ProjectModal } from './project-modal.js';
 import { escapeHTML } from '../utils/dom.js';
 
 /**
@@ -22,6 +23,7 @@ export async function renderDashboard(forceRefresh = false) {
   let isSearchRowVisible = localStorage.getItem('dashboard_search_visible') !== 'false';
   let isTodosCollapsed = localStorage.getItem('dashboard_todos_collapsed') === 'true';
   let isHistoryCollapsed = localStorage.getItem('dashboard_history_collapsed') === 'true';
+  let isDashboardShowEpics = localStorage.getItem('dashboard_show_epics') !== 'false';
   let historySearchTerm = localStorage.getItem('dashboard_history_search') || '';
   let historyLimit = localStorage.getItem('dashboard_history_limit') || 'today';
 
@@ -992,6 +994,7 @@ export async function renderDashboard(forceRefresh = false) {
 
     // Parse dates and filter out spans without valid dates or missing/archived projects
     const parsed = spans.map(p => {
+      if (p.type === 'epic' && !isDashboardShowEpics) return null;
       const startDate = p.started_at ? new Date(p.started_at) : null;
       const endDate = p.completed_at ? new Date(p.completed_at) : null;
       return { project_id: p.id, proj: p, startDate, endDate };
@@ -1057,6 +1060,13 @@ export async function renderDashboard(forceRefresh = false) {
           <div class="w-[6px] h-[6px] rounded-full shadow-[0_0_8px_rgba(51,138,129,0.2)]" style="background-color: #338a81;"></div>
           <span class="text-[10px] font-black uppercase tracking-[0.3em] text-primary">PROJECTS TIMELINE</span>
           <div class="flex-grow h-px bg-white/[0.04] ml-2"></div>
+          <label class="flex items-center gap-2 cursor-pointer group mb-0">
+             <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5 whitespace-nowrap">Show Epics</span>
+             <div class="relative w-8 h-5 bg-black/20 rounded-full border border-white/10 transition-colors">
+                 <input type="checkbox" id="dashboard-show-epics-toggle" class="sr-only" ${isDashboardShowEpics ? 'checked' : ''}>
+                 <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${isDashboardShowEpics ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'} pointer-events-none"></div>
+             </div>
+          </label>
       </div>
       <div class="bg-card/30 rounded-2xl border border-white/[0.04] p-6 overflow-hidden relative">
         <div class="relative" style="height: ${chartHeight}px;">
@@ -1091,21 +1101,26 @@ export async function renderDashboard(forceRefresh = false) {
       const prog = progress(s);
       const isPast = s.endDate < now;
       const isCurrent = s.startDate <= now && s.endDate >= now;
-      const barHeight = 28;
+      
+      const isEpic = s.proj.type === 'epic';
+      const useSubtle = isEpic; // Always subtle when shown
+      const barHeight = useSubtle ? 4 : 28;
+      const barTop = useSubtle ? top + 34 : top + 22;
 
       return `
             <!-- Label row -->
-            <div class="absolute flex items-center gap-2 whitespace-nowrap cursor-pointer ${isPast ? 'opacity-40' : ''}" style="left: ${left}%; top: ${top}px; height: 20px;" data-span-project-id="${s.project_id}">
+            <div class="absolute flex items-center gap-2 whitespace-nowrap cursor-pointer ${isPast ? 'opacity-40' : ''} hover:bg-white/5 transition-colors px-2 py-1 -ml-2 rounded-lg" style="left: ${left}%; top: ${top}px; height: 26px; z-index: 10;" data-span-project-id="${s.project_id}">
               <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${s.proj.color};"></span>
-              <span class="text-xs font-bold text-main/80">${s.proj.name}</span>
+              ${isEpic ? `<span class="px-1.5 py-[1px] rounded-md bg-[${s.proj.color}]/10 border border-[${s.proj.color}]/20 text-[8px] font-black uppercase tracking-widest text-primary shrink-0 opacity-80 mt-px" style="color: ${s.proj.color};">EPIC</span>` : ''}
+              <span class="text-xs font-bold text-main/80 hover:text-main">${s.proj.name}</span>
               <span class="text-[10px] text-dim/30 font-bold">${formatDate(s.startDate)} – ${formatDate(s.endDate)}</span>
               <span class="text-[11px] font-black" style="color: ${s.proj.color};">${prog}%</span>
             </div>
 
             <!-- Bar -->
-            <div class="absolute rounded-xl overflow-hidden cursor-pointer ${isPast ? 'opacity-40' : ''} ${isCurrent ? 'shadow-lg shadow-primary/5' : ''}" style="left: ${left}%; width: ${width}%; top: ${top + 22}px; height: ${barHeight}px; background-color: ${s.proj.color}10; border: 1px solid ${s.proj.color}20;" data-span-project-id="${s.project_id}">
+            <div class="absolute rounded-xl overflow-hidden cursor-pointer ${isPast ? 'opacity-40' : ''} ${isCurrent && !useSubtle ? 'shadow-lg shadow-primary/5' : ''} hover:ring-2 hover:ring-white/10 transition-all" style="left: ${left}%; width: ${width}%; top: ${barTop}px; height: ${barHeight}px; background-color: ${useSubtle ? s.proj.color + '40' : s.proj.color + '10'}; border: 1px solid ${useSubtle ? 'transparent' : s.proj.color + '20'};" data-span-project-id="${s.project_id}">
               <!-- Progress fill -->
-              <div class="absolute inset-y-0 left-0 rounded-xl" style="width: ${Math.max(prog, 1)}%; background-color: ${s.proj.color}; opacity: 0.4;"></div>
+              <div class="absolute inset-y-0 left-0 ${useSubtle ? 'rounded-full' : 'rounded-xl'}" style="width: ${Math.max(prog, 1)}%; background-color: ${s.proj.color}; opacity: ${useSubtle ? '0.8' : '0.4'};"></div>
             </div>
           `;
     }).join('')}
@@ -1114,7 +1129,22 @@ export async function renderDashboard(forceRefresh = false) {
     `;
 
     chartEl.addEventListener('click', (e) => {
-      // Future feature: open project modal instead of span task
+      const spanEl = e.target.closest('[data-span-project-id]');
+      if (spanEl) {
+        const projectId = spanEl.dataset.spanProjectId;
+        const project = projects.find(p => String(p.id) === String(projectId));
+        if (project) {
+          ProjectModal.open(project, { onSave: refreshView });
+        }
+      }
+    });
+
+    chartEl.addEventListener('change', (e) => {
+      if (e.target.id === 'dashboard-show-epics-toggle') {
+        localStorage.setItem('dashboard_show_epics', String(e.target.checked));
+        isDashboardShowEpics = e.target.checked;
+        refreshView();
+      }
     });
   };
 

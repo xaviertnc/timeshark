@@ -395,12 +395,14 @@ export async function renderProjects() {
             <span class="text-[10px] font-bold text-dim/60 group-hover/row:text-main transition-colors uppercase tracking-widest truncate block" title="${org ? org.name : 'Individual'}">${org ? org.name : 'Individual'}</span>
         </td>
         <td class="hidden lg:table-cell px-4 py-2">
+            ${p.type === 'ops' ? '' : `
             <div class="flex items-center gap-4">
                 <div class="flex-1 bg-app rounded-full h-1.5 overflow-hidden border border-white/5 shadow-inner">
                     <div class="h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]" style="width: ${progress}%; background-color: ${pColor}"></div>
                 </div>
                 <span class="text-[10px] font-black text-main tabular-nums tracking-widest w-8 text-right">${progress}%</span>
             </div>
+            `}
         </td>
         <td class="px-4 py-2 text-right">
             <div class="flex justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-all transform translate-x-1 group-hover/row:translate-x-0">

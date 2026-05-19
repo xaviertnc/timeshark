@@ -22,6 +22,8 @@ let timeOffset = 0;           // 0 = today/start, +/- to move
 let projectFilter = 'all';
 let showSpans = true;
 let currentView = 'timeline'; // 'timeline', 'kanban', 'heatmap', 'analytics'
+let subtleEpics = false;
+
 
 export async function renderPlanner() {
     await PlannerState.init();
@@ -80,6 +82,16 @@ export async function renderPlanner() {
                         return `<button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-zoom="${z}" title="${tooltips[z]}">${z}</button>`;
                     }).join('')}
                 </div>
+
+                <div id="epic-span-toggle-container" class="flex items-center bg-app/30 px-2 h-7 rounded-lg border border-white/5 ${currentView !== 'timeline' ? 'hidden' : ''}">
+                    <label class="flex items-center gap-2 cursor-pointer group mb-0">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5">Subtle Epics</span>
+                        <div class="relative w-7 h-4 bg-black/20 rounded-full border border-white/10 transition-colors">
+                            <input type="checkbox" id="subtle-epics-toggle" class="sr-only" ${subtleEpics ? 'checked' : ''}>
+                            <div class="absolute left-1 top-[1px] w-3 h-3 rounded-full transition-all ${subtleEpics ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        </div>
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -121,8 +133,23 @@ export async function renderPlanner() {
         // Hide toggle groups if irrelevant
         const scaleGroup = container.querySelector('#scale-toggle-container');
         const zoomGroup = container.querySelector('#zoom-toggle-container');
+        const epicGroup = container.querySelector('#epic-span-toggle-container');
         if (scaleGroup) scaleGroup.classList.toggle('hidden', currentView !== 'timeline' && currentView !== 'heatmap');
         if (zoomGroup) zoomGroup.classList.toggle('hidden', currentView !== 'timeline');
+        if (epicGroup) epicGroup.classList.toggle('hidden', currentView !== 'timeline');
+
+        const subtleEpicsToggleInput = container.querySelector('#subtle-epics-toggle');
+        if (subtleEpicsToggleInput) {
+            subtleEpicsToggleInput.checked = subtleEpics;
+            const knob = subtleEpicsToggleInput.nextElementSibling;
+            if (subtleEpics) {
+                knob.classList.add('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.remove('bg-dim');
+            } else {
+                knob.classList.remove('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.add('bg-dim');
+            }
+        }
 
         container.querySelectorAll('.scale-toggle').forEach(btn => {
             const active = btn.dataset.scale === currentScale;
@@ -144,7 +171,7 @@ export async function renderPlanner() {
         // Render Views
         const timelineContainer = container.querySelector('#planner-timeline-container');
         if (currentView === 'timeline') {
-            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, {});
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics });
         } else if (currentView === 'kanban') {
             PlannerKanban.render(timelineContainer, data, config, today, projectFilter);
         } else if (currentView === 'heatmap') {
@@ -193,7 +220,7 @@ export async function renderPlanner() {
         }
 
         // Project Click
-        const projectEl = e.target.closest('.project-legend-item') || e.target.closest('.proj-row');
+        const projectEl = e.target.closest('.project-legend-item') || e.target.closest('.proj-row') || e.target.closest('.project-envelope');
         if (projectEl && projectEl.dataset.projectId) {
             const project = (store.get().projects || []).find(p => String(p.id) === String(projectEl.dataset.projectId));
             if (project) ProjectModal.open(project, { onSave: () => refresh() });
@@ -221,9 +248,14 @@ export async function renderPlanner() {
         if (viewBtn) { currentView = viewBtn.dataset.view; updateUI(); return; }
     });
 
+    container.addEventListener('change', (e) => {
+        if (e.target.id === 'subtle-epics-toggle') {
+            subtleEpics = e.target.checked;
+            updateUI();
+        }
+    });
+
     container.querySelector('#project-filter').onchange = (e) => { projectFilter = e.target.value; updateUI(); };
-
-
 
     // Resize Observer for basic cleanup
     let resizeObserver = new ResizeObserver(() => {
@@ -234,7 +266,7 @@ export async function renderPlanner() {
         if (!timelineContainer) return;
 
         if (currentView === 'timeline') {
-            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, {});
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics });
         } else if (currentView === 'kanban') {
             PlannerKanban.render(timelineContainer, data, config, today, projectFilter);
         } else if (currentView === 'heatmap') {

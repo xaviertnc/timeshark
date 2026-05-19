@@ -534,14 +534,23 @@ export const PlannerTimeline = {
                 if (boundaryStartX !== null && boundaryEndX !== null) {
                     const bw = Math.max(10, boundaryEndX - boundaryStartX);
                     const eColor = row.epic.color || '#475569';
-                    const envelopeTop = (zp.rowH - (zp.barH * 0.4)) / 2;
+                    const isSubtle = options.subtleEpics;
+                    const envelopeTop = (zp.rowH - (zp.barH * (isSubtle ? 0.1 : 0.4))) / 2;
                     let finalStartX = Math.max(0, boundaryStartX);
                     let finalW = Math.min(totalWidth - finalStartX, Math.max(2, boundaryEndX - boundaryStartX));
                     
-                    rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm border border-black/10 dark:border-transparent dynamic-border-item overflow-hidden"
-                            style="left: ${finalStartX}px; width: ${finalW}px; top: ${envelopeTop}px; height: ${zp.barH * 0.4}px; --item-color: ${eColor};">
-                            <div class="absolute opacity-40 dark:opacity-50" style="left: ${boundaryStartX - finalStartX}px; width: ${bw}px; top: 0; bottom: 0; background: linear-gradient(90deg, ${eColor} ${epicProgress}%, transparent ${epicProgress}%);"></div>
-                    </div>`;
+                    if (isSubtle) {
+                        rightHtml += `<div class="absolute rounded-full transition-all shadow-sm overflow-hidden cursor-pointer hover:shadow-lg project-envelope"
+                                data-project-id="${row.epic.id}"
+                                style="left: ${finalStartX}px; width: ${finalW}px; top: ${envelopeTop}px; height: 2px; background-color: ${eColor}; opacity: 0.3;">
+                        </div>`;
+                    } else {
+                        rightHtml += `<div class="absolute rounded-full transition-all shadow-sm border border-black/10 dark:border-transparent dynamic-border-item overflow-hidden cursor-pointer hover:shadow-lg project-envelope"
+                                data-project-id="${row.epic.id}"
+                                style="left: ${finalStartX}px; width: ${finalW}px; top: ${envelopeTop}px; height: ${zp.barH * 0.4}px; --item-color: ${eColor};">
+                                <div class="absolute opacity-40 dark:opacity-50 pointer-events-none" style="left: ${boundaryStartX - finalStartX}px; width: ${bw}px; top: 0; bottom: 0; background: linear-gradient(90deg, ${eColor} ${epicProgress}%, transparent ${epicProgress}%);"></div>
+                        </div>`;
+                    }
                 }
             }
             else if (row.type === 'project') {
@@ -623,9 +632,10 @@ export const PlannerTimeline = {
                     let plannedBW = Math.max(2, plannedEndX - plannedStartX);
 
                     if (row.project.type !== 'ops') {
-                        rightHtml += `<div class="absolute rounded-full pointer-events-none transition-all shadow-sm flex items-center px-2 border dynamic-border-item overflow-hidden"
+                        rightHtml += `<div class="absolute rounded-full transition-all shadow-sm flex items-center px-2 border dynamic-border-item overflow-hidden cursor-pointer hover:shadow-lg project-envelope"
+                                data-project-id="${row.project.id}"
                                 style="left: ${finalPlannedStartX}px; width: ${finalPlannedW}px; top: ${envelopeTop}px; height: ${zp.barH * 0.8}px; --item-color: ${pColor};">
-                                <div class="absolute opacity-40 dark:opacity-50" style="left: ${plannedStartX - finalPlannedStartX}px; width: ${plannedBW}px; top: 0; bottom: 0; background: linear-gradient(90deg, ${pColor} ${projProgress}%, transparent ${projProgress}%);"></div>
+                                <div class="absolute opacity-40 dark:opacity-50 pointer-events-none" style="left: ${plannedStartX - finalPlannedStartX}px; width: ${plannedBW}px; top: 0; bottom: 0; background: linear-gradient(90deg, ${pColor} ${projProgress}%, transparent ${projProgress}%);"></div>
                         </div>`;
                     }
 
