@@ -74,25 +74,27 @@ export async function renderOrganizations() {
                 </button>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               ${orgClients.map(client => `
-                <div class="bg-card rounded-3xl p-10 border border-soft shadow-sm group hover:border-primary/30 transition-all duration-500 relative overflow-hidden">
+                <div class="bg-card rounded-2xl p-5 border border-soft shadow-sm group hover:border-primary/30 transition-all duration-300 relative overflow-hidden flex items-center gap-4">
                   <div class="absolute top-0 left-0 w-1 h-full" style="background-color: ${org.color}40"></div>
-                  <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1">
+                  
+                  <div class="w-10 h-10 rounded-full bg-app flex-shrink-0 flex items-center justify-center text-primary border border-soft">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                  </div>
+                  
+                  <div class="flex flex-col min-w-0 flex-1 pr-2">
+                    <h3 class="text-base font-bold text-main tracking-tight truncate">${client.name}</h3>
+                    <p class="text-muted font-medium text-xs truncate opacity-70">${client.email || 'No email provided'}</p>
+                  </div>
+
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1 flex-shrink-0 bg-card/90 backdrop-blur-sm rounded-lg p-1">
                     <button class="edit-client-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${client.id}">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     </button>
                     <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${client.id}">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
-                  </div>
-                  <div class="flex flex-col">
-                    <div class="w-10 h-10 rounded-full bg-app flex items-center justify-center mb-6 text-primary border border-soft">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    </div>
-                    <div class="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2 opacity-40">Client Contact</div>
-                    <h3 class="text-xl font-bold text-main mb-1 tracking-tight">${client.name}</h3>
-                    <p class="text-muted font-medium text-sm truncate opacity-70">${client.email || 'No email provided'}</p>
                   </div>
                 </div>
               ` ).join('')}
@@ -112,24 +114,25 @@ export async function renderOrganizations() {
             <h2 class="text-3xl font-bold text-main tracking-tight">Individual Clients</h2>
             <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-3 opacity-50">Private / Unassociated Contacts</p>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             ${customers.filter(c => c.is_client == 0 && (!c.client_id && (!c.organization_ids || c.organization_ids.length === 0))).map(client => `
-              <div class="bg-card rounded-3xl p-10 border border-soft shadow-sm group hover:border-primary/30 transition-all duration-500 relative overflow-hidden">
-                <div class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1">
+              <div class="bg-card rounded-2xl p-5 border border-soft shadow-sm group hover:border-primary/30 transition-all duration-300 relative overflow-hidden flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-app flex-shrink-0 flex items-center justify-center text-primary border border-soft">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </div>
+                
+                <div class="flex flex-col min-w-0 flex-1 pr-2">
+                  <h3 class="text-base font-bold text-main tracking-tight truncate">${client.name}</h3>
+                  <p class="text-muted font-medium text-xs truncate opacity-70">${client.email || 'No email provided'}</p>
+                </div>
+
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-1 flex-shrink-0 bg-card/90 backdrop-blur-sm rounded-lg p-1">
                   <button class="edit-client-btn text-dim/50 hover:text-primary transition-colors p-2" data-id="${client.id}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                   </button>
                   <button class="delete-btn text-dim/50 hover:text-red-400 transition-colors p-2" data-id="${client.id}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
-                </div>
-                <div class="flex flex-col">
-                  <div class="w-10 h-10 rounded-full bg-app flex items-center justify-center mb-6 text-primary border border-soft">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                  </div>
-                  <div class="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2 opacity-40">Individual Client</div>
-                  <h3 class="text-xl font-bold text-main mb-1 tracking-tight">${client.name}</h3>
-                  <p class="text-muted font-medium text-sm truncate opacity-70">${client.email || 'No email provided'}</p>
                 </div>
               </div>
             ` ).join('')}
