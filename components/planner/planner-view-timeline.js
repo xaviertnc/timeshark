@@ -200,10 +200,11 @@ export const PlannerTimeline = {
             // Build rows for this resource temporarily
             const resourceRows = [];
 
+            const checkIsOps = (p) => (p.type && p.type.toLowerCase() === 'ops') || (p.category && p.category.toLowerCase() === 'ops') || (typeof p.name === 'string' && p.name.toUpperCase().includes('OPS'));
+
             // Helper to push project with Epic context
             const pushProjectGroup = (proj, isEpicChild = false, epicId = null, targetArray) => {
-                const isOps = proj.type === 'OPS' || proj.category === 'OPS' || proj.category === 'ops' || (typeof proj.name === 'string' && proj.name.toUpperCase().includes('OPS'));
-                if (options.showOps === false && isOps) return 0;
+                if (options.showOps === false && checkIsOps(proj)) return 0;
 
                 let tasks = tasksByProject.get(proj.id) || [];
                 let entries = entriesByProject.get(proj.id) || [];
@@ -261,6 +262,8 @@ export const PlannerTimeline = {
 
             // 2. Add Epics and their projects
             Array.from(epicsMap.values()).forEach(group => {
+                if (options.showOps === false && checkIsOps(group.epic)) return;
+                
                 const epicProjectRows = [];
                 let hasChildren = false;
                 const isEpicChildFlag = options.showEpics !== false;
