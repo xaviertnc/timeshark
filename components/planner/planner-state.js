@@ -26,24 +26,29 @@ export const PlannerState = {
         }
     },
 
-    getCombinedData(filterProjectId = 'all') {
+    getCombinedData(filterProjectIds = []) {
         const state = store.get();
         let tasks = state.tasks || [];
         let timeEntries = state.timeEntries || [];
         let projects = state.projects || [];
         const team = state.team || [];
 
+        const noFilter = !filterProjectIds || filterProjectIds.length === 0 || filterProjectIds === 'all';
+
         // Hide projects marked as 'hide_from_gantt' UNLESS explicitly targeted
-        const hiddenProjectIds = new Set(projects.filter(p => p.hide_from_gantt == 1 && String(p.id) !== filterProjectId).map(p => String(p.id)));
+        const hiddenProjectIds = new Set(
+            projects.filter(p => p.hide_from_gantt == 1 && (noFilter || !filterProjectIds.includes(String(p.id))))
+                .map(p => String(p.id))
+        );
         
         projects = projects.filter(p => !hiddenProjectIds.has(String(p.id)));
         tasks = tasks.filter(t => !t.project_id || !hiddenProjectIds.has(String(t.project_id)));
         timeEntries = timeEntries.filter(te => !te.project_id || !hiddenProjectIds.has(String(te.project_id)));
 
         // Filter by project if needed
-        let filteredTasks = filterProjectId === 'all'
+        let filteredTasks = noFilter
             ? tasks
-            : tasks.filter(t => t.project_id == filterProjectId);
+            : tasks.filter(t => filterProjectIds.includes(String(t.project_id)));
 
         // 1. Separate Scheduled vs Unscheduled (Backlog)
         const scheduledTasks = [];

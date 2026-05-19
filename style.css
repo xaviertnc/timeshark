@@ -61,7 +61,7 @@
     background-color: transparent !important;
 }
 .dark .dynamic-bg-item {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--item-color) 30%, black) 0%, transparent 45%, transparent 55%, color-mix(in srgb, var(--item-color) 30%, black) 100%) !important;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--item-color) 20%, black) 0%, transparent 20%, transparent 80%, color-mix(in srgb, var(--item-color) 20%, black) 100%) !important;
 }
 
 /* Dynamic Gantt Task Text coloring */

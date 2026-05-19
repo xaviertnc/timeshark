@@ -38,6 +38,7 @@ export const PlannerTimeline = {
         window.TimesharkProjectCollapsed = window.TimesharkProjectCollapsed || new Set();
         window.TimesharkEpicCollapsed = window.TimesharkEpicCollapsed || new Set();
         window.TimesharkResourceCollapsed = window.TimesharkResourceCollapsed || new Set();
+        window.TimesharkGanttHidden = window.TimesharkGanttHidden || new Set();
 
         container.innerHTML = '';
 
@@ -164,8 +165,19 @@ export const PlannerTimeline = {
                 pEntries.forEach(en => { if(en.start_time) { const d = new Date(en.start_time).getTime(); if(d < e) e = d; }});
                 return e;
             };
+            rawProjectArr.sort((a, b) => {
+                const aUnassigned = a.name === 'Unassigned';
+                const bUnassigned = b.name === 'Unassigned';
+                if (aUnassigned && !bUnassigned) return 1;
+                if (!aUnassigned && bUnassigned) return -1;
 
-            rawProjectArr.sort((a, b) => getEarliest(a.id) - getEarliest(b.id));
+                const aOps = a.type === 'OPS' || a.category === 'OPS' || (a.name && typeof a.name === 'string' && a.name.toUpperCase().includes('OPS'));
+                const bOps = b.type === 'OPS' || b.category === 'OPS' || (b.name && typeof b.name === 'string' && b.name.toUpperCase().includes('OPS'));
+                if (aOps && !bOps) return 1;
+                if (!aOps && bOps) return -1;
+
+                return getEarliest(a.id) - getEarliest(b.id);
+            });
 
             // Group by Epic
             const epicsMap = new Map(); // epicId -> list of projects
@@ -247,14 +259,17 @@ export const PlannerTimeline = {
             Array.from(epicsMap.values()).forEach(group => {
                 const epicProjectRows = [];
                 let hasChildren = false;
+                const isEpicChildFlag = options.showEpics !== false;
                 group.projList.forEach(p => {
-                    if (pushProjectGroup(p, true, group.epic.id, epicProjectRows) > 0) hasChildren = true;
+                    if (pushProjectGroup(p, isEpicChildFlag, group.epic.id, epicProjectRows) > 0) hasChildren = true;
                 });
                 
                 if (hasChildren) {
                     const epicTasks = group.projList.flatMap(p => tasksByProject.get(p.id) || []);
                     const epicEntries = group.projList.flatMap(p => entriesByProject.get(p.id) || []);
-                    resourceRows.push({ type: 'epic', epic: group.epic, resource: row.resource, tasks: epicTasks, entries: epicEntries });
+                    if (options.showEpics !== false) {
+                        resourceRows.push({ type: 'epic', epic: group.epic, resource: row.resource, tasks: epicTasks, entries: epicEntries });
+                    }
                     resourceRows.push(...epicProjectRows);
                 }
             });
@@ -423,6 +438,21 @@ export const PlannerTimeline = {
             rowEl.style.height = `${zp.rowH}px`;
             
             // ... (rest uses the existing logic until Assemble row)
+            let typePrefix = '';
+            let rowIdStr = '';
+            if (row.type === 'resource') { typePrefix = 'res_'; rowIdStr = row.resource; }
+            else if (row.type === 'epic') { typePrefix = 'epic_'; rowIdStr = row.epic.id; }
+            else if (row.type === 'project') { typePrefix = 'proj_'; rowIdStr = row.project.id; }
+            else if (row.type === 'task') { typePrefix = 'task_'; rowIdStr = row.task.id; }
+            
+            const fullRowId = typePrefix + rowIdStr;
+            const isSelfHidden = window.TimesharkGanttHidden.has(fullRowId);
+            const isGanttHidden = window.TimesharkGanttHidden.has('res_' + row.resource) ||
+                (row.epicId && window.TimesharkGanttHidden.has('epic_' + row.epicId)) ||
+                (row.type === 'epic' && window.TimesharkGanttHidden.has('epic_' + row.epic.id)) ||
+                (row.project && window.TimesharkGanttHidden.has('proj_' + row.project.id)) ||
+                isSelfHidden;
+
             let leftHtml = '';
             // Gantt View Column (Right)
             let rightHtml = '';
@@ -722,10 +752,18 @@ export const PlannerTimeline = {
                 rightHtml += renderBar(row.task, row.project);
             }
 
+            if (isGanttHidden) rightHtml = '';
+
             // Assemble row
             rowEl.innerHTML = `
-                <div class="flex-shrink-0 bg-card sticky left-0 z-40 border-r border-b border-[#ffffff11] border-b-black/5 dark:border-white/5 overflow-hidden" style="width: ${leftWidth}px">
-                    ${leftHtml}
+                <div class="flex-shrink-0 bg-card sticky left-0 z-40 border-r border-b border-[#ffffff11] border-b-black/5 dark:border-white/5 overflow-hidden flex items-center justify-between group/row" style="width: ${leftWidth}px">
+                    <div class="flex-1 overflow-hidden h-full">${leftHtml}</div>
+                    <button class="gantt-eye-toggle p-1 mr-1.5 rounded-md text-dim/40 hover:text-white transition-colors absolute right-0 bg-card ${isSelfHidden ? 'opacity-100 text-dim' : 'group-hover/row:opacity-100 opacity-0'} z-10" data-hide-id="${fullRowId}" title="Toggle Gantt Layer Visibility">
+                        ${isSelfHidden ? 
+                        `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>` 
+                        : 
+                        `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`}
+                    </button>
                 </div>
                 <div class="relative pointer-events-auto border-b border-black/5 dark:border-white/5 overflow-hidden shrink-0" style="width: ${totalWidth}px">
                     ${rightHtml}
@@ -774,6 +812,16 @@ export const PlannerTimeline = {
                     window.TimesharkResourceCollapsed.clear();
                     window.TimesharkEpicCollapsed.clear();
                     window.TimesharkProjectCollapsed.clear();
+                    PlannerTimeline.render(container, data, config, today, zoom, onLaneReorder, options);
+                    return;
+                }
+
+                const ganttEyeToggleBtn = e.target.closest('.gantt-eye-toggle');
+                if (ganttEyeToggleBtn) {
+                    e.stopPropagation();
+                    const hid = ganttEyeToggleBtn.dataset.hideId;
+                    if (window.TimesharkGanttHidden.has(hid)) window.TimesharkGanttHidden.delete(hid);
+                    else window.TimesharkGanttHidden.add(hid);
                     PlannerTimeline.render(container, data, config, today, zoom, onLaneReorder, options);
                     return;
                 }

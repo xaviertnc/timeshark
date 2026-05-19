@@ -15,14 +15,16 @@ import { PlannerAnalytics } from './planner/planner-view-analytics.js';
 import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { ProjectModal } from './project-modal.js';
+import { SearchableSelect } from './searchable-select.js';
 
-let currentScale = 'week';     // 'day', 'week', 'month'
-let currentZoom = 'regular';  // 'compact', 'regular', 'relaxed'
+let currentScale = localStorage.getItem('timeshark_planner_scale') || 'week';     // 'day', 'week', 'month'
+let currentZoom = localStorage.getItem(`timeshark_planner_zoom_${currentScale}`) || 'regular';  // 'compact', 'regular', 'relaxed'
 let timeOffset = 0;           // 0 = today/start, +/- to move
-let projectFilter = 'all';
+let projectFilter = [];       // empty is global
 let showSpans = true;
 let currentView = 'timeline'; // 'timeline', 'kanban', 'heatmap', 'analytics'
-let subtleEpics = false;
+let subtleEpics = localStorage.getItem(`timeshark_planner_subtle_epics_${currentScale}`) === 'true';
+let showEpics = localStorage.getItem(`timeshark_planner_show_epics_${currentScale}`) !== 'false';
 
 
 export async function renderPlanner() {
@@ -43,8 +45,10 @@ export async function renderPlanner() {
 
         <!--Filter Bar-->
         <div class="flex items-center justify-between px-2 shrink-0 mb-3 gap-2 flex-wrap">
-            <div class="flex items-center gap-2 flex-wrap">
-                <div class="flex items-center gap-1 bg-app/30 p-0.5 rounded-lg border border-white/5">
+            <div class="flex items-center gap-3 flex-wrap">
+                <div id="project-filter-container" class="w-[200px] h-7 relative z-10 shrink-0"></div>
+                
+                <div class="flex items-center gap-1 bg-app/30 p-0.5 rounded-lg border border-white/5 shrink-0">
                     <button class="nav-btn p-1.5 text-dim hover:text-main" data-dir="-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
@@ -54,10 +58,6 @@ export async function renderPlanner() {
                     </button>
                 </div>
                 <span id="period-label" class="text-[10px] font-black uppercase tracking-widest text-muted whitespace-nowrap shrink-0"></span>
-                <select id="project-filter" class="h-7 min-w-[120px] bg-app/60 border border-black/5 dark:border-white/5 rounded-lg px-2 text-[10px] font-black uppercase tracking-widest text-main appearance-none cursor-pointer outline-none shadow-sm">
-                    <option value="all">Global View</option>
-                    ${projects.filter(p => !p.hide_from_gantt || projectFilter == p.id).map(p => `<option value="${p.id}" ${projectFilter == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-                </select>
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
@@ -83,8 +83,15 @@ export async function renderPlanner() {
                     }).join('')}
                 </div>
 
-                <div id="epic-span-toggle-container" class="flex items-center bg-app/30 px-2 h-7 rounded-lg border border-white/5 ${currentView !== 'timeline' ? 'hidden' : ''}">
+                <div id="epic-span-toggle-container" class="flex items-center bg-app/30 px-2 h-7 rounded-lg border border-white/5 gap-4 ${currentView !== 'timeline' ? 'hidden' : ''}">
                     <label class="flex items-center gap-2 cursor-pointer group mb-0">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5">Show Epics</span>
+                        <div class="relative w-7 h-4 bg-black/20 rounded-full border border-white/10 transition-colors">
+                            <input type="checkbox" id="show-epics-toggle" class="sr-only" ${showEpics ? 'checked' : ''}>
+                            <div class="absolute left-1 top-[1px] w-3 h-3 rounded-full transition-all ${showEpics ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        </div>
+                    </label>
+                    <label id="subtle-epics-label" class="flex items-center gap-2 cursor-pointer group mb-0 transition-opacity">
                         <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5">Subtle Epics</span>
                         <div class="relative w-7 h-4 bg-black/20 rounded-full border border-white/10 transition-colors">
                             <input type="checkbox" id="subtle-epics-toggle" class="sr-only" ${subtleEpics ? 'checked' : ''}>
@@ -101,6 +108,27 @@ export async function renderPlanner() {
             </div>
         </div>
     `;
+
+    const renderFilterUI = () => {
+        const filterContainer = container.querySelector('#project-filter-container');
+        if (filterContainer) {
+            const currentProjs = store.get().projects || [];
+            SearchableSelect.render(filterContainer, currentProjs.filter(p => !p.hide_from_gantt), {
+                value: projectFilter,
+                multiple: true,
+                placeholder: 'Global View',
+                allLabel: 'All Projects',
+                size: 'small',
+                clearable: true,
+                alignTarget: '#project-filter-container',
+                onChange: (newVal) => {
+                    projectFilter = newVal;
+                    updateUI(); 
+                }
+            });
+        }
+    };
+    renderFilterUI();
 
     const updateUI = () => {
         const data = PlannerState.getCombinedData(projectFilter);
@@ -138,6 +166,25 @@ export async function renderPlanner() {
         if (zoomGroup) zoomGroup.classList.toggle('hidden', currentView !== 'timeline');
         if (epicGroup) epicGroup.classList.toggle('hidden', currentView !== 'timeline');
 
+        const showEpicsToggleInput = container.querySelector('#show-epics-toggle');
+        if (showEpicsToggleInput) {
+            showEpicsToggleInput.checked = showEpics;
+            const knob = showEpicsToggleInput.nextElementSibling;
+            if (showEpics) {
+                knob.classList.add('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.remove('bg-dim');
+            } else {
+                knob.classList.remove('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.add('bg-dim');
+            }
+        }
+
+        const subtleEpicsLabel = container.querySelector('#subtle-epics-label');
+        if (subtleEpicsLabel) {
+            if (showEpics) subtleEpicsLabel.classList.remove('hidden');
+            else subtleEpicsLabel.classList.add('hidden');
+        }
+
         const subtleEpicsToggleInput = container.querySelector('#subtle-epics-toggle');
         if (subtleEpicsToggleInput) {
             subtleEpicsToggleInput.checked = subtleEpics;
@@ -171,9 +218,9 @@ export async function renderPlanner() {
         // Render Views
         const timelineContainer = container.querySelector('#planner-timeline-container');
         if (currentView === 'timeline') {
-            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics });
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics, showEpics });
         } else if (currentView === 'kanban') {
-            PlannerKanban.render(timelineContainer, data, config, today, projectFilter);
+            PlannerKanban.render(timelineContainer, data, config, today, projectFilter, { refresh });
         } else if (currentView === 'heatmap') {
             PlannerHeatmap.render(timelineContainer, data, config, today, currentScale);
         } else if (currentView === 'analytics') {
@@ -188,7 +235,7 @@ export async function renderPlanner() {
         try { await api.post('projects.php', { lane_reorder: move }); store.update('projects', await api.get('projects.php')); } catch (err) { console.error(err); }
     };
 
-    const refresh = async () => { await PlannerState.init(); updateUI(); };
+    const refresh = async () => { await PlannerState.init(); renderFilterUI(); updateUI(); };
 
     // Interactions
     container.addEventListener('click', async (e) => {
@@ -198,6 +245,14 @@ export async function renderPlanner() {
             const stateData = PlannerState.getCombinedData('all');
             const task = [...stateData.backlog, ...stateData.rows.flatMap(r => r.tasks)].find(t => t.id == taskEl.dataset.taskId);
             if (task) TaskModal.open(task, { onSave: () => refresh() });
+            return;
+        }
+
+        // Kanban Add Task
+        const addKanbanBtn = e.target.closest('.add-kanban-task-btn');
+        if (addKanbanBtn) {
+            e.stopPropagation();
+            TaskModal.open(null, { onSave: () => refresh(), defaults: { status: addKanbanBtn.dataset.status } });
             return;
         }
 
@@ -239,10 +294,24 @@ export async function renderPlanner() {
         if (navBtn) { const dir = parseInt(navBtn.dataset.dir); timeOffset = (dir === 0 ? 0 : timeOffset + dir); updateUI(); return; }
 
         const scaleBtn = e.target.closest('.scale-toggle');
-        if (scaleBtn) { currentScale = scaleBtn.dataset.scale; currentZoom = 'regular'; timeOffset = 0; updateUI(); return; }
+        if (scaleBtn) { 
+            currentScale = scaleBtn.dataset.scale; 
+            localStorage.setItem('timeshark_planner_scale', currentScale);
+            currentZoom = localStorage.getItem(`timeshark_planner_zoom_${currentScale}`) || 'regular';
+            subtleEpics = localStorage.getItem(`timeshark_planner_subtle_epics_${currentScale}`) === 'true';
+            showEpics = localStorage.getItem(`timeshark_planner_show_epics_${currentScale}`) !== 'false';
+            timeOffset = 0; 
+            updateUI(); 
+            return; 
+        }
 
         const zoomBtn = e.target.closest('.zoom-toggle');
-        if (zoomBtn) { currentZoom = zoomBtn.dataset.zoom; updateUI(); return; }
+        if (zoomBtn) { 
+            currentZoom = zoomBtn.dataset.zoom; 
+            localStorage.setItem(`timeshark_planner_zoom_${currentScale}`, currentZoom);
+            updateUI(); 
+            return; 
+        }
 
         const viewBtn = e.target.closest('.view-toggle');
         if (viewBtn) { currentView = viewBtn.dataset.view; updateUI(); return; }
@@ -251,11 +320,15 @@ export async function renderPlanner() {
     container.addEventListener('change', (e) => {
         if (e.target.id === 'subtle-epics-toggle') {
             subtleEpics = e.target.checked;
+            localStorage.setItem(`timeshark_planner_subtle_epics_${currentScale}`, subtleEpics);
+            updateUI();
+        }
+        if (e.target.id === 'show-epics-toggle') {
+            showEpics = e.target.checked;
+            localStorage.setItem(`timeshark_planner_show_epics_${currentScale}`, showEpics);
             updateUI();
         }
     });
-
-    container.querySelector('#project-filter').onchange = (e) => { projectFilter = e.target.value; updateUI(); };
 
     // Resize Observer for basic cleanup
     let resizeObserver = new ResizeObserver(() => {
@@ -266,9 +339,9 @@ export async function renderPlanner() {
         if (!timelineContainer) return;
 
         if (currentView === 'timeline') {
-            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics });
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics, showEpics });
         } else if (currentView === 'kanban') {
-            PlannerKanban.render(timelineContainer, data, config, today, projectFilter);
+            PlannerKanban.render(timelineContainer, data, config, today, projectFilter, { refresh });
         } else if (currentView === 'heatmap') {
             PlannerHeatmap.render(timelineContainer, data, config, today, currentScale);
         } else if (currentView === 'analytics') {
