@@ -11,6 +11,7 @@ export class ProjectModal {
         const { onSave = () => { }, onCancel = () => { } } = options;
         const state = store.get();
         const customers = state.customers || [];
+        const team = state.team || [];
         const modalPortal = document.getElementById('modal-portal');
         if (!modalPortal) return;
 
@@ -65,7 +66,7 @@ export class ProjectModal {
                                     </div>
                                     
                                     <div class="space-y-1.5">
-                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Lead Contact</label>
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Client Contact</label>
                                         <div class="relative group">
                                             <select name="client_id" id="modal-client-select" class="w-full bg-app border-none rounded-xl py-2.5 px-4 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20 transition-all uppercase text-[10px] tracking-widest outline-none">
                                                 <option value="">Assign Later...</option>
@@ -74,6 +75,37 @@ export class ProjectModal {
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Project Lead</label>
+                                        <div class="relative group">
+                                            <select name="lead_id" id="modal-lead-select" class="w-full bg-app border-none rounded-xl py-2.5 px-4 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20 transition-all uppercase text-[10px] tracking-widest outline-none">
+                                                <option value="">No Lead</option>
+                                                ${team.map(t => `<option value="${t.id}" ${project && project.lead_id == t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                                            </select>
+                                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Project Dev</label>
+                                        <div class="relative group">
+                                            <select name="dev_id" id="modal-dev-select" class="w-full bg-app border-none rounded-xl py-2.5 px-4 appearance-none cursor-pointer text-main font-bold focus:ring-2 focus:ring-primary/20 transition-all uppercase text-[10px] tracking-widest outline-none">
+                                                <option value="">No Dev</option>
+                                                ${team.map(t => `<option value="${t.id}" ${project && project.dev_id == t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                                            </select>
+                                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Priority</label>
+                                        <input type="number" min="1" max="99" name="priority" value="${project && project.priority !== undefined ? project.priority : 10}" class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold text-sm outline-none">
                                     </div>
 
                                     <div class="space-y-1.5">
@@ -370,6 +402,8 @@ export class ProjectModal {
             data.tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
             if (data.type === 'epic') data.parent_id = null;
             if (!data.parent_id) data.parent_id = null;
+            if (data.priority === '') data.priority = 10;
+            else data.priority = parseInt(data.priority);
 
             try {
                 await api.post('projects.php', data);

@@ -37,14 +37,18 @@ let statusFilter = 'active'; // 'active' or 'archived'
 let sortConfig = { key: 'list_order', direction: 'asc' };
 let groupByOrg = false;
 let groupByTag = false;
+let groupByLead = false;
 let collapseEpics = false;
 let tagFilter = '';
+let leadFilter = '';
+let devFilter = '';
 let selectedProjectIds = new Set();
 let lastCheckedProjectValue = null;
 
 export async function renderProjects() {
   const state = store.get();
   const customers = state.customers || [];
+  const team = state.team || [];
 
   // We need to fetch projects based on the filter
   let projects = [];
@@ -65,6 +69,8 @@ export async function renderProjects() {
   // Filter Logic
   let filtered = projects.filter(p => {
     if (tagFilter && (!p.tags || !p.tags.includes(tagFilter))) return false;
+    if (leadFilter && p.lead_id != leadFilter) return false;
+    if (devFilter && p.dev_id != devFilter) return false;
 
     const searchTermLower = searchTerm.toLowerCase();
     const matchesTag = p.tags && p.tags.some(t => t.toLowerCase().includes(searchTermLower));
@@ -91,6 +97,18 @@ export async function renderProjects() {
         case 'status':
           valA = (a.status || 'Active').toLowerCase();
           valB = (b.status || 'Active').toLowerCase();
+          break;
+        case 'priority':
+          valA = parseInt(a.priority) || 10;
+          valB = parseInt(b.priority) || 10;
+          break;
+        case 'lead':
+          valA = (team.find(t => t.id == a.lead_id)?.name || 'No Lead').toLowerCase();
+          valB = (team.find(t => t.id == b.lead_id)?.name || 'No Lead').toLowerCase();
+          break;
+        case 'dev':
+          valA = (team.find(t => t.id == a.dev_id)?.name || 'No Dev').toLowerCase();
+          valB = (team.find(t => t.id == b.dev_id)?.name || 'No Dev').toLowerCase();
           break;
         case 'customer':
           valA = (customers.find(c => c.id == a.customer_id)?.name || 'Individual').toLowerCase();
@@ -156,6 +174,26 @@ export async function renderProjects() {
                 </div>
             </div>
 
+            <div class="relative group hidden sm:block">
+                <select id="lead-filter" class="bg-card/50 border border-white/5 rounded-xl pl-4 pr-10 py-2.5 text-[10px] uppercase tracking-widest font-bold text-main outline-none focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all appearance-none cursor-pointer group-hover:bg-card/80">
+                    <option value="">All Leads</option>
+                    ${team.map(t => `<option value="${t.id}" ${leadFilter == t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                </select>
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+
+            <div class="relative group hidden sm:block">
+                <select id="dev-filter" class="bg-card/50 border border-white/5 rounded-xl pl-4 pr-10 py-2.5 text-[10px] uppercase tracking-widest font-bold text-main outline-none focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all appearance-none cursor-pointer group-hover:bg-card/80">
+                    <option value="">All Devs</option>
+                    ${team.map(t => `<option value="${t.id}" ${devFilter == t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                </select>
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dim group-hover:text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+
             <div class="flex items-center gap-1.5 p-1 bg-card/30 rounded-xl border border-white/5">
                 <button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'active' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim'}" data-status="active">Active</button>
                 <button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'archived' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim'}" data-status="archived">Archived</button>
@@ -175,6 +213,13 @@ export async function renderProjects() {
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
                     <input type="checkbox" id="group-by-org" class="sr-only" ${groupByOrg ? 'checked' : ''}>
                     <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByOrg ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                </div>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Lead</span>
+                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                    <input type="checkbox" id="group-by-lead" class="sr-only" ${groupByLead ? 'checked' : ''}>
+                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByLead ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
             <label class="flex items-center gap-3 cursor-pointer group">
@@ -199,14 +244,26 @@ export async function renderProjects() {
                 <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-12 text-center" data-sort="list_order">
                     <div class="flex items-center justify-center gap-1"># ${renderSortIcon('list_order')}</div>
                 </th>
+                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-12 text-center" data-sort="priority">
+                    <div class="flex items-center justify-center gap-1" title="Priority">PRI ${renderSortIcon('priority')}</div>
+                </th>
                 <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="name">
                     <div class="flex items-center gap-2">Project ${renderSortIcon('name')}</div>
                 </th>
                 <th class="hidden sm:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="status">
                     <div class="flex items-center gap-2">Status ${renderSortIcon('status')}</div>
                 </th>
-                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="customer">
+                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="lead">
+                    <div class="flex items-center gap-2">Lead ${renderSortIcon('lead')}</div>
+                </th>
+                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="dev">
+                    <div class="flex items-center gap-2">Dev ${renderSortIcon('dev')}</div>
+                </th>
+                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/5" data-sort="customer">
                     <div class="flex items-center gap-2">Organization ${renderSortIcon('customer')}</div>
+                </th>
+                <th class="hidden xl:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest w-1/5">
+                    Description
                 </th>
                 <th class="hidden lg:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-40" data-sort="progress">
                     <div class="flex items-center gap-2">Progress ${renderSortIcon('progress')}</div>
@@ -215,7 +272,7 @@ export async function renderProjects() {
             </tr>
             </thead>
             <tbody id="projects-table-body">
-            ${renderTableRows(filtered, customers)}
+            ${renderTableRows(filtered, customers, team)}
             </tbody>
         </table>
       </div>
@@ -226,6 +283,19 @@ export async function renderProjects() {
     <div id="bulk-action-bar" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-card border border-primary/30 shadow-[0_10px_40px_rgba(35,35,35,1)] rounded-2xl px-6 py-3 flex items-center gap-6 animate-fade-in backdrop-blur-md">
         <span class="text-xs font-black text-main uppercase tracking-widest"><span class="text-primary">${selectedProjectIds.size}</span> Selected</span>
         <div class="w-px h-6 bg-white/10"></div>
+        <div class="flex items-center gap-3 pr-4 border-r border-white/5">
+            <select id="bulk-lead-select" class="bg-app border-none text-[9px] uppercase tracking-widest font-bold text-main py-1.5 px-3 rounded outline-none focus:ring-1 focus:ring-primary/50">
+                <option value="">Set Lead...</option>
+                <option value="none">Empty (No Lead)</option>
+                ${team.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+            </select>
+            <select id="bulk-dev-select" class="bg-app border-none text-[9px] uppercase tracking-widest font-bold text-main py-1.5 px-3 rounded outline-none focus:ring-1 focus:ring-primary/50">
+                <option value="">Set Dev...</option>
+                <option value="none">Empty (No Dev)</option>
+                ${team.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+            </select>
+            <button id="bulk-assign-apply" class="px-3 py-1.5 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors rounded text-[9px] font-black uppercase tracking-widest cursor-pointer">Apply</button>
+        </div>
         <div class="flex items-center gap-2">
             ${statusFilter === 'active' ? `
             <button id="bulk-archive" class="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">Archive</button>
@@ -242,14 +312,14 @@ export async function renderProjects() {
 
   // --- RENDERING HELPERS ---
 
-  function renderTableRows(inItems, customers) {
+  function renderTableRows(inItems, customers, team) {
     const items = collapseEpics ? inItems.filter(p => !p.parent_id) : inItems;
 
     if (items.length === 0) {
-      return `<tr><td colspan="6" class="py-20 text-center opacity-20"><p class="text-xs font-black uppercase tracking-[0.3em]">No projects found</p></td></tr>`;
+      return `<tr><td colspan="11" class="py-20 text-center opacity-20"><p class="text-xs font-black uppercase tracking-[0.3em]">No projects found</p></td></tr>`;
     }
 
-    if (!groupByOrg && !groupByTag) {
+    if (!groupByOrg && !groupByTag && !groupByLead) {
       // Group by Epic hierarchically
       const epics = items.filter(p => p.type === 'epic');
       const standalone = items.filter(p => p.type !== 'epic' && !p.parent_id);
@@ -257,21 +327,21 @@ export async function renderProjects() {
       let rowsHtml = '';
 
       epics.forEach(epic => {
-        rowsHtml += renderProjectRow(epic, customers, false);
+        rowsHtml += renderProjectRow(epic, customers, team, false);
         const children = items.filter(p => p.parent_id == epic.id);
         children.forEach(child => {
-          rowsHtml += renderProjectRow(child, customers, true);
+          rowsHtml += renderProjectRow(child, customers, team, true);
         });
       });
 
       standalone.forEach(p => {
-        rowsHtml += renderProjectRow(p, customers, false);
+        rowsHtml += renderProjectRow(p, customers, team, false);
       });
 
       // Orphaned children (parent filtered out or missing)
       const orphaned = items.filter(p => p.type !== 'epic' && p.parent_id && !epics.find(e => e.id == p.parent_id));
       orphaned.forEach(p => {
-        rowsHtml += renderProjectRow(p, customers, false);
+        rowsHtml += renderProjectRow(p, customers, team, false);
       });
 
       return rowsHtml;
@@ -313,7 +383,7 @@ export async function renderProjects() {
             const paddingLeft = 1.25 + (level * 1.5);
             html += `
             <tr class="bg-app/40">
-                <td colspan="7" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5" style="padding-left: ${paddingLeft}rem;">
+                <td colspan="11" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5" style="padding-left: ${paddingLeft}rem;">
                     <span class="opacity-50 mr-2">${'#'.repeat(level + 1)}</span> ${tag} 
                     <span class="text-dim/40 ml-2 font-black tabular-nums">[${totalProjects}]</span>
                 </td>
@@ -321,7 +391,7 @@ export async function renderProjects() {
             `;
             
             node._projects.forEach(p => {
-              html += renderProjectRow(p, customers, false);
+              html += renderProjectRow(p, customers, team, false);
             });
             
             html += renderNode(node._children, level + 1);
@@ -334,6 +404,26 @@ export async function renderProjects() {
       return renderNode(tree, 0);
     }
 
+    if (groupByLead) {
+      const groups = items.reduce((acc, p) => {
+        const leadMember = team.find(t => t.id == p.lead_id);
+        const leadName = leadMember ? leadMember.name : 'No Lead';
+        if (!acc[leadName]) acc[leadName] = [];
+        acc[leadName].push(p);
+        return acc;
+      }, {});
+
+      return Object.entries(groups).map(([leadName, projects]) => `
+        <tr class="bg-app/40">
+            <td colspan="11" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
+                <span class="opacity-50 mr-2">@</span> ${leadName} 
+                <span class="text-dim/40 ml-2 font-black tabular-nums">[${projects.length}]</span>
+            </td>
+        </tr>
+        ${projects.map(p => renderProjectRow(p, customers, team, false)).join('')}
+      `).join('');
+    }
+
     const groups = items.reduce((acc, p) => {
       const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
       const orgName = org ? org.name : 'Individual';
@@ -344,23 +434,31 @@ export async function renderProjects() {
 
     return Object.entries(groups).map(([orgName, projects]) => `
         <tr class="bg-app/40">
-            <td colspan="7" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
+            <td colspan="11" class="px-5 py-2.5 text-[10px] font-black text-primary uppercase tracking-[0.3em] border-b border-white/5">
                 <span class="opacity-50 mr-2">/</span> ${orgName} 
                 <span class="text-dim/40 ml-2 font-black tabular-nums">[${projects.length}]</span>
             </td>
         </tr>
-        ${projects.map(p => renderProjectRow(p, customers, false)).join('')}
+        ${projects.map(p => renderProjectRow(p, customers, team, false)).join('')}
     `).join('');
   }
 
-  function renderProjectRow(p, customers, isChild = false) {
+  function renderProjectRow(p, customers, team, isChild = false) {
     const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
     const progress = p._progress;
     const pColor = p.color || '#338a81';
+    const leadMember = team.find(t => t.id == p.lead_id);
+    const devMember = team.find(t => t.id == p.dev_id);
+    const priority = parseInt(p.priority) || 10;
 
     // Tag rendering
     const tagsHtml = p.tags && p.tags.length > 0
-      ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`
+      ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => {
+          if (t.toLowerCase().includes('urgent')) {
+            return `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-red-500/20 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded">${t}</span>`;
+          }
+          return `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`;
+        }).join('')}</div>`
       : '';
 
     // Type formatting
@@ -379,6 +477,9 @@ export async function renderProjects() {
         <td class="px-4 py-2 text-center">
              <div class="w-2 h-2 rounded-full mx-auto shadow-sm" style="background-color: ${pColor}"></div>
         </td>
+        <td class="px-4 py-2 text-center text-dim/60 font-black text-[10px] tabular-nums">
+             ${priority}
+        </td>
         <td class="px-4 py-2 ${isChild ? 'pl-8' : ''}">
             <div class="flex items-center gap-2">
                 ${isChild ? '<div class="w-3 h-3 border-l-2 border-b-2 border-dim/40 rounded-bl-sm mb-1 ml-1 shrink-0"></div>' : ''}
@@ -392,7 +493,28 @@ export async function renderProjects() {
                   style="background-color: ${applyAlpha(pColor, 0.08)}; border-color: ${applyAlpha(pColor, 0.15)}; color: ${pColor}">${p.status || 'Active'}</span>
         </td>
         <td class="hidden md:table-cell px-4 py-2">
+            <div class="flex items-center gap-2">
+                ${leadMember ? `
+                    <div class="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-black text-primary border border-primary/30 uppercase shrink-0">
+                        ${leadMember.initials || leadMember.name.substring(0, 2)}
+                    </div>
+                ` : ``}
+            </div>
+        </td>
+        <td class="hidden md:table-cell px-4 py-2">
+            <div class="flex items-center gap-2">
+                ${devMember ? `
+                    <div class="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-[9px] font-black text-blue-400 border border-blue-500/30 uppercase shrink-0">
+                        ${devMember.initials || devMember.name.substring(0, 2)}
+                    </div>
+                ` : ``}
+            </div>
+        </td>
+        <td class="hidden md:table-cell px-4 py-2">
             <span class="text-[10px] font-bold text-dim/60 group-hover/row:text-main transition-colors uppercase tracking-widest truncate block" title="${org ? org.name : 'Individual'}">${org ? org.name : 'Individual'}</span>
+        </td>
+        <td class="hidden xl:table-cell px-4 py-2 max-w-[200px]">
+            <span class="text-[10px] font-medium text-dim/50 group-hover/row:text-main/80 transition-colors truncate block" title="${p.notes ? p.notes.replace(/"/g, '&quot;') : ''}">${p.notes ? p.notes.replace(/\r?\n|\r/g, ' ') : ''}</span>
         </td>
         <td class="hidden lg:table-cell px-4 py-2">
             ${p.type === 'ops' ? '' : `
@@ -455,14 +577,23 @@ export async function renderProjects() {
   // Group by Organization Toggle
   container.querySelector('#group-by-org').onchange = (e) => {
     groupByOrg = e.target.checked;
-    if (groupByOrg) groupByTag = false;
+    if (groupByOrg) { groupByTag = false; groupByLead = false; }
     refreshView();
   };
 
   if (container.querySelector('#group-by-tag')) {
     container.querySelector('#group-by-tag').onchange = (e) => {
       groupByTag = e.target.checked;
-      if (groupByTag) groupByOrg = false;
+      if (groupByTag) { groupByOrg = false; groupByLead = false; }
+      refreshView();
+    };
+  }
+
+  const groupByLeadToggle = container.querySelector('#group-by-lead');
+  if (groupByLeadToggle) {
+    groupByLeadToggle.onchange = (e) => {
+      groupByLead = e.target.checked;
+      if (groupByLead) { groupByOrg = false; groupByTag = false; }
       refreshView();
     };
   }
@@ -472,6 +603,24 @@ export async function renderProjects() {
   if (tagSelect) {
     tagSelect.onchange = (e) => {
       tagFilter = e.target.value;
+      refreshView();
+    };
+  }
+
+  // Lead filter
+  const leadSelect = container.querySelector('#lead-filter');
+  if (leadSelect) {
+    leadSelect.onchange = (e) => {
+      leadFilter = e.target.value;
+      refreshView();
+    };
+  }
+
+  // Dev filter
+  const devSelect = container.querySelector('#dev-filter');
+  if (devSelect) {
+    devSelect.onchange = (e) => {
+      devFilter = e.target.value;
       refreshView();
     };
   }
@@ -550,6 +699,31 @@ export async function renderProjects() {
       selectedProjectIds.clear();
       refreshView();
       return;
+    }
+
+    // Bulk Assign Lead/Dev
+    if (e.target.id === 'bulk-assign-apply') {
+        const leadId = document.getElementById('bulk-lead-select').value;
+        const devId = document.getElementById('bulk-dev-select').value;
+        
+        if (leadId === '' && devId === '') return; // Nothing selected
+
+        const arr = Array.from(selectedProjectIds);
+        for (const id of arr) {
+            const projectToUpdate = (statusFilter === 'archived' ? filtered : state.projects || []).find(p => String(p.id) === String(id));
+            if (!projectToUpdate) continue;
+
+            const payload = { id, name: projectToUpdate.name };
+            if (leadId !== '') payload.lead_id = leadId === 'none' ? null : leadId;
+            if (devId !== '') payload.dev_id = devId === 'none' ? null : devId;
+            
+            await api.post('projects.php', payload);
+        }
+
+        store.update('projects', await api.get('projects.php'));
+        selectedProjectIds.clear();
+        refreshView();
+        return;
     }
 
     // Bulk Delete
