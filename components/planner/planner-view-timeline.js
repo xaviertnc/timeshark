@@ -202,6 +202,9 @@ export const PlannerTimeline = {
 
             // Helper to push project with Epic context
             const pushProjectGroup = (proj, isEpicChild = false, epicId = null, targetArray) => {
+                const isOps = proj.type === 'OPS' || proj.category === 'OPS' || proj.category === 'ops' || (typeof proj.name === 'string' && proj.name.toUpperCase().includes('OPS'));
+                if (options.showOps === false && isOps) return 0;
+
                 let tasks = tasksByProject.get(proj.id) || [];
                 let entries = entriesByProject.get(proj.id) || [];
 
@@ -219,7 +222,6 @@ export const PlannerTimeline = {
                     const eEnd = e.end_time ? new Date(e.end_time).getTime() : eStart + (30 * 60 * 1000);
                     return (eStart < cEnd && eEnd > cStart);
                 });
-
                 if (tasks.length === 0 && validEntries.length === 0) return 0;
 
                 tasks.sort((a,b) => new Date(a.start_date) - new Date(b.start_date));
@@ -241,15 +243,17 @@ export const PlannerTimeline = {
                         const taskDays = task.end_date ? (new Date(task.end_date) - new Date(task.start_date)) / (24 * 60 * 60 * 1000) : 0;
                         if (taskDays < 3) return;
                     }
-                    targetArray.push({
-                        type: 'task',
-                        task: task,
-                        project: proj,
-                        resource: row.resource,
-                        isEpicChild: isEpicChild,
-                        epicId: epicId
-                    });
-                    count++;
+                    if (options.showTasks !== false) {
+                        targetArray.push({
+                            type: 'task',
+                            task: task,
+                            project: proj,
+                            resource: row.resource,
+                            isEpicChild: isEpicChild,
+                            epicId: epicId
+                        });
+                        count++;
+                    }
                 });
                 
                 return count;
@@ -690,7 +694,7 @@ export const PlannerTimeline = {
                 }
 
                 // Render time entries natively on the project row bottom edge (similar to original look)
-                if (config.type !== 'year') {
+                if (config.type !== 'year' && options.showTimeEntries !== false) {
                     const envelopeTop = (zp.rowH - (zp.barH * 0.8)) / 2;
                     const entryH = Math.max(4, (zp.barH * 0.8) - 4);
                     const entryTop = envelopeTop + ((zp.barH * 0.8) - entryH) / 2;

@@ -1,6 +1,8 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { TimeEntryModal } from './time-entry-modal.js';
+import { PlannerState } from './planner/planner-state.js';
+import { PlannerAnalytics } from './planner/planner-view-analytics.js';
 
 /**
  * components/reports.js
@@ -13,15 +15,34 @@ let currentPage = 1;
 const DAYS_PER_PAGE = 5;
 let selectedProject = '';
 let selectedMember = '';
-let dailyReportDate = new Date().toLocaleDateString('en-CA');
+let dailyReportDate = localStorage.getItem('timeshark_reports_daily_date') || new Date().toLocaleDateString('en-CA');
+let analyticsScale = localStorage.getItem('timeshark_reports_analytics_scale') || 'month';
 
 export async function renderReports() {
+  await PlannerState.init();
+  
   const state = store.get();
   const rawEntries = state.timeEntries || [];
   const projects = state.projects || [];
   
   const hiddenProjectIds = new Set(projects.filter(p => p.hide_from_gantt == 1 && String(p.id) !== selectedProject).map(p => String(p.id)));
   const entries = rawEntries.filter(e => !hiddenProjectIds.has(String(e.project_id)));
+  
+  const plannerData = PlannerState.getCombinedData(selectedProject ? [selectedProject] : 'all');
+  const today = new Date();
+  
+  const generateDates = (days) => {
+      const dates = [];
+      for (let i = days; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          d.setHours(0,0,0,0);
+          dates.push(d);
+      }
+      return dates;
+  };
+  const timeframes = { 'week': 7, 'month': 30, 'quarter': 90 };
+  const analyticsConfig = { dates: generateDates(timeframes[analyticsScale] || 30) };
 
   const formatDuration = (secs) => {
     const h = Math.floor(secs / 3600);
@@ -96,7 +117,8 @@ export async function renderReports() {
   const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
   container.innerHTML = `
-    <div class="flex items-end justify-between px-2 mb-6">
+    <!-- Performance Section -->
+    <div class="flex items-end justify-between px-2 mb-6 mt-4">
       <div>
         <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Analytics</h2>
         <h1 class="text-3xl font-light text-main tracking-tight">Daily <span class="font-bold italic text-primary">Performance.</span></h1>
@@ -136,8 +158,8 @@ export async function renderReports() {
             <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === todayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${todayStr}">Today</button>
             <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === yesterdayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${yesterdayStr}">Yesterday</button>
           </div>
-          <div class="flex items-center justify-center px-2 py-3 bg-app/50 rounded-xl border border-soft">
-            <input type="date" id="daily-date-picker" value="${dailyReportDate}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-main focus:ring-0 cursor-pointer p-0 text-center">
+          <div class="flex items-center justify-center px-2 py-3 rounded-xl border transition-all ${(![todayStr, yesterdayStr].includes(dailyReportDate)) ? 'bg-primary border-primary text-white shadow-md' : 'bg-app/50 border-soft'}">
+            <input type="date" id="daily-date-picker" value="${dailyReportDate}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest ${(![todayStr, yesterdayStr].includes(dailyReportDate)) ? 'text-white' : 'text-main'} focus:ring-0 cursor-pointer p-0 text-center">
           </div>
           <div class="pt-4 space-y-6">
             <h4 class="text-[9px] font-black text-dim uppercase tracking-widest px-1">Daily Mix</h4>
@@ -146,6 +168,24 @@ export async function renderReports() {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="mt-16 pt-8 border-t border-white/5">
+        <div class="flex items-end justify-between px-2 mb-6">
+          <div>
+            <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Project Analytics</h2>
+            <h1 class="text-3xl font-light text-main tracking-tight">Delivery <span class="font-bold italic text-primary">Overview.</span></h1>
+          </div>
+          <div class="flex gap-2">
+             ${['week', 'month', 'quarter'].map(s => {
+                 const labels = { week: 'Past Week', month: 'Past Month', quarter: 'Past Quarter' };
+                 const active = analyticsScale === s;
+                 return `<button class="analytics-scale-btn px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${active ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-scale="${s}">${labels[s]}</button>`;
+             }).join('')}
+          </div>
+        </div>
+        <div id="project-analytics-container" class="w-full bg-card/10 rounded-xl border border-white/5 overflow-hidden flex flex-col h-[500px]"></div>
     </div>
   `;
 
@@ -216,11 +256,28 @@ export async function renderReports() {
         </div>
       `).join('');
     }
+    
+    const analyticsContainer = container.querySelector('#project-analytics-container');
+    if (analyticsContainer) {
+        PlannerAnalytics.render(analyticsContainer, plannerData, analyticsConfig, today, selectedProject ? [selectedProject] : []);
+    }
   }, 100);
 
   container.addEventListener('click', async (e) => {
     const dayBtn = e.target.closest('.day-select-btn');
-    if (dayBtn) { dailyReportDate = dayBtn.dataset.date; refreshView(); }
+    if (dayBtn) { 
+        dailyReportDate = dayBtn.dataset.date; 
+        localStorage.setItem('timeshark_reports_daily_date', dailyReportDate);
+        refreshView(); 
+    }
+    
+    const scaleBtn = e.target.closest('.analytics-scale-btn');
+    if (scaleBtn) { 
+        analyticsScale = scaleBtn.dataset.scale; 
+        localStorage.setItem('timeshark_reports_analytics_scale', analyticsScale);
+        refreshView(); 
+    }
+
     if (e.target.closest('#prev-page') && currentPage > 1) { currentPage--; refreshView(); }
     if (e.target.closest('#next-page') && currentPage < totalPages) { currentPage++; refreshView(); }
     const deleteBtn = e.target.closest('.delete-btn');
@@ -236,7 +293,11 @@ export async function renderReports() {
     }
   });
 
-  container.querySelector('#daily-date-picker').onchange = (e) => { dailyReportDate = e.target.value; refreshView(); };
+  container.querySelector('#daily-date-picker').onchange = (e) => { 
+      dailyReportDate = e.target.value; 
+      localStorage.setItem('timeshark_reports_daily_date', dailyReportDate);
+      refreshView(); 
+  };
 
 
   async function refreshView() {

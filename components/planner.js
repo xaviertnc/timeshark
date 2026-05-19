@@ -25,6 +25,9 @@ let showSpans = true;
 let currentView = localStorage.getItem('timeshark_planner_view') || 'timeline'; // 'timeline', 'kanban', 'heatmap', 'analytics'
 let subtleEpics = localStorage.getItem(`timeshark_planner_subtle_epics_${currentScale}`) === 'true';
 let showEpics = localStorage.getItem(`timeshark_planner_show_epics_${currentScale}`) !== 'false';
+let showTimeEntries = localStorage.getItem(`timeshark_planner_show_time_entries_${currentScale}`) !== 'false';
+let showTasks = localStorage.getItem(`timeshark_planner_show_tasks_${currentScale}`) !== 'false';
+let showOps = localStorage.getItem(`timeshark_planner_show_ops_${currentScale}`) !== 'false';
 
 
 export async function renderPlanner() {
@@ -62,8 +65,8 @@ export async function renderPlanner() {
 
             <div class="flex items-center gap-3 flex-wrap">
                 <div id="view-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
-                    ${['timeline', 'kanban', 'heatmap', 'analytics'].map(v => {
-                        const labels = { timeline: 'Roadmap', kanban: 'Board', heatmap: 'Workload', analytics: 'Analytics' };
+                    ${['timeline', 'kanban', 'heatmap'].map(v => {
+                        const labels = { timeline: 'Roadmap', kanban: 'Kanban', heatmap: 'Workload' };
                         return `<button class="view-toggle px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-view="${v}">${labels[v]}</button>`;
                     }).join('')}
                 </div>
@@ -96,6 +99,30 @@ export async function renderPlanner() {
                         <div class="relative w-7 h-4 bg-black/20 rounded-full border border-white/10 transition-colors">
                             <input type="checkbox" id="subtle-epics-toggle" class="sr-only" ${subtleEpics ? 'checked' : ''}>
                             <div class="absolute left-1 top-[1px] w-3 h-3 rounded-full transition-all ${subtleEpics ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        </div>
+                    </label>
+                    <div class="w-px h-4 bg-white/10 ml-2 mr-2"></div>
+                    <label class="flex items-center gap-2 cursor-pointer group mb-0">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5">Logs</span>
+                        <div class="relative w-7 h-4 bg-black/20 rounded-full border border-white/10 transition-colors">
+                            <input type="checkbox" id="show-time-toggle" class="sr-only" ${showTimeEntries ? 'checked' : ''}>
+                            <div class="absolute left-1 top-[1px] w-3 h-3 rounded-full transition-all ${showTimeEntries ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        </div>
+                    </label>
+                    <div class="w-px h-4 bg-white/10 mx-2"></div>
+                    <label class="flex items-center gap-2 cursor-pointer group mb-0">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5">Tasks</span>
+                        <div class="relative w-7 h-4 bg-black/20 rounded-full border border-white/10 transition-colors">
+                            <input type="checkbox" id="show-tasks-toggle" class="sr-only" ${showTasks ? 'checked' : ''}>
+                            <div class="absolute left-1 top-[1px] w-3 h-3 rounded-full transition-all ${showTasks ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        </div>
+                    </label>
+                    <div class="w-px h-4 bg-white/10 mx-2"></div>
+                    <label class="flex items-center gap-2 cursor-pointer group mb-0">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5">OPS</span>
+                        <div class="relative w-7 h-4 bg-black/20 rounded-full border border-white/10 transition-colors">
+                            <input type="checkbox" id="show-ops-toggle" class="sr-only" ${showOps ? 'checked' : ''}>
+                            <div class="absolute left-1 top-[1px] w-3 h-3 rounded-full transition-all ${showOps ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                         </div>
                     </label>
                 </div>
@@ -198,6 +225,45 @@ export async function renderPlanner() {
             }
         }
 
+        const showTimeToggleInput = container.querySelector('#show-time-toggle');
+        if (showTimeToggleInput) {
+            showTimeToggleInput.checked = showTimeEntries;
+            const knob = showTimeToggleInput.nextElementSibling;
+            if (showTimeEntries) {
+                knob.classList.add('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.remove('bg-dim');
+            } else {
+                knob.classList.remove('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.add('bg-dim');
+            }
+        }
+
+        const showTasksToggleInput = container.querySelector('#show-tasks-toggle');
+        if (showTasksToggleInput) {
+            showTasksToggleInput.checked = showTasks;
+            const knob = showTasksToggleInput.nextElementSibling;
+            if (showTasks) {
+                knob.classList.add('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.remove('bg-dim');
+            } else {
+                knob.classList.remove('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.add('bg-dim');
+            }
+        }
+
+        const showOpsToggleInput = container.querySelector('#show-ops-toggle');
+        if (showOpsToggleInput) {
+            showOpsToggleInput.checked = showOps;
+            const knob = showOpsToggleInput.nextElementSibling;
+            if (showOps) {
+                knob.classList.add('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.remove('bg-dim');
+            } else {
+                knob.classList.remove('translate-x-3', 'bg-primary', 'shadow-[0_0_8px_rgba(51,138,129,0.5)]');
+                knob.classList.add('bg-dim');
+            }
+        }
+
         container.querySelectorAll('.scale-toggle').forEach(btn => {
             const active = btn.dataset.scale === currentScale;
             btn.classList.toggle('bg-card', active);
@@ -218,13 +284,11 @@ export async function renderPlanner() {
         // Render Views
         const timelineContainer = container.querySelector('#planner-timeline-container');
         if (currentView === 'timeline') {
-            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics, showEpics });
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics, showEpics, showTimeEntries, showTasks, showOps });
         } else if (currentView === 'kanban') {
             PlannerKanban.render(timelineContainer, data, config, today, projectFilter, { refresh });
         } else if (currentView === 'heatmap') {
             PlannerHeatmap.render(timelineContainer, data, config, today, currentScale);
-        } else if (currentView === 'analytics') {
-            PlannerAnalytics.render(timelineContainer, data, config, today, projectFilter);
         }
     };
 
@@ -300,6 +364,9 @@ export async function renderPlanner() {
             currentZoom = localStorage.getItem(`timeshark_planner_zoom_${currentScale}`) || 'regular';
             subtleEpics = localStorage.getItem(`timeshark_planner_subtle_epics_${currentScale}`) === 'true';
             showEpics = localStorage.getItem(`timeshark_planner_show_epics_${currentScale}`) !== 'false';
+            showTimeEntries = localStorage.getItem(`timeshark_planner_show_time_entries_${currentScale}`) !== 'false';
+            showTasks = localStorage.getItem(`timeshark_planner_show_tasks_${currentScale}`) !== 'false';
+            showOps = localStorage.getItem(`timeshark_planner_show_ops_${currentScale}`) !== 'false';
             timeOffset = 0; 
             updateUI(); 
             return; 
@@ -333,6 +400,21 @@ export async function renderPlanner() {
             localStorage.setItem(`timeshark_planner_show_epics_${currentScale}`, showEpics);
             updateUI();
         }
+        if (e.target.id === 'show-time-toggle') {
+            showTimeEntries = e.target.checked;
+            localStorage.setItem(`timeshark_planner_show_time_entries_${currentScale}`, showTimeEntries);
+            updateUI();
+        }
+        if (e.target.id === 'show-tasks-toggle') {
+            showTasks = e.target.checked;
+            localStorage.setItem(`timeshark_planner_show_tasks_${currentScale}`, showTasks);
+            updateUI();
+        }
+        if (e.target.id === 'show-ops-toggle') {
+            showOps = e.target.checked;
+            localStorage.setItem(`timeshark_planner_show_ops_${currentScale}`, showOps);
+            updateUI();
+        }
     });
 
     // Resize Observer for basic cleanup
@@ -344,13 +426,11 @@ export async function renderPlanner() {
         if (!timelineContainer) return;
 
         if (currentView === 'timeline') {
-            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics, showEpics });
+            PlannerTimeline.render(timelineContainer, data, config, today, currentZoom, handleLaneReorder, { subtleEpics, showEpics, showTimeEntries, showTasks, showOps });
         } else if (currentView === 'kanban') {
             PlannerKanban.render(timelineContainer, data, config, today, projectFilter, { refresh });
         } else if (currentView === 'heatmap') {
             PlannerHeatmap.render(timelineContainer, data, config, today, currentScale);
-        } else if (currentView === 'analytics') {
-            PlannerAnalytics.render(timelineContainer, data, config, today, projectFilter);
         }
     });
     const timelineContainer = container.querySelector('#planner-timeline-container');
