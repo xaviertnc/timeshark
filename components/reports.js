@@ -127,63 +127,7 @@ export async function renderReports() {
           <div class="h-64"><canvas id="daily-stacked-bar"></canvas></div>
         </div>
 
-        <div class="space-y-6 pt-8">
-          <div class="flex items-center justify-between px-2">
-            <h3 class="text-[10px] font-black text-dim uppercase tracking-[0.4em]">Time History</h3>
-            <div class="flex items-center gap-3">
-              <select id="filter-project" class="bg-card border border-soft rounded-lg py-1.5 px-3 text-[9px] font-black text-dim uppercase tracking-widest appearance-none cursor-pointer focus:ring-2 focus:ring-primary/20">
-                <option value="">All Projects</option>
-                ${projects.filter(p => !p.hide_from_gantt || selectedProject == p.id).map(p => `<option value="${p.id}" ${selectedProject === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-              </select>
-              ${totalPages > 1 ? `
-                <div class="flex items-center gap-1 bg-card rounded-lg p-0.5 border border-soft">
-                  <button id="prev-page" ${currentPage === 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-app transition-colors disabled:opacity-20"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg></button>
-                  <span class="text-[9px] font-black text-dim px-2">${currentPage}/${totalPages}</span>
-                  <button id="next-page" ${currentPage === totalPages ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-app transition-colors disabled:opacity-20"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></button>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-          <div class="space-y-10">
-            ${paginatedDays.map(dayKey => {
-    const group = grouped[dayKey];
-    return `
-                <div class="space-y-3">
-                  <div class="flex items-center justify-between px-2 opacity-40">
-                    <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${group.date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                    <div class="text-[9px] font-black text-dim uppercase tracking-[0.2em]">${formatDuration(group.total)}</div>
-                  </div>
-                  <div class="space-y-2">
-                    ${group.entries.map(e => {
-      const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
-      return `
-                        <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-soft hover:border-primary/30 transition-all group/row flex items-center justify-between">
-                          <div class="flex items-center gap-4 flex-1 min-w-0">
-                            <div class="w-1 h-8 rounded-full" style="background-color: ${proj.color}"></div>
-                            <div class="min-w-0">
-                              <h4 class="text-sm font-bold text-main truncate">${e.description || 'No description'}</h4>
-                              <p class="text-[10px] font-bold text-dim uppercase tracking-wider">${proj.name}</p>
-                            </div>
-                          </div>
-                          <div class="flex items-center gap-6">
-                            <div class="text-right tabular-nums">
-                              <div class="text-[10px] font-black text-dim uppercase tracking-widest opacity-30">${formatTime(e.start_time)} – ${formatTime(e.end_time)}</div>
-                              <div class="text-sm font-black text-main">${formatDuration((new Date(e.end_time) - new Date(e.start_time)) / 1000)}</div>
-                            </div>
-                            <div class="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
-                              <button class="edit-btn p-1.5 text-dim hover:text-primary transition-colors" data-id="${e.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                              <button class="delete-btn p-1.5 text-dim hover:text-red-400 transition-colors" data-id="${e.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                            </div>
-                          </div>
-                        </div>
-                      `;
-    }).join('')}
-                  </div>
-                </div>
-              `;
-  }).join('')}
-          </div>
-        </div>
+
       </div>
 
       <div class="lg:w-[320px] space-y-8 flex-shrink-0">
@@ -214,7 +158,7 @@ export async function renderReports() {
           labels: Array.from({ length: 1440 }, (_, i) => `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`),
           datasets: [{ label: 'Time Logged', data: cumulativePoints, borderColor: '#338a81', backgroundColor: 'rgba(51, 138, 129, 0.1)', borderWidth: 3, fill: true, pointRadius: 0, tension: 0.2 }, { label: 'Target (8h)', data: Array(1440).fill(480), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], fill: false, pointRadius: 0 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i / 60}:00` : '' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v) => `${(v / 60).toFixed(0)}h` } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i / 60}:00` : '' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, ticks: { font: { size: 9 }, color: '#64748b', stepSize: 60, callback: (v) => `${(v / 60).toFixed(0)}h` } } } }
       });
     }
 
@@ -234,7 +178,33 @@ export async function renderReports() {
       new Chart(dailyPieCtx, {
         type: 'doughnut',
         data: { labels: pieData.map(d => d.name), datasets: [{ data: pieData.map(d => d.total / 60), backgroundColor: pieData.map(d => d.color), borderWidth: 0, cutout: '80%' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+        plugins: [{
+          id: 'percentLabels',
+          afterDatasetsDraw(chart) {
+            const { ctx, data } = chart;
+            ctx.save();
+            const meta = chart.getDatasetMeta(0);
+            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+            if (total === 0) return;
+            meta.data.forEach((arc, i) => {
+              const val = data.datasets[0].data[i];
+              if (val === 0) return;
+              const percent = Math.round((val / total) * 100);
+              if (percent < 5) return;
+              
+              const centerPoint = arc.tooltipPosition();
+              ctx.font = '9px sans-serif';
+              ctx.fillStyle = '#ffffff';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.shadowColor = 'rgba(0,0,0,0.8)';
+              ctx.shadowBlur = 3;
+              ctx.fillText(percent + '%', centerPoint.x, centerPoint.y);
+            });
+            ctx.restore();
+          }
+        }]
       });
       container.querySelector('#daily-pie-legend').innerHTML = pieData.map(d => `
         <div class="flex items-center justify-between text-[10px] font-bold">
@@ -267,7 +237,7 @@ export async function renderReports() {
   });
 
   container.querySelector('#daily-date-picker').onchange = (e) => { dailyReportDate = e.target.value; refreshView(); };
-  container.querySelector('#filter-project').onchange = (e) => { selectedProject = e.target.value; currentPage = 1; refreshView(); };
+
 
   async function refreshView() {
     const app = document.getElementById('app');
