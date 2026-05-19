@@ -62,18 +62,18 @@ export class TaskModal {
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Status</label>
                                 <select name="status" class="w-full zen-input bg-highlight border border-subtle text-main cursor-pointer appearance-none outline-none">
-                                    <option value="todo" ${task?.status === 'todo' ? 'selected' : ''}>Todo</option>
-                                    <option value="in-progress" ${task?.status === 'in-progress' ? 'selected' : ''}>In-Progress</option>
-                                    <option value="done" ${task?.status === 'done' ? 'selected' : ''}>Done</option>
-                                    <option value="backlog" ${task?.status === 'backlog' ? 'selected' : ''}>Backlog</option>
+                                    <option value="todo" ${(!task && defaults.status === 'todo') || task?.status === 'todo' ? 'selected' : ''}>Todo</option>
+                                    <option value="in-progress" ${(!task && (defaults.status === 'in-progress' || defaults.status === 'doing')) || task?.status === 'in-progress' ? 'selected' : ''}>In-Progress</option>
+                                    <option value="done" ${(!task && defaults.status === 'done') || task?.status === 'done' ? 'selected' : ''}>Done</option>
+                                    <option value="backlog" ${(!task && defaults.status === 'backlog') || task?.status === 'backlog' ? 'selected' : ''}>Backlog</option>
                                 </select>
                             </div>
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Priority</label>
                                 <select name="priority" class="w-full zen-input bg-highlight border border-subtle text-main cursor-pointer appearance-none outline-none">
-                                    <option value="low" ${task?.priority === 'low' ? 'selected' : ''}>🟢 Low</option>
-                                    <option value="medium" ${task?.priority === 'medium' ? 'selected' : ''}>🟡 Medium</option>
-                                    <option value="high" ${task?.priority === 'high' ? 'selected' : ''}>🔴 High</option>
+                                    <option value="low" ${(!task && (!defaults.priority || defaults.priority === 'low')) || task?.priority === 'low' ? 'selected' : ''}>🟢 Low</option>
+                                    <option value="medium" ${(!task && defaults.priority === 'medium') || task?.priority === 'medium' ? 'selected' : ''}>🟡 Medium</option>
+                                    <option value="high" ${(!task && defaults.priority === 'high') || task?.priority === 'high' ? 'selected' : ''}>🔴 High</option>
                                 </select>
                             </div>
                         </div>
@@ -99,13 +99,13 @@ export class TaskModal {
                             <div class="flex items-center justify-between">
                                 <span class="text-[10px] font-black text-dim uppercase tracking-widest">Schedule</span>
                                 <label class="inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="toggle-dates" class="sr-only peer" ${(task?.status && task.status !== 'backlog') || !task ? 'checked' : ''}>
+                                    <input type="checkbox" id="toggle-dates" class="sr-only peer" ${(task && task.status !== 'backlog') || (!task && defaults.status !== 'backlog') ? 'checked' : ''}>
                                     <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary relative"></div>
                                     <span class="ml-2 text-[10px] font-bold text-dim">Active</span>
                                 </label>
                             </div>
 
-                            <div id="date-fields" class="${(task?.status && task.status !== 'backlog') || !task ? 'grid' : 'hidden'} grid-cols-2 gap-4 transition-all">
+                            <div id="date-fields" class="${(task && task.status !== 'backlog') || (!task && defaults.status !== 'backlog') ? 'grid' : 'hidden'} grid-cols-2 gap-4 transition-all">
                                 <!-- Start -->
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Start</label>

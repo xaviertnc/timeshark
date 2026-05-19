@@ -22,7 +22,7 @@ let currentZoom = localStorage.getItem(`timeshark_planner_zoom_${currentScale}`)
 let timeOffset = 0;           // 0 = today/start, +/- to move
 let projectFilter = [];       // empty is global
 let showSpans = true;
-let currentView = 'timeline'; // 'timeline', 'kanban', 'heatmap', 'analytics'
+let currentView = localStorage.getItem('timeshark_planner_view') || 'timeline'; // 'timeline', 'kanban', 'heatmap', 'analytics'
 let subtleEpics = localStorage.getItem(`timeshark_planner_subtle_epics_${currentScale}`) === 'true';
 let showEpics = localStorage.getItem(`timeshark_planner_show_epics_${currentScale}`) !== 'false';
 
@@ -314,7 +314,12 @@ export async function renderPlanner() {
         }
 
         const viewBtn = e.target.closest('.view-toggle');
-        if (viewBtn) { currentView = viewBtn.dataset.view; updateUI(); return; }
+        if (viewBtn) { 
+            currentView = viewBtn.dataset.view; 
+            localStorage.setItem('timeshark_planner_view', currentView);
+            updateUI(); 
+            return; 
+        }
     });
 
     container.addEventListener('change', (e) => {

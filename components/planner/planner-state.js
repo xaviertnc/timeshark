@@ -17,6 +17,21 @@ export const PlannerState = {
                 api.get('time-entries.php'),
                 api.get('projects.php')
             ]);
+            
+            // Sort projects: OPS last, Unassigned very last
+            projects.sort((a, b) => {
+                const aUnassigned = a.name === 'Unassigned';
+                const bUnassigned = b.name === 'Unassigned';
+                if (aUnassigned && !bUnassigned) return 1;
+                if (!aUnassigned && bUnassigned) return -1;
+
+                const aOps = a.type === 'OPS' || a.category === 'OPS';
+                const bOps = b.type === 'OPS' || b.category === 'OPS';
+                if (aOps && !bOps) return 1;
+                if (!aOps && bOps) return -1;
+
+                return 0; // preserve original API ordering for others
+            });
 
             store.update('tasks', tasks);
             store.update('timeEntries', timeEntries);
