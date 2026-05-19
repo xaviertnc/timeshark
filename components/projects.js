@@ -39,6 +39,7 @@ let groupByOrg = false;
 let groupByTag = false;
 let groupByLead = false;
 let collapseEpics = false;
+let hideNotes = false;
 let tagFilter = '';
 let leadFilter = '';
 let devFilter = '';
@@ -99,8 +100,10 @@ export async function renderProjects() {
           valB = (b.status || 'Active').toLowerCase();
           break;
         case 'priority':
-          valA = parseInt(a.priority) || 10;
-          valB = parseInt(b.priority) || 10;
+          valA = parseFloat(a.priority);
+          valB = parseFloat(b.priority);
+          if (isNaN(valA)) valA = 10;
+          if (isNaN(valB)) valB = 10;
           break;
         case 'lead':
           valA = (team.find(t => t.id == a.lead_id)?.name || 'No Lead').toLowerCase();
@@ -115,8 +118,10 @@ export async function renderProjects() {
           valB = (customers.find(c => c.id == b.customer_id)?.name || 'Individual').toLowerCase();
           break;
         case 'progress':
-          valA = a._progress;
-          valB = b._progress;
+          valA = parseFloat(a._progress);
+          valB = parseFloat(b._progress);
+          if (isNaN(valA)) valA = 0;
+          if (isNaN(valB)) valB = 0;
           break;
         case 'list_order':
           valA = a.list_order ?? 0;
@@ -153,8 +158,8 @@ export async function renderProjects() {
     </div>
 
     <!-- Toolbar -->
-    <div class="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6 px-2">
-        <div class="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6 px-2">
+        <div class="flex flex-wrap items-center gap-4 w-full xl:w-auto">
             <div class="relative w-full sm:w-80 group">
                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-dim/30 group-focus-within:text-primary/50 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -227,6 +232,13 @@ export async function renderProjects() {
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
                     <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''}>
                     <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                </div>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Hide Notes</span>
+                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                    <input type="checkbox" id="hide-notes" class="sr-only" ${hideNotes ? 'checked' : ''}>
+                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${hideNotes ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
         </div>
@@ -315,28 +327,19 @@ export async function renderProjects() {
     }
 
     if (!groupByOrg && !groupByTag && !groupByLead) {
-      // Group by Epic hierarchically
-      const epics = items.filter(p => p.type === 'epic');
-      const standalone = items.filter(p => p.type !== 'epic' && !p.parent_id);
+      // Find all top-level items (no parent, or parent isn't in the current filtered list)
+      const topLevelItems = items.filter(p => !p.parent_id || !items.find(parent => parent.id == p.parent_id));
 
       let rowsHtml = '';
 
-      epics.forEach(epic => {
-        rowsHtml += renderProjectRow(epic, customers, team, false);
-        const children = items.filter(p => p.parent_id == epic.id);
+      topLevelItems.forEach(topLevel => {
+        rowsHtml += renderProjectRow(topLevel, customers, team, false);
+        
+        // Render children immediately under their parent
+        const children = items.filter(p => p.parent_id == topLevel.id);
         children.forEach(child => {
           rowsHtml += renderProjectRow(child, customers, team, true);
         });
-      });
-
-      standalone.forEach(p => {
-        rowsHtml += renderProjectRow(p, customers, team, false);
-      });
-
-      // Orphaned children (parent filtered out or missing)
-      const orphaned = items.filter(p => p.type !== 'epic' && p.parent_id && !epics.find(e => e.id == p.parent_id));
-      orphaned.forEach(p => {
-        rowsHtml += renderProjectRow(p, customers, team, false);
       });
 
       return rowsHtml;
@@ -492,7 +495,7 @@ export async function renderProjects() {
                     <span class="text-dim/50 text-[10px] font-black">/</span>
                     <span class="text-[9px] font-bold text-dim uppercase tracking-widest truncate max-w-[100px]">${org ? org.name : 'Individual'}</span>
                 </div>
-                ${p.notes ? `
+                ${(p.notes && !hideNotes) ? `
                 <div class="flex items-center gap-1.5 flex-1 min-w-0 max-w-full" title="${p.notes.replace(/"/g, '&quot;')}">
                     <svg class="w-3 h-3 md:w-3.5 md:h-3.5 text-dim/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
                     <span class="text-[9px] md:text-[11px] font-medium text-dim/70 truncate">${p.notes.split(/\r?\n/)[0].trim()}</span>
@@ -641,6 +644,14 @@ export async function renderProjects() {
   if (container.querySelector('#collapse-epics')) {
     container.querySelector('#collapse-epics').onchange = (e) => {
       collapseEpics = e.target.checked;
+      refreshView();
+    };
+  }
+
+  // Hide Notes Toggle
+  if (container.querySelector('#hide-notes')) {
+    container.querySelector('#hide-notes').onchange = (e) => {
+      hideNotes = e.target.checked;
       refreshView();
     };
   }
