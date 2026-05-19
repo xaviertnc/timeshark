@@ -51,7 +51,29 @@ export class ProjectModal {
                                         <input type="text" name="name" required value="${project ? project.name : ''}" placeholder="Launch Campaign" class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold placeholder:opacity-30 text-sm outline-none">
                                     </div>
 
-                                    <!-- Row 2: Org, Lead, Status -->
+                                    <!-- Row 2: Progress, Priority, Visibility -->
+                                    <div class="space-y-1.5" id="project-progress-container">
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Progress</label>
+                                        <div class="flex items-center gap-3 bg-app rounded-xl py-[11px] px-4">
+                                            <input type="range" name="progress" min="0" max="100" value="${project ? project.progress || 0 : 0}" id="project-progress-slider" class="flex-1 h-1.5 bg-card rounded-lg appearance-none cursor-pointer accent-primary shadow-inner">
+                                            <span id="project-progress-val" class="text-[10px] font-black text-primary tabular-nums shrink-0 w-8 text-right">${project ? project.progress || 0 : 0}%</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Priority</label>
+                                        <input type="number" min="1" max="99" name="priority" value="${project && project.priority !== undefined ? project.priority : 10}" class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold text-sm outline-none">
+                                    </div>
+
+                                    <div class="space-y-1.5">
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1" title="Hide from Planner & global reports">Visibility</label>
+                                        <label class="flex items-center justify-between gap-3 bg-app rounded-xl py-[9px] px-4 cursor-pointer hover:bg-app/80 transition-colors">
+                                            <span class="text-[10px] font-black text-main uppercase tracking-[0.2em] truncate">Hide Project</span>
+                                            <input type="checkbox" name="hide_from_gantt" class="w-4 h-4 rounded border-soft bg-card text-primary focus:ring-primary/20" ${project && project.hide_from_gantt ? 'checked' : ''}>
+                                        </label>
+                                    </div>
+
+                                    <!-- Row 3: Org, Client Contact, Project Lead -->
                                     <div class="space-y-1.5">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Organization</label>
                                         <div class="relative group">
@@ -90,6 +112,7 @@ export class ProjectModal {
                                         </div>
                                     </div>
                                     
+                                    <!-- Row 4: Project Dev, Status, Type -->
                                     <div class="space-y-1.5">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Project Dev</label>
                                         <div class="relative group">
@@ -103,11 +126,6 @@ export class ProjectModal {
                                         </div>
                                     </div>
                                     
-                                    <div class="space-y-1.5">
-                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Priority</label>
-                                        <input type="number" min="1" max="99" name="priority" value="${project && project.priority !== undefined ? project.priority : 10}" class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold text-sm outline-none">
-                                    </div>
-
                                     <div class="space-y-1.5">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Status</label>
                                         <div class="relative group">
@@ -123,7 +141,6 @@ export class ProjectModal {
                                         </div>
                                     </div>
 
-                                    <!-- Row 3: Type, Epic, Dates -->
                                     <div class="space-y-1.5">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Type</label>
                                         <div class="relative group">
@@ -138,6 +155,7 @@ export class ProjectModal {
                                         </div>
                                     </div>
 
+                                    <!-- Row 5: Parent Epic, Start Date, Deadline -->
                                     <div class="space-y-1.5" id="parent-epic-container">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Parent Epic</label>
                                         <div class="relative group">
@@ -161,30 +179,10 @@ export class ProjectModal {
                                         <input type="date" name="completed_at" value="${project && project.completed_at ? project.completed_at.split('T')[0] : ''}" class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold text-sm outline-none">
                                     </div>
 
-                                    <!-- Progress (Compact) -->
-                                    <div class="space-y-1.5 md:col-span-3 mt-1" id="project-progress-container">
-                                        <div class="flex items-center gap-4 bg-app rounded-xl py-2.5 px-4">
-                                            <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] whitespace-nowrap">Progress</label>
-                                            <input type="range" name="progress" min="0" max="100" value="${project ? project.progress || 0 : 0}" id="project-progress-slider" class="flex-1 h-1.5 bg-card rounded-lg appearance-none cursor-pointer accent-primary shadow-inner">
-                                            <span id="project-progress-val" class="text-xs font-black text-primary tabular-nums w-8 text-right">${project ? project.progress || 0 : 0}%</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Hide from Gantt Toggle -->
-                                    <div class="space-y-1.5 md:col-span-3 mt-0.5">
-                                        <label class="flex items-center gap-3 bg-app rounded-xl py-2.5 px-4 cursor-pointer hover:bg-app/80 transition-colors">
-                                            <input type="checkbox" name="hide_from_gantt" class="w-4 h-4 rounded border-soft bg-card text-primary focus:ring-primary/20" ${project && project.hide_from_gantt ? 'checked' : ''}>
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] font-black text-main uppercase tracking-[0.2em]">Hide from Planner & Reports</span>
-                                                <span class="text-[8px] font-medium text-dim/60 uppercase tracking-widest mt-0.5">Keeps project active but removes it from global audience views.</span>
-                                            </div>
-                                        </label>
-                                    </div>
-
                                     <!-- Notes -->
                                     <div class="space-y-1.5 md:col-span-3">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Notes</label>
-                                        <textarea name="notes" rows="2" placeholder="Project notes and details..." class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold placeholder:opacity-30 text-sm outline-none resize-y">${project && project.notes ? project.notes : ''}</textarea>
+                                        <textarea name="notes" rows="1" placeholder="Project notes and details..." class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold placeholder:opacity-30 text-sm outline-none resize-y">${project && project.notes ? project.notes : ''}</textarea>
                                     </div>
                                     
                                     <!-- Tags -->

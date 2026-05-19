@@ -241,32 +241,27 @@ export async function renderProjects() {
                 <th class="py-2.5 px-4 w-12 text-center border-r border-white/5">
                     <input type="checkbox" id="select-all-projects" class="cursor-pointer accent-primary w-3.5 h-3.5" ${filtered.length > 0 && selectedProjectIds.size === filtered.length ? 'checked' : ''}>
                 </th>
-                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-12 text-center" data-sort="list_order">
-                    <div class="flex items-center justify-center gap-1"># ${renderSortIcon('list_order')}</div>
+                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-full min-w-[200px]" data-sort="name">
+                    <div class="flex items-center gap-2">Project ${renderSortIcon('name')}</div>
                 </th>
                 <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-12 text-center" data-sort="priority">
                     <div class="flex items-center justify-center gap-1" title="Priority">PRI ${renderSortIcon('priority')}</div>
                 </th>
-                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/4" data-sort="name">
-                    <div class="flex items-center gap-2">Project ${renderSortIcon('name')}</div>
-                </th>
-                <th class="hidden sm:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="status">
-                    <div class="flex items-center gap-2">Status ${renderSortIcon('status')}</div>
-                </th>
-                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="lead">
+                <th class="hidden xl:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-20" data-sort="lead">
                     <div class="flex items-center gap-2">Lead ${renderSortIcon('lead')}</div>
                 </th>
-                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-24" data-sort="dev">
+                <th class="hidden xl:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-20" data-sort="dev">
                     <div class="flex items-center gap-2">Dev ${renderSortIcon('dev')}</div>
                 </th>
-                <th class="hidden md:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-1/5" data-sort="customer">
-                    <div class="flex items-center gap-2">Organization ${renderSortIcon('customer')}</div>
+                <th class="hidden xl:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-32" data-sort="customer">
+                    <div class="flex items-center gap-2">Org ${renderSortIcon('customer')}</div>
                 </th>
-                <th class="hidden xl:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest w-1/5">
-                    Description
+
+                <th class="py-2.5 px-2 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-20 text-center" data-sort="status">
+                    <div class="flex items-center justify-center gap-1">Status ${renderSortIcon('status')}</div>
                 </th>
-                <th class="hidden lg:table-cell py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-40" data-sort="progress">
-                    <div class="flex items-center gap-2">Progress ${renderSortIcon('progress')}</div>
+                <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest cursor-pointer group hover:text-primary transition-colors w-16 xl:w-32 text-right xl:text-left" data-sort="progress">
+                    <div class="flex items-center justify-end xl:justify-start gap-2"><span class="hidden xl:inline">Progress</span> <span class="xl:hidden">%</span> ${renderSortIcon('progress')}</div>
                 </th>
                 <th class="py-2.5 px-4 text-[9px] font-black text-dim uppercase tracking-widest w-24 text-right">Actions</th>
             </tr>
@@ -474,25 +469,40 @@ export async function renderProjects() {
         <td class="px-4 py-2 text-center border-r border-white/5 project-checkbox-td">
             <input type="checkbox" class="project-checkbox cursor-pointer accent-primary w-3.5 h-3.5" value="${p.id}" ${selectedProjectIds.has(String(p.id)) ? 'checked' : ''}>
         </td>
-        <td class="px-4 py-2 text-center">
-             <div class="w-2 h-2 rounded-full mx-auto shadow-sm" style="background-color: ${pColor}"></div>
-        </td>
-        <td class="px-4 py-2 text-center text-dim/60 font-black text-[10px] tabular-nums">
-             ${priority}
-        </td>
         <td class="px-4 py-2 ${isChild ? 'pl-8' : ''}">
             <div class="flex items-center gap-2">
                 ${isChild ? '<div class="w-3 h-3 border-l-2 border-b-2 border-dim/40 rounded-bl-sm mb-1 ml-1 shrink-0"></div>' : ''}
+                <div class="w-2 h-2 rounded-full shadow-sm shrink-0" style="background-color: ${pColor}"></div>
                 ${typeBadge}
                 <span class="${isChild ? 'font-semibold text-main/80 text-xs' : 'font-bold text-main text-sm'} tracking-tight group-hover/row:text-primary transition-colors truncate block" title="${p.name}">${p.name}</span>
             </div>
             ${tagsHtml}
+            <div class="flex flex-wrap items-center gap-3 mt-1.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
+                ${leadMember ? `
+                <div class="flex items-center gap-1.5 xl:hidden" title="Lead: ${leadMember.name}">
+                    <div class="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[7px] font-black text-primary border border-primary/30 uppercase shrink-0">${leadMember.initials || leadMember.name.substring(0, 2)}</div>
+                    <span class="text-[9px] font-bold text-dim uppercase tracking-widest">${leadMember.name}</span>
+                </div>` : ''}
+                ${devMember ? `
+                <div class="flex items-center gap-1.5 xl:hidden" title="Dev: ${devMember.name}">
+                    <div class="w-3.5 h-3.5 rounded-full bg-blue-500/20 flex items-center justify-center text-[7px] font-black text-blue-400 border border-blue-500/30 uppercase shrink-0">${devMember.initials || devMember.name.substring(0, 2)}</div>
+                    <span class="text-[9px] font-bold text-dim uppercase tracking-widest">${devMember.name}</span>
+                </div>` : ''}
+                <div class="flex items-center gap-1 xl:hidden" title="Org: ${org ? org.name : 'Individual'}">
+                    <span class="text-dim/50 text-[10px] font-black">/</span>
+                    <span class="text-[9px] font-bold text-dim uppercase tracking-widest truncate max-w-[100px]">${org ? org.name : 'Individual'}</span>
+                </div>
+                ${p.notes ? `
+                <div class="flex items-center gap-1.5 flex-1 min-w-0 max-w-full" title="${p.notes.replace(/"/g, '&quot;')}">
+                    <svg class="w-3 h-3 md:w-3.5 md:h-3.5 text-dim/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                    <span class="text-[9px] md:text-[11px] font-medium text-dim/70 truncate">${p.notes.split(/\r?\n/)[0].trim()}</span>
+                </div>` : ''}
+            </div>
         </td>
-        <td class="hidden sm:table-cell px-4 py-2">
-            <span class="text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border" 
-                  style="background-color: ${applyAlpha(pColor, 0.08)}; border-color: ${applyAlpha(pColor, 0.15)}; color: ${pColor}">${p.status || 'Active'}</span>
+        <td class="px-4 py-2 text-center text-dim/60 font-black text-[10px] tabular-nums">
+             ${priority}
         </td>
-        <td class="hidden md:table-cell px-4 py-2">
+        <td class="hidden xl:table-cell px-4 py-2">
             <div class="flex items-center gap-2">
                 ${leadMember ? `
                     <div class="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[9px] font-black text-primary border border-primary/30 uppercase shrink-0">
@@ -501,7 +511,7 @@ export async function renderProjects() {
                 ` : ``}
             </div>
         </td>
-        <td class="hidden md:table-cell px-4 py-2">
+        <td class="hidden xl:table-cell px-4 py-2">
             <div class="flex items-center gap-2">
                 ${devMember ? `
                     <div class="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-[9px] font-black text-blue-400 border border-blue-500/30 uppercase shrink-0">
@@ -510,19 +520,21 @@ export async function renderProjects() {
                 ` : ``}
             </div>
         </td>
-        <td class="hidden md:table-cell px-4 py-2">
+        <td class="hidden xl:table-cell px-4 py-2">
             <span class="text-[10px] font-bold text-dim/60 group-hover/row:text-main transition-colors uppercase tracking-widest truncate block" title="${org ? org.name : 'Individual'}">${org ? org.name : 'Individual'}</span>
         </td>
-        <td class="hidden xl:table-cell px-4 py-2 max-w-[200px]">
-            <span class="text-[10px] font-medium text-dim/50 group-hover/row:text-main/80 transition-colors truncate block" title="${p.notes ? p.notes.replace(/"/g, '&quot;') : ''}">${p.notes ? p.notes.replace(/\r?\n|\r/g, ' ') : ''}</span>
+
+        <td class="px-2 py-2 text-center">
+            <span class="text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-1 rounded-md border inline-block w-full truncate" 
+                  style="background-color: ${applyAlpha(pColor, 0.08)}; border-color: ${applyAlpha(pColor, 0.15)}; color: ${pColor}" title="${p.status || 'Active'}">${p.status || 'Active'}</span>
         </td>
-        <td class="hidden lg:table-cell px-4 py-2">
+        <td class="px-4 py-2 text-right xl:text-left">
             ${p.type === 'ops' ? '' : `
-            <div class="flex items-center gap-4">
-                <div class="flex-1 bg-app rounded-full h-1.5 overflow-hidden border border-white/5 shadow-inner">
+            <div class="flex items-center justify-end xl:justify-start gap-3">
+                <div class="hidden xl:block flex-1 bg-app rounded-full h-1.5 overflow-hidden border border-white/5 shadow-inner">
                     <div class="h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]" style="width: ${progress}%; background-color: ${pColor}"></div>
                 </div>
-                <span class="text-[10px] font-black text-main tabular-nums tracking-widest w-8 text-right">${progress}%</span>
+                <span class="text-[10px] font-black text-main tabular-nums tracking-widest shrink-0">${progress}%</span>
             </div>
             `}
         </td>
