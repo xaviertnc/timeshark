@@ -47,7 +47,7 @@ export async function renderPlanner() {
         </div>
 
         <!--Filter Bar-->
-        <div class="flex items-center justify-between px-2 shrink-0 mb-3 gap-2 flex-wrap">
+        <div class="flex items-center justify-between px-2 shrink-0 mb-3 gap-4 flex-wrap">
             <div class="flex items-center gap-3 flex-wrap">
                 <div id="project-filter-container" class="w-[200px] h-7 relative z-10 shrink-0"></div>
                 

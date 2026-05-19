@@ -3,6 +3,7 @@ import { api } from '../utils/api.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { PlannerState } from './planner/planner-state.js';
 import { PlannerAnalytics } from './planner/planner-view-analytics.js';
+import { SearchableSelect } from './searchable-select.js';
 
 /**
  * components/reports.js
@@ -13,7 +14,7 @@ import { PlannerAnalytics } from './planner/planner-view-analytics.js';
 
 let currentPage = 1;
 const DAYS_PER_PAGE = 5;
-let selectedProject = '';
+let projectFilter = [];
 let selectedMember = '';
 let dailyReportDate = localStorage.getItem('timeshark_reports_daily_date') || new Date().toLocaleDateString('en-CA');
 let analyticsScale = localStorage.getItem('timeshark_reports_analytics_scale') || 'month';
@@ -25,10 +26,10 @@ export async function renderReports() {
   const rawEntries = state.timeEntries || [];
   const projects = state.projects || [];
   
-  const hiddenProjectIds = new Set(projects.filter(p => p.hide_from_gantt == 1 && String(p.id) !== selectedProject).map(p => String(p.id)));
+  const hiddenProjectIds = new Set(projects.filter(p => p.hide_from_gantt == 1 && !projectFilter.includes(String(p.id))).map(p => String(p.id)));
   const entries = rawEntries.filter(e => !hiddenProjectIds.has(String(e.project_id)));
   
-  const plannerData = PlannerState.getCombinedData(selectedProject ? [selectedProject] : 'all');
+  const plannerData = PlannerState.getCombinedData(projectFilter.length > 0 ? projectFilter : 'all');
   const today = new Date();
   
   const generateDates = (days) => {
@@ -91,7 +92,7 @@ export async function renderReports() {
 
   const filteredEntries = entries.filter(e => {
     if (!e.end_time) return false;
-    if (selectedProject && String(e.project_id) !== String(selectedProject)) return false;
+    if (projectFilter.length > 0 && !projectFilter.includes(String(e.project_id))) return false;
     if (selectedMember && String(e.resource_id || 'Main') !== String(selectedMember)) return false;
     return true;
   });
@@ -177,12 +178,15 @@ export async function renderReports() {
             <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Project Analytics</h2>
             <h1 class="text-3xl font-light text-main tracking-tight">Delivery <span class="font-bold italic text-primary">Overview.</span></h1>
           </div>
-          <div class="flex gap-2">
-             ${['week', 'month', 'quarter'].map(s => {
-                 const labels = { week: 'Past Week', month: 'Past Month', quarter: 'Past Quarter' };
-                 const active = analyticsScale === s;
-                 return `<button class="analytics-scale-btn px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${active ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-scale="${s}">${labels[s]}</button>`;
-             }).join('')}
+          <div class="flex items-center gap-3">
+             <div id="reports-project-filter-container" class="w-[200px] h-7 relative z-10 shrink-0 mr-2"></div>
+             <div class="flex gap-2">
+                 ${['week', 'month', 'quarter'].map(s => {
+                     const labels = { week: 'Past Week', month: 'Past Month', quarter: 'Past Quarter' };
+                     const active = analyticsScale === s;
+                     return `<button class="analytics-scale-btn px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${active ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-scale="${s}">${labels[s]}</button>`;
+                 }).join('')}
+             </div>
           </div>
         </div>
         <div id="project-analytics-container" class="w-full bg-card/10 rounded-xl border border-white/5 overflow-hidden flex flex-col h-[500px]"></div>
@@ -259,7 +263,24 @@ export async function renderReports() {
     
     const analyticsContainer = container.querySelector('#project-analytics-container');
     if (analyticsContainer) {
-        PlannerAnalytics.render(analyticsContainer, plannerData, analyticsConfig, today, selectedProject ? [selectedProject] : []);
+        PlannerAnalytics.render(analyticsContainer, plannerData, analyticsConfig, today, projectFilter);
+    }
+    
+    const filterContainer = container.querySelector('#reports-project-filter-container');
+    if (filterContainer) {
+        SearchableSelect.render(filterContainer, projects.filter(p => !p.hide_from_gantt), {
+            value: projectFilter,
+            multiple: true,
+            placeholder: 'Global View',
+            allLabel: 'All Projects',
+            size: 'small',
+            clearable: true,
+            alignTarget: '#reports-project-filter-container',
+            onChange: (newVal) => {
+                projectFilter = newVal;
+                refreshView(); 
+            }
+        });
     }
   }, 100);
 
@@ -302,8 +323,15 @@ export async function renderReports() {
 
   async function refreshView() {
     const app = document.getElementById('app');
+    const scrollY = window.scrollY;
+    const appScroll = app.scrollTop;
+
+    const newContent = await renderReports();
     app.innerHTML = '';
-    app.appendChild(await renderReports());
+    app.appendChild(newContent);
+
+    window.scrollTo(0, scrollY);
+    app.scrollTop = appScroll;
   }
 
 

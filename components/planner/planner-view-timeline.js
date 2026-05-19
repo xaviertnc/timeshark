@@ -47,7 +47,9 @@ export const PlannerTimeline = {
         const showText = zoom !== 'compact';
 
         // Static Tree View left width
-        const leftWidth = 320;
+        let leftWidth = 320;
+        if (window.innerWidth < 768) leftWidth = 160;
+        else if (window.innerWidth < 1024) leftWidth = 240;
 
         // Calculate dimensions
         const startTime = config.startDate.getTime();
@@ -609,7 +611,7 @@ export const PlannerTimeline = {
                 const ml = '';
                 
                 const tags = row.project.tags ? (Array.isArray(row.project.tags) ? row.project.tags : row.project.tags.split(',').filter(Boolean)) : [];
-                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1.5 py-px rounded-sm bg-black/5 dark:bg-white/5 text-[7px] opacity-40 uppercase tracking-widest ml-1">${t}</span>`).join('');
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="hidden md:inline-block px-1.5 py-px rounded-sm bg-black/5 dark:bg-white/5 text-[7px] opacity-40 uppercase tracking-widest ml-1">${t}</span>`).join('');
 
                 leftHtml = `
                     <div class="proj-row w-full h-full flex items-center pr-2 gap-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t border-black/5 dark:border-white/5 ${pl} ${ml}" data-project-id="${row.project.id}">
@@ -748,7 +750,7 @@ export const PlannerTimeline = {
                 const ml = 'border-l-[2px] border-transparent hover:border-l-primary/30';
 
                 const tags = row.task.tags ? (Array.isArray(row.task.tags) ? row.task.tags : row.task.tags.split(',').filter(Boolean)) : [];
-                const tagBadges = tags.slice(0, 2).map(t => `<span class="px-1.5 py-px rounded-sm bg-black/5 dark:bg-white/5 text-[7px] opacity-40 uppercase tracking-widest pointer-events-none ml-1 shrink-0">${t}</span>`).join('');
+                const tagBadges = tags.slice(0, 2).map(t => `<span class="hidden md:inline-block px-1.5 py-px rounded-sm bg-black/5 dark:bg-white/5 text-[7px] opacity-40 uppercase tracking-widest pointer-events-none ml-1 shrink-0">${t}</span>`).join('');
 
                 leftHtml = `
                     <div class="task-item relative w-full h-full flex items-center pr-2 gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${pl} ${ml}" data-task-id="${row.task.id}">
