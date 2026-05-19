@@ -261,6 +261,17 @@ export async function renderDashboard(forceRefresh = false) {
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                 <span class="text-[10px] font-black uppercase tracking-widest">To Backlog</span>
              </button>
+             
+             <div class="h-6 w-px bg-white/10 mx-1"></div>
+             
+             <div class="flex items-center gap-2 flex-1 min-w-[140px]" title="Assign Selected Tasks">
+                <div id="bulk-assign-select-container" class="w-full text-[10px]"></div>
+             </div>
+
+             <button class="zen-btn bg-red-500/10 text-red-500 h-9 px-4 rounded-lg hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 border border-red-500/20 whitespace-nowrap" id="bulk-delete-btn" title="Delete Selected">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Delete</span>
+             </button>
           </div>
         </div>
       </div>
@@ -921,6 +932,50 @@ export async function renderDashboard(forceRefresh = false) {
           refreshView();
         } catch (err) { alert('Failed to move tasks'); }
       };
+    }
+
+    const deleteBtn = toolbar.querySelector('#bulk-delete-btn');
+    if (deleteBtn) {
+      deleteBtn.onclick = async () => {
+        if (!confirm(`Are you sure you want to delete ${selectedTaskIds.size} tasks?`)) return;
+        try {
+          for (const id of selectedTaskIds) {
+            await api.delete(`planner.php?id=${id}`);
+          }
+          selectedTaskIds.clear();
+          refreshView();
+        } catch (err) { alert('Failed to delete tasks'); }
+      };
+    }
+
+    const assignContainer = toolbar.querySelector('#bulk-assign-select-container');
+    if (assignContainer) {
+        const state = store.get();
+        const resources = (state.team || []).map(m => ({ id: m.name, name: m.name }));
+        if (!resources.some(r => r.id === 'General')) resources.push({ id: 'General', name: 'General' });
+        resources.unshift({ id: 'me', name: 'Unassigned' });
+
+        SearchableSelect.render(assignContainer, resources, {
+            value: '',
+            placeholder: 'Assign to...',
+            allLabel: 'Team Members',
+            alignTarget: '#bulk-action-toolbar',
+            onChange: async (val) => {
+                if (!val) return;
+                if (!confirm(`Assign ${selectedTaskIds.size} tasks to ${val === 'me' ? 'Unassigned' : val}?`)) {
+                    renderBulkToolbar(); // Reset select
+                    return;
+                }
+                const assignedVal = val;
+                try {
+                  for (const id of selectedTaskIds) {
+                    await api.post('planner.php', { id, resource_id: assignedVal });
+                  }
+                  selectedTaskIds.clear();
+                  refreshView();
+                } catch (err) { alert('Failed to assign tasks'); }
+            }
+        });
     }
   };
 
