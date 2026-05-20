@@ -1,5 +1,7 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
+import { TaskModal } from './task-modal.js';
+import { TimeEntryModal } from './time-entry-modal.js';
 
 /**
  * components/project-modal.js
@@ -30,7 +32,7 @@ export class ProjectModal {
         const modalHtml = `
             <div class="project-modal-overlay fixed inset-0 bg-secondary/60 z-[100] backdrop-blur-xl pointer-events-auto overflow-hidden flex justify-center items-center">
                 <div class="w-full flex items-center justify-center p-3 h-full max-h-screen">
-                    <div id="project-modal-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-3xl p-4 sm:p-5 transform scale-95 opacity-0 transition-all duration-300 relative border border-soft text-main text-center max-h-full flex flex-col">
+                    <div id="project-modal-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-5xl p-4 sm:p-5 transform scale-95 opacity-0 transition-all duration-300 relative border border-soft text-main text-center max-h-full flex flex-col">
                         <button id="close-project-modal" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10 shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
@@ -40,8 +42,9 @@ export class ProjectModal {
                             <p class="text-[9px] font-black text-dim uppercase tracking-[0.4em] mt-1 opacity-60">Manage Project Configuration</p>
                         </div>
 
-                        <div class="overflow-y-auto custom-scrollbar flex-1 px-1 -mx-1 pr-3 pb-1 w-full text-left">
-                            <form id="project-form" class="flex flex-col gap-4">
+                        <div class="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
+                            <div class="overflow-y-auto custom-scrollbar flex-1 px-1 -mx-1 pr-3 pb-1 w-full text-left lg:border-r lg:border-white/5 lg:mr-2">
+                                <form id="project-form" class="flex flex-col gap-4">
                                 <input type="hidden" name="id" value="${project ? project.id : ''}">
                                 
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -215,6 +218,29 @@ export class ProjectModal {
                                 </button>
                             </div>
                             </form>
+                            </div>
+                            <!-- Right Column: Context Pane -->
+                            <div class="w-full lg:w-[320px] xl:w-[380px] shrink-0 overflow-y-auto custom-scrollbar flex flex-col gap-6 text-left pb-4 px-1 lg:pl-1">
+                                ${project ? `
+                                <div>
+                                    <h4 class="text-[10px] font-black text-dim uppercase tracking-widest border-b border-soft pb-2 mb-3">Linked Tasks</h4>
+                                    <div id="modal-related-tasks" class="space-y-2 flex flex-col">
+                                        <div class="text-xs text-dim opacity-50 py-2">Loading tasks...</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="text-[10px] font-black text-dim uppercase tracking-widest border-b border-soft pb-2 mb-3">Recent Time Logs</h4>
+                                    <div id="modal-related-time" class="space-y-2 flex flex-col">
+                                        <div class="text-xs text-dim opacity-50 py-2">Loading logs...</div>
+                                    </div>
+                                </div>
+                                ` : `
+                                <div class="flex items-center justify-center h-full opacity-30 text-center flex-col gap-2 min-h-[300px]">
+                                    <svg class="w-8 h-8 text-dim mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.1em] text-dim">Save project first<br>to view linked items.</p>
+                                </div>
+                                `}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -234,6 +260,89 @@ export class ProjectModal {
         setTimeout(() => {
             if (content) content.classList.add('scale-100', 'opacity-100');
         }, 10);
+
+        if (project) {
+            // Populate Context Pane
+            const tasksContainer = overlay.querySelector('#modal-related-tasks');
+            const timeContainer = overlay.querySelector('#modal-related-time');
+            
+            const relatedTasks = (state.tasks || []).filter(t => t.project_id == project.id).sort((a, b) => {
+                if (a.status !== 'done' && b.status === 'done') return -1;
+                if (a.status === 'done' && b.status !== 'done') return 1;
+                return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+            });
+            const relatedEntries = (state.timeEntries || []).filter(e => e.project_id == project.id).sort((a, b) => new Date(b.start_time) - new Date(a.start_time)).slice(0, 50);
+
+            if (tasksContainer) {
+                if (relatedTasks.length > 0) {
+                    tasksContainer.innerHTML = relatedTasks.map(t => {
+                        const isDone = t.status === 'done';
+                        const pcol = isDone ? 'text-emerald-500' : 'text-primary';
+                        const bgcol = isDone ? 'bg-emerald-500/10' : 'bg-primary/10';
+                        return `
+                        <div class="px-3 py-2 bg-app rounded-xl border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-start gap-3 task-jump-btn" data-id="${t.id}">
+                            <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${isDone ? 'bg-emerald-500' : 'bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]'}"></div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-main truncate group-hover:text-primary transition-colors">${t.title}</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[8px] font-black uppercase tracking-widest ${pcol} ${bgcol} px-1.5 py-0.5 rounded">${t.status}</span>
+                                    <span class="text-[9px] font-bold text-dim">${t.progress || 0}% ${t.resource_id ? '&bull; ' + t.resource_id : ''}</span>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                    
+                    tasksContainer.querySelectorAll('.task-jump-btn').forEach(btn => {
+                        btn.onclick = () => {
+                            const task = relatedTasks.find(x => String(x.id) === btn.dataset.id);
+                            if (task) TaskModal.open(task, { onSave: () => {
+                                // optional: refresh logic, for now we just rely on main view refresh
+                                closeModal(); 
+                                if(window.location.hash.includes('tasks') || window.location.hash.includes('planner')) {
+                                    // already handled by components
+                                } else {
+                                    // force refresh
+                                    setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
+                                }
+                            }});
+                        };
+                    });
+                } else {
+                    tasksContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-app/50 rounded-xl border border-white/5 border-dashed">No Tasks Linked</div>';
+                }
+            }
+
+            if (timeContainer) {
+                if (relatedEntries.length > 0) {
+                    timeContainer.innerHTML = relatedEntries.map(e => {
+                        const dur = e.duration ? (e.duration / 3600).toFixed(1) + 'h' : '?';
+                        const dateStr = e.start_time ? new Date(e.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric'}) : '';
+                        return `
+                        <div class="px-3 py-2 bg-app rounded-xl border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-start justify-between gap-3 time-jump-btn" data-id="${e.id}">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-medium text-dim/80 group-hover:text-primary transition-colors truncate">${e.notes ? e.notes : '<span class="italic opacity-50">Empty log</span>'}</div>
+                                <div class="text-[9px] font-bold text-dim/50 uppercase tracking-widest mt-1">${dateStr} &bull; ${e.user_id ? e.user_id.substring(0,6) : 'Unk'}</div>
+                            </div>
+                            <div class="text-xs font-black text-main group-hover:text-primary transition-colors shrink-0 tabular-nums">${dur}</div>
+                        </div>
+                        `;
+                    }).join('');
+                    
+                    timeContainer.querySelectorAll('.time-jump-btn').forEach(btn => {
+                        btn.onclick = () => {
+                            const entry = relatedEntries.find(x => String(x.id) === btn.dataset.id);
+                            if (entry) TimeEntryModal.open(entry, { onSave: () => {
+                                closeModal(); 
+                                setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
+                            }});
+                        };
+                    });
+                } else {
+                    timeContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-app/50 rounded-xl border border-white/5 border-dashed">No Time Tracked</div>';
+                }
+            }
+        }
 
         overlay.querySelector('#close-project-modal').onclick = closeModal;
         overlay.onclick = (e) => { if (e.target === overlay || e.target === overlay.firstElementChild) closeModal(); };

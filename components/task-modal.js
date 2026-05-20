@@ -9,6 +9,7 @@ import { api } from '../utils/api.js';
 import { store } from '../utils/store.js';
 import { SearchableSelect } from './searchable-select.js';
 import { escapeHTML } from '../utils/dom.js';
+import { TimeEntryModal } from './time-entry-modal.js';
 
 export class TaskModal {
     static open(task = null, options = {}) {
@@ -23,8 +24,8 @@ export class TaskModal {
         document.body.appendChild(container);
 
         container.innerHTML = `
-            <div id="task-modal" class="fixed inset-0 bg-secondary/40 flex items-start justify-center z-50 backdrop-blur-md pointer-events-auto overflow-y-auto py-6 px-4">
-                <div class="bg-card zen-card shadow-soft w-full max-w-2xl p-8 md:p-10 transform transition-all scale-95 opacity-0 relative mx-3 sm:mx-auto" id="task-modal-content">
+            <div id="task-modal" class="fixed inset-0 bg-secondary/40 flex items-start justify-center z-[110] backdrop-blur-md pointer-events-auto overflow-y-auto py-6 px-4">
+                <div class="bg-card zen-card shadow-soft w-full max-w-5xl p-8 md:p-10 transform transition-all scale-95 opacity-0 relative mx-3 sm:mx-auto" id="task-modal-content">
                     <button id="close-task-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-highlight hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-subtle z-10" title="Close">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -34,7 +35,9 @@ export class TaskModal {
                         <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Planning Registry</p>
                     </div>
 
-                    <form id="task-form" class="space-y-6">
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="flex-1 min-w-0 lg:border-r lg:border-subtle lg:pr-8">
+                            <form id="task-form" class="space-y-6">
                         <input type="hidden" name="id" value="${task?.id || ''}">
 
                         <!-- Title -->
@@ -231,6 +234,26 @@ export class TaskModal {
                             `}
                         </div>
                     </form>
+                    </div>
+                        
+                    <!-- Right Column: Context Pane -->
+                    <div class="w-full lg:w-[300px] shrink-0 flex flex-col gap-6 text-left">
+                        ${task ? `
+                        <div>
+                            <h4 class="text-[10px] font-black text-dim uppercase tracking-widest border-b border-subtle pb-2 mb-3">Time Logs</h4>
+                            <div id="modal-task-time" class="space-y-2 flex flex-col max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                                <div class="text-xs text-dim opacity-50 py-2">Loading...</div>
+                            </div>
+                        </div>
+                        ` : `
+                        <div class="flex items-center justify-center h-full opacity-30 text-center flex-col gap-2 min-h-[200px]">
+                            <svg class="w-8 h-8 text-dim mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <p class="text-[10px] font-black uppercase tracking-[0.1em] text-dim">Save task first<br>to view time logs.</p>
+                        </div>
+                        `}
+                    </div>
+
+                    </div>
                 </div>
             </div>
         `;
@@ -242,6 +265,41 @@ export class TaskModal {
             content.classList.remove('scale-95', 'opacity-0');
             content.classList.add('scale-100', 'opacity-100');
         }, 10);
+
+        if (task) {
+            const timeContainer = container.querySelector('#modal-task-time');
+            if (timeContainer) {
+                const state = store.get();
+                const relatedEntries = (state.timeEntries || []).filter(e => e.task_id == task.id).sort((a, b) => new Date(b.start_time) - new Date(a.start_time)).slice(0, 50);
+                if (relatedEntries.length > 0) {
+                    timeContainer.innerHTML = relatedEntries.map(e => {
+                        const dur = e.duration ? (e.duration / 3600).toFixed(1) + 'h' : '?';
+                        const dateStr = e.start_time ? new Date(e.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric'}) : '';
+                        return `
+                        <div class="px-3 py-2 bg-highlight rounded-xl border border-subtle hover:border-primary/30 transition-colors cursor-pointer group flex items-start justify-between gap-3 time-jump-btn" data-id="${e.id}">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-medium text-main group-hover:text-primary transition-colors truncate">${e.notes ? e.notes : '<span class="italic text-dim opacity-50">Empty log</span>'}</div>
+                                <div class="text-[9px] font-bold text-dim uppercase tracking-widest mt-1">${dateStr} &bull; ${e.user_id ? e.user_id.substring(0,6) : 'Unk'}</div>
+                            </div>
+                            <div class="text-xs font-black text-primary shrink-0 tabular-nums">${dur}</div>
+                        </div>
+                        `;
+                    }).join('');
+                    
+                    timeContainer.querySelectorAll('.time-jump-btn').forEach(btn => {
+                        btn.onclick = () => {
+                            const entry = relatedEntries.find(x => String(x.id) === btn.dataset.id);
+                            if (entry) TimeEntryModal.open(entry, { onSave: () => {
+                                close(); // close TaskModal
+                                setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
+                            }});
+                        };
+                    });
+                } else {
+                    timeContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-highlight/50 rounded-xl border border-subtle border-dashed">No Time Tracked</div>';
+                }
+            }
+        }
 
         const close = () => {
             const content = container.querySelector('#task-modal-content');
