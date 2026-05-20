@@ -2,6 +2,7 @@ import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
+import { escapeHTML } from '../utils/dom.js';
 
 /**
  * components/project-modal.js
@@ -223,13 +224,32 @@ export class ProjectModal {
                             <div class="w-full lg:w-[320px] xl:w-[380px] shrink-0 overflow-y-auto custom-scrollbar flex flex-col gap-6 text-left pb-4 px-1 lg:pl-1">
                                 ${project ? `
                                 <div>
-                                    <h4 class="text-[10px] font-black text-dim uppercase tracking-widest border-b border-soft pb-2 mb-3">Linked Tasks</h4>
+                                    <div class="flex items-center justify-between border-b border-soft pb-2 mb-3">
+                                        <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-0">Linked Tasks</h4>
+                                        <div class="flex items-center gap-1.5">
+                                            <button type="button" class="task-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors bg-white/10 text-main" data-filter="all">ALL</button>
+                                            <button type="button" class="task-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main" data-filter="todo">TODO</button>
+                                            <button type="button" class="task-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main" data-filter="backlog">BACK</button>
+                                            <button type="button" class="task-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main" data-filter="done">DONE</button>
+                                            <div class="w-px h-3 bg-white/10 mx-0.5"></div>
+                                            <button type="button" id="toggle-compact-btn" class="px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main">CMPCT</button>
+                                        </div>
+                                    </div>
                                     <div id="modal-related-tasks" class="space-y-2 flex flex-col">
                                         <div class="text-xs text-dim opacity-50 py-2">Loading tasks...</div>
                                     </div>
                                 </div>
                                 <div>
-                                    <h4 class="text-[10px] font-black text-dim uppercase tracking-widest border-b border-soft pb-2 mb-3">Recent Time Logs</h4>
+                                    <div class="flex items-center justify-between border-b border-soft pb-2 mb-3">
+                                        <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-0">Recent Time Logs</h4>
+                                        <div class="flex items-center gap-1.5" id="project-modal-time-filters">
+                                            <button type="button" class="time-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors bg-white/10 text-main" data-filter="all">ALL</button>
+                                            <button type="button" class="time-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main" data-filter="today">TODAY</button>
+                                            <button type="button" class="time-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main" data-filter="week">WEEK</button>
+                                            <div class="w-px h-3 bg-white/10 mx-0.5"></div>
+                                            <button type="button" id="time-toggle-compact-btn" class="px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main">CMPCT</button>
+                                        </div>
+                                    </div>
                                     <div id="modal-related-time" class="space-y-2 flex flex-col">
                                         <div class="text-xs text-dim opacity-50 py-2">Loading logs...</div>
                                     </div>
@@ -274,73 +294,233 @@ export class ProjectModal {
             const relatedEntries = (state.timeEntries || []).filter(e => e.project_id == project.id).sort((a, b) => new Date(b.start_time) - new Date(a.start_time)).slice(0, 50);
 
             if (tasksContainer) {
-                if (relatedTasks.length > 0) {
-                    tasksContainer.innerHTML = relatedTasks.map(t => {
-                        const isDone = t.status === 'done';
-                        const pcol = isDone ? 'text-emerald-500' : 'text-primary';
-                        const bgcol = isDone ? 'bg-emerald-500/10' : 'bg-primary/10';
-                        return `
-                        <div class="px-3 py-2 bg-app rounded-xl border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-start gap-3 task-jump-btn" data-id="${t.id}">
-                            <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${isDone ? 'bg-emerald-500' : 'bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]'}"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-xs font-bold text-main truncate group-hover:text-primary transition-colors">${t.title}</div>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-[8px] font-black uppercase tracking-widest ${pcol} ${bgcol} px-1.5 py-0.5 rounded">${t.status}</span>
-                                    <span class="text-[9px] font-bold text-dim">${t.progress || 0}% ${t.resource_id ? '&bull; ' + t.resource_id : ''}</span>
+                let currentFilter = localStorage.getItem('pm_task_filter') || 'all';
+                let isCompact = localStorage.getItem('pm_task_compact') === 'true';
+
+                const renderRelatedTasks = () => {
+                    let filtered = relatedTasks;
+                    if (currentFilter !== 'all') {
+                         filtered = filtered.filter(t => t.status === currentFilter);
+                    }
+
+                    if (isCompact) {
+                        tasksContainer.className = 'space-y-0.5 flex flex-col';
+                    } else {
+                        tasksContainer.className = 'space-y-2 flex flex-col';
+                    }
+
+                    if (filtered.length > 0) {
+                        tasksContainer.innerHTML = filtered.map(t => {
+                            const isDone = t.status === 'done';
+                            const pcol = isDone ? 'text-emerald-500' : 'text-primary';
+                            const bgcol = isDone ? 'bg-emerald-500/10' : 'bg-primary/10';
+                            
+                            if (isCompact) {
+                                return `
+                                <div class="px-2 py-1 bg-app rounded border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-center justify-between gap-3 task-jump-btn" data-id="${t.id}">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <div class="w-1.5 h-1.5 rounded-full shrink-0 ${isDone ? 'bg-emerald-500' : 'bg-primary'}"></div>
+                                        <div class="text-[10px] font-bold text-main truncate group-hover:text-primary transition-colors">${t.title}</div>
+                                    </div>
+                                    <span class="text-[8px] font-black uppercase tracking-widest ${pcol} ${bgcol} px-1 rounded shrink-0">${t.status}</span>
+                                </div>`;
+                            }
+
+                            return `
+                            <div class="px-3 py-2 bg-app rounded-xl border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-start gap-3 task-jump-btn" data-id="${t.id}">
+                                <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${isDone ? 'bg-emerald-500' : 'bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]'}"></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs font-bold text-main truncate group-hover:text-primary transition-colors">${t.title}</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-[8px] font-black uppercase tracking-widest ${pcol} ${bgcol} px-1.5 py-0.5 rounded">${t.status}</span>
+                                        <span class="text-[9px] font-bold text-dim">${t.progress || 0}% ${t.resource_id ? '&bull; ' + t.resource_id : ''}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        `;
-                    }).join('');
-                    
-                    tasksContainer.querySelectorAll('.task-jump-btn').forEach(btn => {
-                        btn.onclick = () => {
-                            const task = relatedTasks.find(x => String(x.id) === btn.dataset.id);
-                            if (task) TaskModal.open(task, { onSave: () => {
-                                // optional: refresh logic, for now we just rely on main view refresh
-                                closeModal(); 
-                                if(window.location.hash.includes('tasks') || window.location.hash.includes('planner')) {
-                                    // already handled by components
-                                } else {
-                                    // force refresh
-                                    setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
-                                }
-                            }});
-                        };
+                            `;
+                        }).join('');
+                        
+                        tasksContainer.querySelectorAll('.task-jump-btn').forEach(btn => {
+                            btn.onclick = () => {
+                                const task = relatedTasks.find(x => String(x.id) === btn.dataset.id);
+                                if (task) TaskModal.open(task, { onSave: () => {
+                                    if(window.location.hash.includes('tasks') || window.location.hash.includes('planner')) {
+                                        // already handled by components
+                                    } else {
+                                        setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
+                                    }
+                                }});
+                            };
+                        });
+                    } else {
+                        tasksContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-app/50 rounded-xl border border-white/5 border-dashed">No Tasks Found</div>';
+                    }
+                };
+
+                const filterBtns = overlay.querySelectorAll('.task-filter-btn');
+                const applyTaskFilterStyle = () => {
+                    filterBtns.forEach(b => {
+                        if (b.dataset.filter === currentFilter) {
+                            b.classList.add('bg-white/10', 'text-main');
+                            b.classList.remove('opacity-50');
+                        } else {
+                            b.classList.remove('bg-white/10', 'text-main');
+                            b.classList.add('opacity-50');
+                        }
                     });
-                } else {
-                    tasksContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-app/50 rounded-xl border border-white/5 border-dashed">No Tasks Linked</div>';
+                };
+                
+                filterBtns.forEach(btn => {
+                    btn.onclick = () => {
+                        currentFilter = btn.dataset.filter;
+                        localStorage.setItem('pm_task_filter', currentFilter);
+                        applyTaskFilterStyle();
+                        renderRelatedTasks();
+                    };
+                });
+
+                const compactBtn = overlay.querySelector('#toggle-compact-btn');
+                if (compactBtn) {
+                    const applyCompactStyle = () => {
+                        if (isCompact) {
+                            compactBtn.classList.add('bg-white/10', 'text-main');
+                            compactBtn.classList.remove('opacity-50');
+                        } else {
+                            compactBtn.classList.remove('bg-white/10', 'text-main');
+                            compactBtn.classList.add('opacity-50');
+                        }
+                    };
+                    
+                    compactBtn.onclick = () => {
+                        isCompact = !isCompact;
+                        localStorage.setItem('pm_task_compact', isCompact);
+                        applyCompactStyle();
+                        renderRelatedTasks();
+                    };
+                    applyCompactStyle();
                 }
+
+                applyTaskFilterStyle();
+                renderRelatedTasks();
             }
 
             if (timeContainer) {
-                if (relatedEntries.length > 0) {
-                    timeContainer.innerHTML = relatedEntries.map(e => {
-                        const dur = e.duration ? (e.duration / 3600).toFixed(1) + 'h' : '?';
-                        const dateStr = e.start_time ? new Date(e.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric'}) : '';
-                        return `
-                        <div class="px-3 py-2 bg-app rounded-xl border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-start justify-between gap-3 time-jump-btn" data-id="${e.id}">
-                            <div class="flex-1 min-w-0">
-                                <div class="text-xs font-medium text-dim/80 group-hover:text-primary transition-colors truncate">${e.notes ? e.notes : '<span class="italic opacity-50">Empty log</span>'}</div>
-                                <div class="text-[9px] font-bold text-dim/50 uppercase tracking-widest mt-1">${dateStr} &bull; ${e.user_id ? e.user_id.substring(0,6) : 'Unk'}</div>
-                            </div>
-                            <div class="text-xs font-black text-main group-hover:text-primary transition-colors shrink-0 tabular-nums">${dur}</div>
-                        </div>
-                        `;
-                    }).join('');
+                let timeFilter = localStorage.getItem('pm_time_filter') || 'all';
+                let isCompactTime = localStorage.getItem('pm_time_compact') === 'true';
+
+                const renderRelatedEntries = () => {
+                    let relatedEntries = (state.timeEntries || []).filter(e => e.project_id == project.id).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
                     
-                    timeContainer.querySelectorAll('.time-jump-btn').forEach(btn => {
-                        btn.onclick = () => {
-                            const entry = relatedEntries.find(x => String(x.id) === btn.dataset.id);
-                            if (entry) TimeEntryModal.open(entry, { onSave: () => {
-                                closeModal(); 
-                                setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
-                            }});
-                        };
+                    const now = new Date();
+                    if (timeFilter === 'today') {
+                        relatedEntries = relatedEntries.filter(e => new Date(e.start_time).toDateString() === now.toDateString());
+                    } else if (timeFilter === 'week') {
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        relatedEntries = relatedEntries.filter(e => new Date(e.start_time) > weekAgo);
+                    }
+                    
+                    relatedEntries = relatedEntries.slice(0, 50);
+                    
+                    if (isCompactTime) {
+                        timeContainer.className = 'space-y-0.5 flex flex-col';
+                    } else {
+                        timeContainer.className = 'space-y-2 flex flex-col';
+                    }
+
+                    if (relatedEntries.length > 0) {
+                        timeContainer.innerHTML = relatedEntries.map(e => {
+                            let dur = '?';
+                            if (e.start_time && e.end_time) {
+                                dur = ((new Date(e.end_time).getTime() - new Date(e.start_time).getTime()) / 3600000).toFixed(1) + 'h';
+                            } else if (e.start_time && !e.end_time) {
+                                dur = '...';
+                            }
+                            
+                            const dateStr = e.start_time ? new Date(e.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric'}) : '';
+                            
+                            if (isCompactTime) {
+                                return `
+                                <div class="px-2 py-1 bg-app rounded border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-center justify-between gap-3 time-jump-btn" data-id="${e.id}">
+                                    <div class="flex-1 min-w-0 flex items-center gap-2">
+                                        <div class="text-[10px] font-bold text-main truncate group-hover:text-primary transition-colors" title="${e.description ? escapeHTML(e.description) : ''}">${e.description ? escapeHTML(e.description) : (e.notes ? escapeHTML(e.notes) : '<span class="italic opacity-50">Unnamed session</span>')}</div>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="text-[9px] font-bold text-dim/50 uppercase tracking-widest">${dateStr}</div>
+                                        <div class="text-[10px] font-black text-main group-hover:text-primary transition-colors tabular-nums">${dur}</div>
+                                    </div>
+                                </div>
+                                `;
+                            }
+                            
+                            return `
+                            <div class="px-3 py-2 bg-app rounded-xl border border-white/5 hover:border-primary/30 transition-colors cursor-pointer group flex items-start justify-between gap-3 time-jump-btn" data-id="${e.id}">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs font-medium text-dim/80 group-hover:text-primary transition-colors truncate" title="${e.description ? escapeHTML(e.description) : ''}">${e.description ? escapeHTML(e.description) : (e.notes ? escapeHTML(e.notes) : '<span class="italic opacity-50">Unnamed session</span>')}</div>
+                                    <div class="text-[9px] font-bold text-dim/50 uppercase tracking-widest mt-1">${dateStr} &bull; ${e.user_id ? e.user_id.substring(0,6) : 'Unk'}</div>
+                                </div>
+                                <div class="text-xs font-black text-main group-hover:text-primary transition-colors shrink-0 tabular-nums">${dur}</div>
+                            </div>
+                            `;
+                        }).join('');
+                        
+                        timeContainer.querySelectorAll('.time-jump-btn').forEach(btn => {
+                            btn.onclick = () => {
+                                const entry = relatedEntries.find(x => String(x.id) === btn.dataset.id);
+                                if (entry) TimeEntryModal.open(entry, { onSave: () => {
+                                    setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
+                                }});
+                            };
+                        });
+                    } else {
+                        timeContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-app/50 rounded-xl border border-white/5 border-dashed">No Time Tracked</div>';
+                    }
+                };
+
+                const filterBtns = overlay.querySelectorAll('.time-filter-btn');
+                const applyTimeFilterStyle = () => {
+                    filterBtns.forEach(b => {
+                        if (b.dataset.filter === timeFilter) {
+                            b.classList.add('bg-white/10', 'text-main');
+                            b.classList.remove('opacity-50');
+                        } else {
+                            b.classList.remove('bg-white/10', 'text-main');
+                            b.classList.add('opacity-50');
+                        }
                     });
-                } else {
-                    timeContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-app/50 rounded-xl border border-white/5 border-dashed">No Time Tracked</div>';
+                };
+
+                filterBtns.forEach(btn => {
+                    btn.onclick = () => {
+                        timeFilter = btn.dataset.filter;
+                        localStorage.setItem('pm_time_filter', timeFilter);
+                        applyTimeFilterStyle();
+                        renderRelatedEntries();
+                    };
+                });
+                
+                const compactBtn = overlay.querySelector('#time-toggle-compact-btn');
+                if (compactBtn) {
+                    const applyCompactStyle = () => {
+                        if (isCompactTime) {
+                            compactBtn.classList.add('bg-white/10', 'text-main');
+                            compactBtn.classList.remove('opacity-50');
+                        } else {
+                            compactBtn.classList.remove('bg-white/10', 'text-main');
+                            compactBtn.classList.add('opacity-50');
+                        }
+                    };
+                    
+                    compactBtn.onclick = () => {
+                        isCompactTime = !isCompactTime;
+                        localStorage.setItem('pm_time_compact', isCompactTime);
+                        applyCompactStyle();
+                        renderRelatedEntries();
+                    };
+                    applyCompactStyle();
                 }
+
+                applyTimeFilterStyle();
+                renderRelatedEntries();
             }
         }
 

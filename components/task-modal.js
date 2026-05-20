@@ -19,9 +19,12 @@ export class TaskModal {
         const existing = document.getElementById('task-modal-container');
         if (existing) existing.remove();
 
+        const modalPortal = document.getElementById('modal-portal');
+        if (!modalPortal) return;
+
         const container = document.createElement('div');
         container.id = 'task-modal-container';
-        document.body.appendChild(container);
+        modalPortal.appendChild(container);
 
         container.innerHTML = `
             <div id="task-modal" class="fixed inset-0 bg-secondary/40 flex items-start justify-center z-[110] backdrop-blur-md pointer-events-auto overflow-y-auto py-6 px-4">
@@ -240,7 +243,16 @@ export class TaskModal {
                     <div class="w-full lg:w-[300px] shrink-0 flex flex-col gap-6 text-left">
                         ${task ? `
                         <div>
-                            <h4 class="text-[10px] font-black text-dim uppercase tracking-widest border-b border-subtle pb-2 mb-3">Time Logs</h4>
+                            <div class="flex items-center justify-between border-b border-subtle pb-2 mb-3">
+                                <h4 class="text-[10px] font-black text-dim uppercase tracking-widest mb-0">Time Logs</h4>
+                                <div class="flex items-center gap-1.5" id="task-modal-time-filters">
+                                    <button type="button" class="time-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors bg-white/10 text-main" data-filter="all">ALL</button>
+                                    <button type="button" class="time-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main" data-filter="today">TODAY</button>
+                                    <button type="button" class="time-filter-btn px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main" data-filter="week">WEEK</button>
+                                    <div class="w-px h-3 bg-white/10 mx-0.5"></div>
+                                    <button type="button" id="time-toggle-compact-btn" class="px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest transition-colors opacity-50 hover:opacity-100 text-main">CMPCT</button>
+                                </div>
+                            </div>
                             <div id="modal-task-time" class="space-y-2 flex flex-col max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
                                 <div class="text-xs text-dim opacity-50 py-2">Loading...</div>
                             </div>
@@ -270,34 +282,122 @@ export class TaskModal {
             const timeContainer = container.querySelector('#modal-task-time');
             if (timeContainer) {
                 const state = store.get();
-                const relatedEntries = (state.timeEntries || []).filter(e => e.task_id == task.id).sort((a, b) => new Date(b.start_time) - new Date(a.start_time)).slice(0, 50);
-                if (relatedEntries.length > 0) {
-                    timeContainer.innerHTML = relatedEntries.map(e => {
-                        const dur = e.duration ? (e.duration / 3600).toFixed(1) + 'h' : '?';
-                        const dateStr = e.start_time ? new Date(e.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric'}) : '';
-                        return `
-                        <div class="px-3 py-2 bg-highlight rounded-xl border border-subtle hover:border-primary/30 transition-colors cursor-pointer group flex items-start justify-between gap-3 time-jump-btn" data-id="${e.id}">
-                            <div class="flex-1 min-w-0">
-                                <div class="text-xs font-medium text-main group-hover:text-primary transition-colors truncate">${e.notes ? e.notes : '<span class="italic text-dim opacity-50">Empty log</span>'}</div>
-                                <div class="text-[9px] font-bold text-dim uppercase tracking-widest mt-1">${dateStr} &bull; ${e.user_id ? e.user_id.substring(0,6) : 'Unk'}</div>
-                            </div>
-                            <div class="text-xs font-black text-primary shrink-0 tabular-nums">${dur}</div>
-                        </div>
-                        `;
-                    }).join('');
+                let timeFilter = localStorage.getItem('tm_time_filter') || 'all';
+                let isCompactTime = localStorage.getItem('tm_time_compact') === 'true';
+
+                const renderRelatedEntries = () => {
+                    let relatedEntries = (state.timeEntries || []).filter(e => e.task_id == task.id).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
                     
-                    timeContainer.querySelectorAll('.time-jump-btn').forEach(btn => {
-                        btn.onclick = () => {
-                            const entry = relatedEntries.find(x => String(x.id) === btn.dataset.id);
-                            if (entry) TimeEntryModal.open(entry, { onSave: () => {
-                                close(); // close TaskModal
-                                setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
-                            }});
-                        };
+                    const now = new Date();
+                    if (timeFilter === 'today') {
+                        relatedEntries = relatedEntries.filter(e => new Date(e.start_time).toDateString() === now.toDateString());
+                    } else if (timeFilter === 'week') {
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        relatedEntries = relatedEntries.filter(e => new Date(e.start_time) > weekAgo);
+                    }
+                    
+                    relatedEntries = relatedEntries.slice(0, 50);
+
+                    if (isCompactTime) {
+                        timeContainer.className = 'space-y-0.5 flex flex-col';
+                    } else {
+                        timeContainer.className = 'space-y-2 flex flex-col';
+                    }
+
+                    if (relatedEntries.length > 0) {
+                        timeContainer.innerHTML = relatedEntries.map(e => {
+                            let dur = '?';
+                            if (e.start_time && e.end_time) {
+                                dur = ((new Date(e.end_time).getTime() - new Date(e.start_time).getTime()) / 3600000).toFixed(1) + 'h';
+                            } else if (e.start_time && !e.end_time) {
+                                dur = '...';
+                            }
+                            
+                            const dateStr = e.start_time ? new Date(e.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric'}) : '';
+                            
+                            if (isCompactTime) {
+                                return `
+                                <div class="px-2 py-1 bg-highlight rounded border border-subtle hover:border-primary/30 transition-colors cursor-pointer group flex items-center justify-between gap-3 time-jump-btn" data-id="${e.id}">
+                                    <div class="flex-1 min-w-0 flex items-center gap-2">
+                                        <div class="text-[10px] font-bold text-main truncate group-hover:text-primary transition-colors" title="${e.description ? escapeHTML(e.description) : ''}">${e.description ? escapeHTML(e.description) : (e.notes ? escapeHTML(e.notes) : '<span class="italic text-dim opacity-50">Unnamed session</span>')}</div>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <div class="text-[9px] font-bold text-dim uppercase tracking-widest">${dateStr}</div>
+                                        <div class="text-[10px] font-black text-primary tabular-nums">${dur}</div>
+                                    </div>
+                                </div>
+                                `;
+                            }
+
+                            return `
+                            <div class="px-3 py-2 bg-highlight rounded-xl border border-subtle hover:border-primary/30 transition-colors cursor-pointer group flex items-start justify-between gap-3 time-jump-btn" data-id="${e.id}">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs font-medium text-main group-hover:text-primary transition-colors truncate" title="${e.description ? escapeHTML(e.description) : ''}">${e.description ? escapeHTML(e.description) : (e.notes ? escapeHTML(e.notes) : '<span class="italic text-dim opacity-50">Unnamed session</span>')}</div>
+                                    <div class="text-[9px] font-bold text-dim uppercase tracking-widest mt-1">${dateStr} &bull; ${e.user_id ? e.user_id.substring(0,6) : 'Unk'}</div>
+                                </div>
+                                <div class="text-xs font-black text-primary shrink-0 tabular-nums">${dur}</div>
+                            </div>
+                            `;
+                        }).join('');
+                        
+                        timeContainer.querySelectorAll('.time-jump-btn').forEach(btn => {
+                            btn.onclick = () => {
+                                const entry = relatedEntries.find(x => String(x.id) === btn.dataset.id);
+                                if (entry) TimeEntryModal.open(entry, { onSave: () => {
+                                    setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);
+                                }});
+                            };
+                        });
+                    } else {
+                        timeContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-app/50 rounded-xl border border-white/5 border-dashed">No Time Tracked</div>';
+                    }
+                };
+
+                const filterBtns = container.querySelectorAll('.time-filter-btn');
+                const applyTimeFilterStyle = () => {
+                    filterBtns.forEach(b => {
+                        if (b.dataset.filter === timeFilter) {
+                            b.classList.add('bg-white/10', 'text-main');
+                            b.classList.remove('opacity-50');
+                        } else {
+                            b.classList.remove('bg-white/10', 'text-main');
+                            b.classList.add('opacity-50');
+                        }
                     });
-                } else {
-                    timeContainer.innerHTML = '<div class="text-[10px] font-bold text-dim/50 uppercase tracking-widest text-center py-4 bg-highlight/50 rounded-xl border border-subtle border-dashed">No Time Tracked</div>';
+                };
+                
+                filterBtns.forEach(btn => {
+                    btn.onclick = () => {
+                        timeFilter = btn.dataset.filter;
+                        localStorage.setItem('tm_time_filter', timeFilter);
+                        applyTimeFilterStyle();
+                        renderRelatedEntries();
+                    };
+                });
+
+                const compactBtn = container.querySelector('#time-toggle-compact-btn');
+                if (compactBtn) {
+                    const applyCompactStyle = () => {
+                        if (isCompactTime) {
+                            compactBtn.classList.add('bg-white/10', 'text-main');
+                            compactBtn.classList.remove('opacity-50');
+                        } else {
+                            compactBtn.classList.remove('bg-white/10', 'text-main');
+                            compactBtn.classList.add('opacity-50');
+                        }
+                    };
+                    
+                    compactBtn.onclick = () => {
+                        isCompactTime = !isCompactTime;
+                        localStorage.setItem('tm_time_compact', isCompactTime);
+                        applyCompactStyle();
+                        renderRelatedEntries();
+                    };
+                    applyCompactStyle();
                 }
+
+                applyTimeFilterStyle();
+                renderRelatedEntries();
             }
         }
 
