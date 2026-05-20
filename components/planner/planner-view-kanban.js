@@ -81,12 +81,27 @@ export const PlannerKanban = {
         boardEl.className = 'flex flex-grow p-4 gap-4 overflow-x-auto overflow-y-hidden custom-scrollbar bg-app/20 items-stretch';
         container.appendChild(boardEl);
 
-        // Extract all tasks
+        // Extract all tasks, filtered by selected time range
         const allTasks = [];
-        if (data.backlog) allTasks.push(...data.backlog);
+        const viewStart = config.startDate ? config.startDate.getTime() : 0;
+        const viewEnd = config.endDate ? config.endDate.getTime() : Infinity;
+
+        const isTaskInView = (task) => {
+            const tStart = task.start_date ? new Date(task.start_date).getTime() : null;
+            const tEnd = task.due_date ? new Date(task.due_date).getTime() : tStart;
+            
+            if (!tStart && !tEnd) return true; // Show unscheduled tasks
+            
+            const start = tStart || tEnd;
+            const end = tEnd || tStart;
+            
+            return start <= viewEnd && end >= viewStart;
+        };
+
+        if (data.backlog) allTasks.push(...data.backlog.filter(isTaskInView));
         if (data.rows) {
             data.rows.forEach(row => {
-                if (row.tasks) allTasks.push(...row.tasks);
+                if (row.tasks) allTasks.push(...row.tasks.filter(isTaskInView));
             });
         }
 

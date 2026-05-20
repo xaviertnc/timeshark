@@ -66,14 +66,14 @@ export async function renderPlanner() {
             <div class="flex items-center gap-3 flex-wrap">
                 <div id="view-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
                     ${['timeline', 'kanban', 'heatmap'].map(v => {
-                        const labels = { timeline: 'Roadmap', kanban: 'Kanban', heatmap: 'Workload' };
+                        const labels = { timeline: 'Gantt', kanban: 'Kanban', heatmap: 'Workload' };
                         return `<button class="view-toggle px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-view="${v}">${labels[v]}</button>`;
                     }).join('')}
                 </div>
 
                 <div class="w-px h-5 bg-white/10"></div>
 
-                <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView !== 'timeline' && currentView !== 'heatmap' ? 'hidden' : ''}">
+                <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView !== 'timeline' && currentView !== 'heatmap' && currentView !== 'kanban' ? 'hidden' : ''}">
                     ${['day', 'week', 'month', 'year'].map(s => {
                         const tooltips = { day: 'Tactical execution & time logging', week: 'Operational planning & sprint tracking', month: 'Strategic milestones & bottlenecks', year: 'Executive roadmap' };
                         return `<button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-scale="${s}" title="${tooltips[s]}">${s}</button>`;
@@ -189,7 +189,7 @@ export async function renderPlanner() {
         const scaleGroup = container.querySelector('#scale-toggle-container');
         const zoomGroup = container.querySelector('#zoom-toggle-container');
         const epicGroup = container.querySelector('#epic-span-toggle-container');
-        if (scaleGroup) scaleGroup.classList.toggle('hidden', currentView !== 'timeline' && currentView !== 'heatmap');
+        if (scaleGroup) scaleGroup.classList.toggle('hidden', currentView !== 'timeline' && currentView !== 'heatmap' && currentView !== 'kanban');
         if (zoomGroup) zoomGroup.classList.toggle('hidden', currentView !== 'timeline');
         if (epicGroup) epicGroup.classList.toggle('hidden', currentView !== 'timeline');
 
