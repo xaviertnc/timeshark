@@ -34,16 +34,18 @@ const applyAlpha = (color, alpha) => {
 
 // Persistent UI State
 let searchTerm = '';
-let statusFilter = 'active'; // 'all', 'active', 'on hold', 'completed', 'cancelled', 'archived'
-let sortConfig = { key: 'list_order', direction: 'asc' };
-let groupByOrg = false;
-let groupByTag = false;
-let groupByLead = false;
-let collapseEpics = false;
-let hideNotes = false;
-let tagFilter = '';
-let leadFilter = '';
-let devFilter = '';
+let statusFilter = localStorage.getItem('project_status_filter') || 'active'; // 'all', 'active', 'on hold', 'completed', 'cancelled', 'archived'
+let sortConfig = JSON.parse(localStorage.getItem('project_sort_config') || '{"key":"list_order","direction":"asc"}');
+let groupByOrg = localStorage.getItem('project_group_by_org') === 'true';
+let groupByTag = localStorage.getItem('project_group_by_tag') === 'true';
+let groupByLead = localStorage.getItem('project_group_by_lead') === 'true';
+let collapseEpics = localStorage.getItem('project_collapse_epics') === 'true';
+let hideEpics = localStorage.getItem('project_hide_epics') === 'true';
+let hideOps = localStorage.getItem('project_hide_ops') === 'true';
+let hideNotes = localStorage.getItem('project_hide_notes') === 'true';
+let tagFilter = localStorage.getItem('project_tag_filter') || '';
+let leadFilter = localStorage.getItem('project_lead_filter') || '';
+let devFilter = localStorage.getItem('project_dev_filter') || '';
 let selectedProjectIds = new Set();
 let lastCheckedProjectValue = null;
 let viewMode = localStorage.getItem('project_view_mode') || 'table';
@@ -86,6 +88,8 @@ export async function renderProjects() {
     if (tagFilter && (!p.tags || !p.tags.includes(tagFilter))) return false;
     if (leadFilter && p.lead_id != leadFilter) return false;
     if (devFilter && p.dev_id != devFilter) return false;
+    if (hideEpics && p.type === 'epic') return false;
+    if (hideOps && p.type === 'ops') return false;
 
     const searchTermLower = searchTerm.toLowerCase();
     const matchesTag = p.tags && p.tags.some(t => t.toLowerCase().includes(searchTermLower));
@@ -166,11 +170,11 @@ export async function renderProjects() {
       </div>
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-1.5 p-1 bg-card/30 rounded-xl border border-white/5 mr-4 hidden md:flex">
-            <button id="view-kanban-btn" class="w-9 h-9 rounded-lg flex items-center justify-center transition-all ${viewMode === 'kanban' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-main'}">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 17v2m3-10v10m3-6v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
-            </button>
             <button id="view-table-btn" class="w-9 h-9 rounded-lg flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-main'}">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            </button>
+            <button id="view-kanban-btn" class="w-9 h-9 rounded-lg flex items-center justify-center transition-all ${viewMode === 'kanban' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-main'}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 17v2m3-10v10m3-6v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
             </button>
         </div>
         <button id="add-project-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center font-black uppercase tracking-[0.2em] text-[10px] transform active:scale-95 leading-none">
@@ -268,11 +272,28 @@ export async function renderProjects() {
                         <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByLead ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                     </div>
                 </label>
+                <div class="flex items-center gap-4 bg-white/5 rounded-xl px-4 py-2 border border-white/10">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Hide Epics</span>
+                        <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                            <input type="checkbox" id="hide-epics" class="sr-only" ${hideEpics ? 'checked' : ''}>
+                            <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${hideEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        </div>
+                    </label>
+                    <div class="w-px h-4 bg-white/10"></div>
+                    <label class="flex items-center gap-3 group ${hideEpics ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
+                        <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors ${hideEpics ? '' : 'group-hover:border-primary/30'}">
+                            <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''} ${hideEpics ? 'disabled' : ''}>
+                            <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        </div>
+                    </label>
+                </div>
                 <label class="flex items-center gap-3 cursor-pointer group">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Hide Ops</span>
                     <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
-                        <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''}>
-                        <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                        <input type="checkbox" id="hide-ops" class="sr-only" ${hideOps ? 'checked' : ''}>
+                        <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${hideOps ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                     </div>
                 </label>
                 <label class="flex items-center gap-3 cursor-pointer group">
@@ -547,6 +568,14 @@ export async function renderProjects() {
   }
 
   function renderProjectRow(p, customers, team, isChild = false) {
+    const hasVisibleChildren = !collapseEpics && !groupByOrg && !groupByTag && !groupByLead && filtered.some(child => child.parent_id == p.id);
+    let isLastChild = false;
+    if (isChild && p.parent_id) {
+        const siblings = filtered.filter(child => child.parent_id == p.parent_id);
+        if (siblings.length > 0) {
+            isLastChild = siblings[siblings.length - 1].id == p.id;
+        }
+    }
     const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
     const progress = p._progress;
     const pColor = p.color || '#338a81';
@@ -573,19 +602,22 @@ export async function renderProjects() {
     }
 
     return `
-    <tr draggable="true" class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-black/10' : ''}" data-id="${p.id}">
+    <tr draggable="true" class="border-b border-soft last:border-b-0 hover:bg-app/40 transition-all group/row cursor-pointer ${isChild ? 'bg-app/20' : 'border-t-[3px] border-t-card bg-card'}" data-id="${p.id}">
         <td class="px-4 py-2 text-center border-r border-white/5 project-checkbox-td">
             <input type="checkbox" class="project-checkbox cursor-pointer accent-primary w-3.5 h-3.5" value="${p.id}" ${selectedProjectIds.has(String(p.id)) ? 'checked' : ''}>
         </td>
-        <td class="px-4 py-2 ${isChild ? 'pl-8' : ''}">
-            <div class="flex items-center gap-2">
-                ${isChild ? '<div class="w-3 h-3 border-l-2 border-b-2 border-dim/40 rounded-bl-sm mb-1 ml-1 shrink-0"></div>' : ''}
+        <td class="px-4 py-2 relative ${isChild ? 'pl-11' : ''}">
+            ${isChild && !isLastChild ? `<div class="absolute left-[19px] top-0 bottom-[-1rem] border-l-2 border-dim/40 pointer-events-none z-0"></div>` : ''}
+            <div class="flex items-center gap-2 relative z-10">
+                ${isChild ? `<div class="absolute -left-[25px] -top-[10px] w-[25px] h-[21px] border-l-2 border-b-2 border-dim/40 rounded-bl-sm pointer-events-none"></div>` : ''}
                 <div class="w-2 h-2 rounded-full shadow-sm shrink-0" style="background-color: ${pColor}"></div>
                 ${typeBadge}
-                <span class="${isChild ? 'font-semibold text-main/80 text-xs' : 'font-bold text-main text-sm'} tracking-tight group-hover/row:text-primary transition-colors truncate block" title="${p.name}">${p.name}</span>
+                <span class="${isChild ? 'font-medium text-main/70 text-[13px]' : 'font-bold text-main text-sm'} tracking-tight group-hover/row:text-primary transition-colors truncate block" title="${p.name}">${p.name}</span>
             </div>
             ${tagsHtml}
-            <div class="flex flex-wrap items-center gap-3 mt-1.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
+            <div class="relative ${isChild ? '' : 'ml-[1.75rem]'} ${!isChild && hasVisibleChildren ? 'z-0' : ''}">
+                ${!isChild && hasVisibleChildren ? `<div class="absolute -left-[25px] -top-3 -bottom-6 border-l-2 border-dim/40 pointer-events-none"></div>` : ''}
+                <div class="flex flex-wrap items-center gap-3 mt-1.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
                 ${leadMember ? `
                 <div class="flex items-center gap-1.5 xl:hidden" title="Lead: ${leadMember.name}">
                     <div class="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center text-[7px] font-black text-primary border border-primary/30 uppercase shrink-0">${leadMember.initials || leadMember.name.substring(0, 2)}</div>
@@ -605,6 +637,7 @@ export async function renderProjects() {
                     <svg class="w-3 h-3 md:w-3.5 md:h-3.5 text-dim/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
                     <span class="text-[9px] md:text-[11px] font-medium text-dim/70 truncate">${p.notes.split(/\r?\n/)[0].trim()}</span>
                 </div>` : ''}
+                </div>
             </div>
         </td>
         <td class="px-4 py-2 text-center text-dim/60 font-black text-[10px] tabular-nums">
@@ -755,6 +788,7 @@ export async function renderProjects() {
   container.querySelectorAll('.status-filter-btn').forEach(btn => {
     btn.onclick = () => {
       statusFilter = btn.dataset.status;
+      localStorage.setItem('project_status_filter', statusFilter);
       refreshView();
     };
   });
@@ -762,14 +796,16 @@ export async function renderProjects() {
   // Group by Organization Toggle
   container.querySelector('#group-by-org').onchange = (e) => {
     groupByOrg = e.target.checked;
-    if (groupByOrg) { groupByTag = false; groupByLead = false; }
+    localStorage.setItem('project_group_by_org', groupByOrg);
+    if (groupByOrg) { groupByTag = false; groupByLead = false; localStorage.setItem('project_group_by_tag', false); localStorage.setItem('project_group_by_lead', false); }
     refreshView();
   };
 
   if (container.querySelector('#group-by-tag')) {
     container.querySelector('#group-by-tag').onchange = (e) => {
       groupByTag = e.target.checked;
-      if (groupByTag) { groupByOrg = false; groupByLead = false; }
+      localStorage.setItem('project_group_by_tag', groupByTag);
+      if (groupByTag) { groupByOrg = false; groupByLead = false; localStorage.setItem('project_group_by_org', false); localStorage.setItem('project_group_by_lead', false); }
       refreshView();
     };
   }
@@ -778,7 +814,8 @@ export async function renderProjects() {
   if (groupByLeadToggle) {
     groupByLeadToggle.onchange = (e) => {
       groupByLead = e.target.checked;
-      if (groupByLead) { groupByOrg = false; groupByTag = false; }
+      localStorage.setItem('project_group_by_lead', groupByLead);
+      if (groupByLead) { groupByOrg = false; groupByTag = false; localStorage.setItem('project_group_by_org', false); localStorage.setItem('project_group_by_tag', false); }
       refreshView();
     };
   }
@@ -788,6 +825,7 @@ export async function renderProjects() {
   if (tagSelect) {
     tagSelect.onchange = (e) => {
       tagFilter = e.target.value;
+      localStorage.setItem('project_tag_filter', tagFilter);
       refreshView();
     };
   }
@@ -797,6 +835,7 @@ export async function renderProjects() {
   if (leadSelect) {
     leadSelect.onchange = (e) => {
       leadFilter = e.target.value;
+      localStorage.setItem('project_lead_filter', leadFilter);
       refreshView();
     };
   }
@@ -806,6 +845,17 @@ export async function renderProjects() {
   if (devSelect) {
     devSelect.onchange = (e) => {
       devFilter = e.target.value;
+      localStorage.setItem('project_dev_filter', devFilter);
+      refreshView();
+    };
+  }
+
+  // Hide Epics Toggle
+  if (container.querySelector('#hide-epics')) {
+    container.querySelector('#hide-epics').onchange = (e) => {
+      hideEpics = e.target.checked;
+      localStorage.setItem('project_hide_epics', hideEpics);
+      if (hideEpics) { collapseEpics = false; localStorage.setItem('project_collapse_epics', false); }
       refreshView();
     };
   }
@@ -814,6 +864,16 @@ export async function renderProjects() {
   if (container.querySelector('#collapse-epics')) {
     container.querySelector('#collapse-epics').onchange = (e) => {
       collapseEpics = e.target.checked;
+      localStorage.setItem('project_collapse_epics', collapseEpics);
+      refreshView();
+    };
+  }
+
+  // Hide Ops Toggle
+  if (container.querySelector('#hide-ops')) {
+    container.querySelector('#hide-ops').onchange = (e) => {
+      hideOps = e.target.checked;
+      localStorage.setItem('project_hide_ops', hideOps);
       refreshView();
     };
   }
@@ -822,6 +882,7 @@ export async function renderProjects() {
   if (container.querySelector('#hide-notes')) {
     container.querySelector('#hide-notes').onchange = (e) => {
       hideNotes = e.target.checked;
+      localStorage.setItem('project_hide_notes', hideNotes);
       refreshView();
     };
   }
@@ -836,6 +897,7 @@ export async function renderProjects() {
         sortConfig.key = key;
         sortConfig.direction = 'asc';
       }
+      localStorage.setItem('project_sort_config', JSON.stringify(sortConfig));
       refreshView();
     };
   });
