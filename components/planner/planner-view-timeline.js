@@ -161,10 +161,32 @@ export const PlannerTimeline = {
 
             const getEarliest = (pid) => {
                 const pTasks = tasksByProject.get(pid) || [];
-                const pEntries = entriesByProject.get(pid) || [];
                 let e = Infinity;
-                pTasks.forEach(t => { if(t.start_date) { const d = new Date(t.start_date).getTime(); if(d < e) e = d; }});
-                pEntries.forEach(en => { if(en.start_time) { const d = new Date(en.start_time).getTime(); if(d < e) e = d; }});
+                
+                const cStart = config.startDate.getTime();
+                const cEnd = config.endDate.getTime();
+                
+                const visibleTasks = pTasks.filter(t => {
+                    const tStart = new Date(t.start_date).getTime();
+                    const tEnd = t.end_date ? new Date(t.end_date).getTime() : tStart + (30 * 60 * 1000);
+                    return (tStart < cEnd && tEnd > cStart);
+                });
+                
+                if (visibleTasks.length > 0) {
+                    visibleTasks.forEach(t => { const d = new Date(t.start_date).getTime(); if(d < e) e = d; });
+                    return e;
+                }
+                
+                const proj = data.projects.find(p => p.id == pid);
+                if (proj && proj.started_at) {
+                    const d = new Date(proj.started_at).getTime();
+                    if (d < e) e = d;
+                }
+                
+                if (e === Infinity && pTasks.length > 0) {
+                    pTasks.forEach(t => { const d = new Date(t.start_date).getTime(); if(d < e) e = d; });
+                }
+                
                 return e;
             };
             rawProjectArr.sort((a, b) => {
