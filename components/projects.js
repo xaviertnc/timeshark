@@ -18,6 +18,7 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { ProjectModal } from './project-modal.js';
+import { TaskModal } from './task-modal.js';
 
 const applyAlpha = (color, alpha) => {
   if (!color) return 'transparent';
@@ -33,7 +34,7 @@ const applyAlpha = (color, alpha) => {
 
 // Persistent UI State
 let searchTerm = '';
-let statusFilter = 'active'; // 'active' or 'archived'
+let statusFilter = 'active'; // 'all', 'active', 'on hold', 'completed', 'cancelled', 'archived'
 let sortConfig = { key: 'list_order', direction: 'asc' };
 let groupByOrg = false;
 let groupByTag = false;
@@ -45,6 +46,9 @@ let leadFilter = '';
 let devFilter = '';
 let selectedProjectIds = new Set();
 let lastCheckedProjectValue = null;
+let viewMode = localStorage.getItem('project_view_mode') || 'table';
+let hiddenKanbanProjects = new Set(JSON.parse(localStorage.getItem('hidden_kanban_projects') || '[]'));
+let compactKanban = localStorage.getItem('compact_kanban') === 'true';
 
 export async function renderProjects() {
   const state = store.get();
@@ -54,7 +58,11 @@ export async function renderProjects() {
   // We need to fetch projects based on the filter
   let projects = [];
   try {
-    if (statusFilter === 'archived') {
+    if (statusFilter === 'all') {
+      const activeP = await api.get('projects.php') || [];
+      const archP = await api.get('projects.php?action=archives') || [];
+      projects = [...activeP, ...archP];
+    } else if (statusFilter === 'archived') {
       projects = await api.get('projects.php?action=archives');
     } else {
       projects = await api.get('projects.php');
@@ -69,6 +77,12 @@ export async function renderProjects() {
 
   // Filter Logic
   let filtered = projects.filter(p => {
+    if (statusFilter === 'active') {
+        if (p.status !== 'Active' && p.status !== undefined) return false;
+    } else if (statusFilter !== 'all' && statusFilter !== 'archived') {
+        if ((p.status || '').toLowerCase() !== statusFilter.toLowerCase()) return false;
+    }
+
     if (tagFilter && (!p.tags || !p.tags.includes(tagFilter))) return false;
     if (leadFilter && p.lead_id != leadFilter) return false;
     if (devFilter && p.dev_id != devFilter) return false;
@@ -146,11 +160,19 @@ export async function renderProjects() {
     <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6 px-2">
       <div>
         <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Portfolio</h2>
-        <h1 class="text-3xl font-light text-main tracking-tight">
-          ${statusFilter === 'active' ? 'Active' : 'Archived'} <span class="font-bold italic text-primary">Projects.</span>
+        <h1 class="text-3xl font-light text-main tracking-tight flex items-center gap-4">
+          <span>${statusFilter === 'all' ? 'All' : (statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1))} <span class="font-bold italic text-primary">Projects.</span></span>
         </h1>
       </div>
       <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5 p-1 bg-card/30 rounded-xl border border-white/5 mr-4 hidden md:flex">
+            <button id="view-kanban-btn" class="w-9 h-9 rounded-lg flex items-center justify-center transition-all ${viewMode === 'kanban' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-main'}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 17v2m3-10v10m3-6v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
+            </button>
+            <button id="view-table-btn" class="w-9 h-9 rounded-lg flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-main'}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            </button>
+        </div>
         <button id="add-project-btn" class="bg-primary hover:bg-primary-dark text-white px-8 py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center font-black uppercase tracking-[0.2em] text-[10px] transform active:scale-95 leading-none">
           + Create Project
         </button>
@@ -199,51 +221,73 @@ export async function renderProjects() {
                 </div>
             </div>
 
-            <div class="flex items-center gap-1.5 p-1 bg-card/30 rounded-xl border border-white/5">
-                <button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'active' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim'}" data-status="active">Active</button>
-                <button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === 'archived' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim'}" data-status="archived">Archived</button>
+            <div class="flex items-center gap-1.5 p-1 bg-card/30 rounded-xl border border-white/5 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                ${['all', 'active', 'on hold', 'completed', 'cancelled', 'archived'].map(status => 
+                '<button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ' + (statusFilter === status ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim') + '" data-status="' + status + '">' + status + '</button>'
+                ).join('')}
             </div>
+            
+            ${viewMode === 'kanban' && [...hiddenKanbanProjects].length > 0 ? 
+            '<div class="relative group ml-auto"><select id="unhide-project-select" class="bg-primary/10 text-primary border border-primary/20 rounded-xl pl-4 pr-10 py-2.5 text-[10px] uppercase tracking-widest font-bold outline-none focus:ring-2 focus:ring-primary/30 transition-all appearance-none cursor-pointer"><option value="">Unhide Project...</option>' +
+            [...hiddenKanbanProjects].map(id => {
+                const p = projects.find(x => String(x.id) === String(id));
+                return p ? '<option value="' + p.id + '">' + p.name + '</option>' : '';
+            }).join('') + '<option value="ALL">-- SHOW ALL --</option></select></div>' : ''}
+            
+            ${viewMode === 'kanban' && filtered.length > [...hiddenKanbanProjects].length ? 
+            '<button id="hide-all-kanban" class="px-4 py-2.5 bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ml-3 border border-white/5">Hide All</button>' : ''}
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-4 w-full lg:w-auto">
-            <label class="flex items-center gap-3 cursor-pointer group">
-                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Tag</span>
+            <label class="flex items-center gap-3 cursor-pointer group ${viewMode === 'table' ? 'hidden' : ''}">
+                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Compact Mode</span>
                 <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
-                    <input type="checkbox" id="group-by-tag" class="sr-only" ${groupByTag ? 'checked' : ''}>
-                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByTag ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                    <input type="checkbox" id="compact-kanban" class="sr-only" ${compactKanban ? 'checked' : ''}>
+                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${compactKanban ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
                 </div>
             </label>
-            <label class="flex items-center gap-3 cursor-pointer group">
-                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Org</span>
-                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
-                    <input type="checkbox" id="group-by-org" class="sr-only" ${groupByOrg ? 'checked' : ''}>
-                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByOrg ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
-                </div>
-            </label>
-            <label class="flex items-center gap-3 cursor-pointer group">
-                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Lead</span>
-                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
-                    <input type="checkbox" id="group-by-lead" class="sr-only" ${groupByLead ? 'checked' : ''}>
-                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByLead ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
-                </div>
-            </label>
-            <label class="flex items-center gap-3 cursor-pointer group">
-                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
-                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
-                    <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''}>
-                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
-                </div>
-            </label>
-            <label class="flex items-center gap-3 cursor-pointer group">
-                <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Hide Notes</span>
-                <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
-                    <input type="checkbox" id="hide-notes" class="sr-only" ${hideNotes ? 'checked' : ''}>
-                    <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${hideNotes ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
-                </div>
-            </label>
+            <div class="${viewMode === 'kanban' ? 'hidden' : 'flex'} flex-wrap items-center gap-4">
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Tag</span>
+                    <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                        <input type="checkbox" id="group-by-tag" class="sr-only" ${groupByTag ? 'checked' : ''}>
+                        <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByTag ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                    </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Org</span>
+                    <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                        <input type="checkbox" id="group-by-org" class="sr-only" ${groupByOrg ? 'checked' : ''}>
+                        <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByOrg ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                    </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Group by Lead</span>
+                    <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                        <input type="checkbox" id="group-by-lead" class="sr-only" ${groupByLead ? 'checked' : ''}>
+                        <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${groupByLead ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                    </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Collapse Epics</span>
+                    <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                        <input type="checkbox" id="collapse-epics" class="sr-only" ${collapseEpics ? 'checked' : ''}>
+                        <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${collapseEpics ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                    </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-dim/60 group-hover:text-dim transition-colors">Hide Notes</span>
+                    <div class="relative w-9 h-5 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-primary/30">
+                        <input type="checkbox" id="hide-notes" class="sr-only" ${hideNotes ? 'checked' : ''}>
+                        <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${hideNotes ? 'translate-x-4 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'}"></div>
+                    </div>
+                </label>
+            </div>
         </div>
     </div>
 
+    <!-- View Mode Wrapper -->
+    ${viewMode === 'table' ? `
     <!-- Projects Table -->
     <div class="zen-card bg-card border border-soft shadow-sm overflow-hidden backdrop-blur-sm relative">
       <div class="overflow-x-auto">
@@ -285,6 +329,36 @@ export async function renderProjects() {
       </div>
     </div>
 
+    ` : `
+    <!-- Kanban Board -->
+    <div class="flex gap-6 overflow-x-auto pb-6 items-start custom-scrollbar hide-scroll kanban-board" style="min-height: calc(100vh - 280px);">
+        ${filtered.filter(p => !hiddenKanbanProjects.has(String(p.id))).map(p => `
+        <div class="shrink-0 flex flex-col bg-white/5 backdrop-blur-2xl shadow-[0_32px_80px_rgba(0,0,0,0.7)] border border-white/10 rounded-3xl max-h-full kanban-column animate-fade-in resize-x overflow-hidden w-[340px] min-w-[200px] max-w-[600px] relative" data-project-id="${p.id}">
+            <div class="p-5 pb-4 flex items-center justify-between group/colheader rounded-t-3xl bg-transparent">
+                <div class="min-w-0 pr-3 cursor-pointer project-title-click flex-1 z-10" data-id="${p.id}">
+                    <div class="font-black text-[15px] truncate transition-colors drop-shadow-md" style="color: ${p.color || '#fff'}" title="${p.name}">${p.name}</div>
+                    <div class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-1.5">${p.status || 'Active'} &bull; ${(state.tasks || []).filter(t => String(t.project_id) === String(p.id)).length || 0} tasks</div>
+                </div>
+                <button class="hide-col-btn opacity-0 group-hover/colheader:opacity-100 transition-opacity text-white/30 hover:text-red-500 bg-white/5 hover:bg-red-500/10 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 z-10 shadow-sm" data-id="${p.id}" title="Hide Project Column">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 ${compactKanban ? 'space-y-0' : 'space-y-3'} kanban-dropzone group/dropzone min-h-[150px] custom-scrollbar" data-project-id="${p.id}">
+                ${(state.tasks || []).filter(t => String(t.project_id) === String(p.id))
+                    .sort((a,b) => {
+                        if (a.status !== 'done' && b.status === 'done') return -1;
+                        if (a.status === 'done' && b.status !== 'done') return 1;
+                        return 0;
+                    })
+                    .map(t => renderKanbanTask(t, team)).join('')}
+                ${(state.tasks || []).filter(t => String(t.project_id) === String(p.id)).length === 0 ? `<div class="opacity-0 group-hover/dropzone:opacity-30 transition-opacity text-center text-[10px] font-black uppercase tracking-widest text-dim py-6 border-2 border-dashed border-dim/20 rounded-xl pointer-events-none">Drop tasks here</div>` : ''}
+            </div>
+        </div>
+        `).join('')}
+        ${filtered.filter(p => !hiddenKanbanProjects.has(String(p.id))).length === 0 ? `<div class="w-full py-20 text-center opacity-30 text-xs font-black uppercase tracking-[0.3em]">No projects visible in kanban</div>` : ''}
+    </div>
+    `}
+
     <!-- Bulk Actions Overaly -->
     ${selectedProjectIds.size > 0 ? `
     <div id="bulk-action-bar" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-card border border-primary/30 shadow-[0_10px_40px_rgba(35,35,35,1)] rounded-2xl px-6 py-3 flex items-center gap-6 animate-fade-in backdrop-blur-md">
@@ -318,6 +392,37 @@ export async function renderProjects() {
   `;
 
   // --- RENDERING HELPERS ---
+
+  function renderKanbanTask(t, team) {
+    const isDone = t.status === 'done';
+    const bgcol = isDone ? 'bg-black/20 shadow-none' : 'bg-[#1a1b1e] hover:bg-[#202226] border-white/5 hover:border-white/10 hover:-translate-y-1 shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md relative';
+    const resName = t.resource_id ? (t.resource_id === 'me' ? 'ME' : (team.find(tm => tm.id == t.resource_id)?.initials || t.resource_id.substring(0,2).toUpperCase())) : '';
+    
+    if (compactKanban) {
+        const compactBg = isDone ? 'bg-black/20' : 'bg-transparent hover:bg-white/5 border-b border-white/5 last:border-b-0';
+        return `
+        <div class="${compactBg} flex items-center py-1.5 px-3 cursor-grab active:cursor-grabbing kanban-task-card transition-colors ${isDone ? 'opacity-50 grayscale-[0.5]' : ''}" draggable="true" data-task-id="${t.id}">
+            <div class="font-medium text-[11px] text-main leading-none truncate transition-colors flex-1 min-w-0" title="${t.title}">${t.title}</div>
+            ${resName ? `<div class="ml-2 text-[8px] font-black text-dim/70 uppercase tracking-widest shrink-0" title="${t.resource_id}">${resName}</div>` : ''}
+        </div>
+        `;
+    }
+
+    const tagHtml = (t.tags && t.tags.length > 0) ? `<div class="flex flex-wrap gap-1.5 mt-3">${t.tags.map(tag => `<span class="px-2 py-0.5 bg-black/40 text-[8px] font-bold uppercase tracking-widest rounded-md text-dim/80 shadow-inner">${tag}</span>`).join('')}</div>` : '';
+
+    return `
+    <div class="${bgcol} border rounded-2xl p-4 cursor-grab active:cursor-grabbing kanban-task-card transition-all duration-300 ${isDone ? 'opacity-50 grayscale-[0.5]' : ''} overflow-hidden" draggable="true" data-task-id="${t.id}">
+        <div class="flex gap-2 items-start justify-between">
+            <div class="font-semibold text-xs text-main leading-snug break-words transition-colors">${t.title}</div>
+        </div>
+        ${tagHtml}
+        <div class="flex justify-between items-end mt-4 pt-3 border-t border-white/5">
+            <span class="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">${t.status}</span>
+            ${resName ? `<div class="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-[8px] font-black text-white/60 border border-white/10 shrink-0 shadow-sm" title="${t.resource_id}">${resName}</div>` : ''}
+        </div>
+    </div>
+    `;
+  }
 
   function renderTableRows(inItems, customers, team) {
     const items = collapseEpics ? inItems.filter(p => !p.parent_id) : inItems;
@@ -567,6 +672,71 @@ export async function renderProjects() {
   }
 
   // --- ACTIONS ---
+
+  const kanbanBtn = container.querySelector('#view-kanban-btn');
+  if (kanbanBtn) kanbanBtn.onclick = () => { localStorage.setItem('project_view_mode', 'kanban'); viewMode = 'kanban'; refreshView(); };
+  
+  const tableBtn = container.querySelector('#view-table-btn');
+  if (tableBtn) tableBtn.onclick = () => { localStorage.setItem('project_view_mode', 'table'); viewMode = 'table'; refreshView(); };
+
+  const unhideSelect = container.querySelector('#unhide-project-select');
+  if (unhideSelect) {
+      unhideSelect.onchange = (e) => {
+          if (e.target.value === 'ALL') {
+              hiddenKanbanProjects.clear();
+          } else if (e.target.value) {
+              hiddenKanbanProjects.delete(String(e.target.value));
+          }
+          if (e.target.value) {
+              localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
+              refreshView();
+          }
+      };
+  }
+
+  const hideAllKanbanBtn = container.querySelector('#hide-all-kanban');
+  if (hideAllKanbanBtn) {
+      hideAllKanbanBtn.onclick = () => {
+          filtered.forEach(p => hiddenKanbanProjects.add(String(p.id)));
+          localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
+          refreshView();
+      };
+  }
+
+  const compactKanbanToggle = container.querySelector('#compact-kanban');
+  if (compactKanbanToggle) {
+      compactKanbanToggle.onchange = (e) => {
+          compactKanban = e.target.checked;
+          localStorage.setItem('compact_kanban', compactKanban.toString());
+          refreshView();
+      };
+  }
+
+  // Hide Column Handlers
+  container.querySelectorAll('.hide-col-btn').forEach(btn => {
+      btn.onclick = (e) => {
+          e.stopPropagation();
+          const pid = btn.dataset.id;
+          if (pid) {
+              hiddenKanbanProjects.add(String(pid));
+              localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
+              refreshView();
+          }
+      };
+  });
+
+  // Kanban Horizontal Scroll with Mouse Wheel
+  const kanbanBoardDiv = container.querySelector('.kanban-board');
+  if (kanbanBoardDiv) {
+      kanbanBoardDiv.addEventListener('wheel', (e) => {
+          // Map vertical scroll (deltaY) to horizontal scroll (scrollLeft)
+          // Avoid mapping if the user is scrolling horizontally naturally (deltaX !== 0)
+          if (e.deltaY !== 0 && Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+              kanbanBoardDiv.scrollLeft += e.deltaY;
+              e.preventDefault();
+          }
+      }, { passive: false });
+  }
 
   // Add Project
   container.querySelector('#add-project-btn').onclick = () => ProjectModal.open(null, { onSave: refreshView });
@@ -869,10 +1039,30 @@ export async function renderProjects() {
         });
       }
     }
+
+    // Edit Kanban Task
+    const kanbanTask = e.target.closest('.kanban-task-card');
+    if (kanbanTask) {
+        const taskId = kanbanTask.dataset.taskId;
+        if (taskId) {
+            const task = (state.tasks || []).find(t => String(t.id) === String(taskId));
+            if (task) {
+                TaskModal.open(task, {
+                    onSave: async () => {
+                        store.update('tasks', await api.get('planner.php'));
+                        refreshView();
+                    }
+                }, team);
+            }
+        }
+        return;
+    }
+
   });
 
-  // Drag and Drop (List Order)
+  // Drag and Drop
   let draggedRow = null;
+  let draggedKanbanTask = null;
 
   container.addEventListener('dragstart', (e) => {
     const tr = e.target.closest('tr[data-id]');
@@ -881,6 +1071,16 @@ export async function renderProjects() {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', tr.dataset.id);
       setTimeout(() => tr.classList.add('opacity-50'), 0);
+      return;
+    }
+
+    const taskCard = e.target.closest('.kanban-task-card');
+    if (taskCard) {
+      draggedKanbanTask = taskCard;
+      e.dataTransfer.effectAllowed = 'move';
+      const sourceProjectId = taskCard.closest('.kanban-dropzone').dataset.projectId;
+      e.dataTransfer.setData('application/json', JSON.stringify({ taskId: taskCard.dataset.taskId, sourceProjectId }));
+      setTimeout(() => taskCard.classList.add('opacity-30'), 0);
     }
   });
 
@@ -896,10 +1096,68 @@ export async function renderProjects() {
       } else {
         tr.parentNode.insertBefore(draggedRow, tr);
       }
+      return;
+    }
+
+    if (draggedKanbanTask) {
+        const dropzone = e.target.closest('.kanban-dropzone');
+        if (dropzone) {
+            dropzone.classList.add('bg-white/5');
+            // Basic insert visual feedback inside the column
+            const taskCard = e.target.closest('.kanban-task-card');
+            if (taskCard && taskCard !== draggedKanbanTask) {
+                const rect = taskCard.getBoundingClientRect();
+                const offset = e.clientY - rect.top;
+                if (offset > rect.height / 2) {
+                    taskCard.parentNode.insertBefore(draggedKanbanTask, taskCard.nextSibling);
+                } else {
+                    taskCard.parentNode.insertBefore(draggedKanbanTask, taskCard);
+                }
+            } else if (!taskCard && dropzone !== draggedKanbanTask.parentNode) {
+                dropzone.appendChild(draggedKanbanTask);
+            }
+        }
     }
   });
 
+  container.addEventListener('dragleave', (e) => {
+      const dropzone = e.target.closest('.kanban-dropzone');
+      // Remove visual feedback if leaving the dropzone boundary entirely
+      if (dropzone && (!e.relatedTarget || !dropzone.contains(e.relatedTarget))) {
+          dropzone.classList.remove('bg-white/5');
+      }
+  });
+
+  container.addEventListener('drop', async (e) => {
+      if (draggedKanbanTask) {
+          const dropzone = e.target.closest('.kanban-dropzone');
+          if (dropzone) {
+              dropzone.classList.remove('bg-white/5');
+              const targetProjectId = dropzone.dataset.projectId;
+              try {
+                  const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                  if (String(data.sourceProjectId) !== String(targetProjectId)) {
+                      // Call planner.php to update project_id of the task
+                      const payload = { id: data.taskId, project_id: targetProjectId };
+                      await api.post('planner.php', payload);
+                      store.update('tasks', await api.get('planner.php'));
+                      refreshView();
+                  }
+              } catch (err) {
+                  console.error('Failed to parse kanban drop data', err);
+              }
+          }
+      }
+  });
+
   container.addEventListener('dragend', async (e) => {
+    if (draggedKanbanTask) {
+        draggedKanbanTask.classList.remove('opacity-30');
+        // Clear all dropzone highlights just in case
+        container.querySelectorAll('.kanban-dropzone').forEach(d => d.classList.remove('bg-white/5'));
+        draggedKanbanTask = null;
+    }
+
     if (draggedRow) {
       draggedRow.classList.remove('opacity-50');
       draggedRow = null;
@@ -914,13 +1172,10 @@ export async function renderProjects() {
         const updatedProjects = await api.get('projects.php');
         store.update('projects', updatedProjects);
 
-        // Ensure sort is by list_order if dropped so the change persists visually
         if (sortConfig.key !== 'list_order') {
           sortConfig.key = 'list_order';
           sortConfig.direction = 'asc';
         }
-
-        // Refresh view to update the table sort state headers
         refreshView();
       } catch (err) {
         console.error('Failed to save list order', err);
