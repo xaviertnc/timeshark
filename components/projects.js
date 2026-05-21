@@ -583,9 +583,8 @@ export async function renderProjects() {
     const devMember = team.find(t => t.id == p.dev_id);
     const priority = parseInt(p.priority) || 10;
 
-    // Tag rendering
     const tagsHtml = p.tags && p.tags.length > 0
-      ? `<div class="flex flex-wrap gap-1 mt-1">${p.tags.map(t => {
+      ? `<div class="flex flex-wrap items-center gap-1.5 ml-2">${p.tags.map(t => {
           if (t.toLowerCase().includes('urgent')) {
             return `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-red-500/20 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded">${t}</span>`;
           }
@@ -613,8 +612,8 @@ export async function renderProjects() {
                 <div class="w-2 h-2 rounded-full shadow-sm shrink-0" style="background-color: ${pColor}"></div>
                 ${typeBadge}
                 <span class="${isChild ? 'font-medium text-main/70 text-[13px]' : 'font-bold text-main text-sm'} tracking-tight group-hover/row:text-primary transition-colors truncate block" title="${p.name}">${p.name}</span>
+                ${tagsHtml}
             </div>
-            ${tagsHtml}
             <div class="relative ${isChild ? '' : 'ml-[1.75rem]'} ${!isChild && hasVisibleChildren ? 'z-0' : ''}">
                 ${!isChild && hasVisibleChildren ? `<div class="absolute -left-[25px] -top-3 -bottom-6 border-l-2 border-dim/40 pointer-events-none"></div>` : ''}
                 <div class="flex flex-wrap items-center gap-3 mt-1.5 opacity-60 group-hover/row:opacity-100 transition-opacity">
