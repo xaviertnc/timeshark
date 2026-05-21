@@ -70,7 +70,11 @@ export const TaskItem = {
                         ` : ''}
                         ${displayTags.length > 0 ? `
                             <div class="flex items-center gap-1 shrink-0">
-                                ${displayTags.map(tag => `<span class="text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded border border-white/5 truncate max-w-[60px]" title="${tag ? tag.replace(/"/g, '&quot;') : ''}">${tag}</span>`).join('')}
+                                ${displayTags.map(tag => {
+                                    const isUrgent = tag && tag.toLowerCase().includes('urgent');
+                                    const colorClasses = isUrgent ? 'bg-red-500/20 text-red-500 border-red-500/20' : 'bg-white/5 text-dim border-white/5';
+                                    return `<span class="text-[8px] uppercase tracking-widest ${colorClasses} px-1.5 py-0.5 rounded border truncate max-w-[60px]" title="${tag ? tag.replace(/"/g, '&quot;') : ''}">${tag}</span>`;
+                                }).join('')}
                             </div>
                         ` : ''}
                         ${displayTimeStr ? `<div class="flex items-center gap-1 ${isDone ? 'text-primary opacity-100' : 'text-dim'} shrink-0">
@@ -137,7 +141,11 @@ export const TaskItem = {
                     ${!options.hideProjectName && proj.name !== 'Unassigned' ? `<span class="text-xs font-semibold truncate leading-none" style="color: ${proj.color}" title="${proj.name ? proj.name.replace(/"/g, '&quot;') : ''}">${proj.name}</span>` : ''}
                     ${displayTags.length > 0 ? `
                         <div class="flex items-center gap-1 overflow-hidden">
-                            ${displayTags.map(tag => `<span class="text-[7px] uppercase tracking-widest bg-white/5 text-dim/80 px-1 py-[1px] rounded-sm leading-none border border-white/5 truncate max-w-[80px]" title="${tag ? tag.replace(/"/g, '&quot;') : ''}">${tag}</span>`).join('')}
+                            ${displayTags.map(tag => {
+                                const isUrgent = tag && tag.toLowerCase().includes('urgent');
+                                const colorClasses = isUrgent ? 'bg-red-500/20 text-red-500 border-red-500/20' : 'bg-white/5 text-dim/80 border-white/5';
+                                return `<span class="text-[7px] uppercase tracking-widest ${colorClasses} px-1 py-[1px] rounded-sm leading-none border truncate max-w-[80px]" title="${tag ? tag.replace(/"/g, '&quot;') : ''}">${tag}</span>`;
+                            }).join('')}
                         </div>
                     ` : ''}
                 </div>
