@@ -17,6 +17,7 @@
 
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
+import { ConfirmModal } from './confirm-modal.js';
 
 
 export async function renderOrganizations() {
@@ -278,7 +279,8 @@ export async function renderOrganizations() {
       const id = e.target.closest('.delete-btn').dataset.id;
       const item = customers.find(c => c.id == id);
       const label = item.is_client == 1 ? 'organization' : 'client';
-      if (confirm(`Delete ${label}?`)) {
+      const confirmed = await ConfirmModal.show(`Delete ${label}?`, { confirmText: 'Delete', isDestructive: true });
+      if (confirmed) {
         await api.delete(`organizations.php?id=${id}`);
         const [newCustomers, newProjects] = await Promise.all([
           api.get('organizations.php'),

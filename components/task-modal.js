@@ -9,6 +9,7 @@ import { api } from '../utils/api.js';
 import { store } from '../utils/store.js';
 import { SearchableSelect } from './searchable-select.js';
 import { escapeHTML } from '../utils/dom.js';
+import { ConfirmModal } from './confirm-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 
 export class TaskModal {
@@ -589,7 +590,8 @@ export class TaskModal {
 
         if (deleteBtn) {
             deleteBtn.onclick = async () => {
-                if (confirm('Delete this task?')) {
+                const confirmed = await ConfirmModal.show('Delete this task?', { confirmText: 'Delete Task', isDestructive: true });
+                if (confirmed) {
                     await api.delete(`planner.php?id=${task.id}`);
                     onSave();
                     close();

@@ -1,6 +1,7 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { TimeEntryModal } from './time-entry-modal.js';
+import { ConfirmModal } from './confirm-modal.js';
 import { PlannerState } from './planner/planner-state.js';
 import { PlannerAnalytics } from './planner/planner-view-analytics.js';
 import { SearchableSelect } from './searchable-select.js';
@@ -302,10 +303,13 @@ export async function renderReports() {
     if (e.target.closest('#prev-page') && currentPage > 1) { currentPage--; refreshView(); }
     if (e.target.closest('#next-page') && currentPage < totalPages) { currentPage++; refreshView(); }
     const deleteBtn = e.target.closest('.delete-btn');
-    if (deleteBtn && confirm('Delete this entry?')) {
-      await api.delete(`time-entries.php?id=${deleteBtn.dataset.id}`);
-      store.update('timeEntries', await api.get('time-entries.php'));
-      refreshView();
+    if (deleteBtn) {
+      const confirmed = await ConfirmModal.show('Delete this entry?', { confirmText: 'Delete Entry', isDestructive: true });
+      if (confirmed) {
+        await api.delete(`time-entries.php?id=${deleteBtn.dataset.id}`);
+        store.update('timeEntries', await api.get('time-entries.php'));
+        refreshView();
+      }
     }
     const editBtn = e.target.closest('.edit-btn');
     if (editBtn) {

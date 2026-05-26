@@ -1,5 +1,6 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
+import { ConfirmModal } from './confirm-modal.js';
 
 export async function renderTeam() {
     const state = store.get();
@@ -163,7 +164,8 @@ export async function renderTeam() {
         if (e.target.closest('.delete-member-btn')) {
             e.stopPropagation();
             const id = e.target.closest('.delete-member-btn').dataset.id;
-            if (confirm('Delete team member?')) {
+            const confirmed = await ConfirmModal.show('Delete team member?', { confirmText: 'Delete', isDestructive: true });
+            if (confirmed) {
                 await api.delete(`team.php?id=${id}`);
                 const [newTeam, newTasks] = await Promise.all([
                     api.get('team.php'),

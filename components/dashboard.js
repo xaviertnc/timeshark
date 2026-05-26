@@ -8,6 +8,7 @@ import { SearchableSelect } from './searchable-select.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { TaskFilterBar } from './task-filter-bar.js';
 import { ProjectModal } from './project-modal.js';
+import { ConfirmModal } from './confirm-modal.js';
 import { escapeHTML } from '../utils/dom.js';
 
 /**
@@ -249,17 +250,31 @@ export async function renderDashboard(forceRefresh = false) {
             </div>
           </div>
           <div class="flex items-center gap-3 flex-grow">
-             <button class="zen-btn bg-emerald-600 text-white h-9 px-5 rounded-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2 flex-1 whitespace-nowrap" id="bulk-move-today-btn">
+             <div class="flex items-center gap-1.5 pr-1 pl-2 py-1 bg-white/5 rounded-lg border border-white/10 shrink-0" title="Set Start & End Times">
+                 <input type="time" id="bulk-time-start" value="09:00" class="bg-transparent text-white font-bold text-[10px] outline-none" style="color-scheme: dark;">
+                 <span class="text-white/30 text-[9px]">-</span>
+                 <input type="time" id="bulk-time-end" value="17:00" class="bg-transparent text-white font-bold text-[10px] outline-none" style="color-scheme: dark;">
+                 <button class="bg-primary/20 hover:bg-primary text-white rounded px-2 py-1 text-[9px] uppercase tracking-widest font-black transition-all ml-1" id="bulk-set-times-btn">Set</button>
+             </div>
+             <button class="zen-btn bg-emerald-600 text-white h-9 px-3 rounded-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0" id="bulk-move-today-btn">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                <span class="text-[10px] font-black uppercase tracking-widest">To Today</span>
+                <span class="text-[10px] font-black uppercase tracking-widest hidden 2xl:inline">To Today</span>
+                <span class="text-[10px] font-black uppercase tracking-widest 2xl:hidden">Today</span>
              </button>
-             <button class="zen-btn bg-primary text-white h-9 px-5 rounded-lg hover:shadow-[0_0_20px_rgba(51,138,129,0.3)] transition-all flex items-center justify-center gap-2 flex-1 whitespace-nowrap" id="bulk-move-future-btn">
+             <button class="zen-btn bg-emerald-500 text-white h-9 px-3 rounded-lg hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0" id="bulk-move-tomorrow-btn">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <span class="text-[10px] font-black uppercase tracking-widest hidden 2xl:inline">To Tomorrow</span>
+                <span class="text-[10px] font-black uppercase tracking-widest 2xl:hidden">Tmw</span>
+             </button>
+             <button class="zen-btn bg-primary text-white h-9 px-3 rounded-lg hover:shadow-[0_0_20px_rgba(51,138,129,0.3)] transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0" id="bulk-move-future-btn">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span class="text-[10px] font-black uppercase tracking-widest">Move +1 Week</span>
+                <span class="text-[10px] font-black uppercase tracking-widest hidden xl:inline">Move +1 Week</span>
+                <span class="text-[10px] font-black uppercase tracking-widest xl:hidden">+1W</span>
              </button>
-             <button class="zen-btn bg-white/5 text-white h-9 px-5 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 flex-1 border border-white/10 whitespace-nowrap" id="bulk-move-backlog-btn">
+             <button class="zen-btn bg-white/5 text-white h-9 px-3 rounded-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 border border-white/10 whitespace-nowrap shrink-0" id="bulk-move-backlog-btn">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                <span class="text-[10px] font-black uppercase tracking-widest">To Backlog</span>
+                <span class="text-[10px] font-black uppercase tracking-widest hidden xl:inline">To Backlog</span>
+                <span class="text-[10px] font-black uppercase tracking-widest xl:hidden">Bklg</span>
              </button>
              
              <div class="h-6 w-px bg-white/10 mx-1"></div>
@@ -752,9 +767,44 @@ export async function renderDashboard(forceRefresh = false) {
     const searchInput = container.querySelector('#task-search-input');
     if (searchInput) {
       searchInput.value = searchTerm;
+      
+      const updateSearchUI = () => {
+          const wrapper = searchInput.parentElement;
+          if (searchTerm) {
+              searchInput.classList.remove('bg-highlight', 'border-white/5');
+              searchInput.classList.add('bg-primary/10', 'border-primary/30');
+              searchInput.style.paddingRight = '2rem';
+              let clearBtn = wrapper.querySelector('.search-filter-clear');
+              if (!clearBtn) {
+                  clearBtn = document.createElement('button');
+                  clearBtn.className = 'search-filter-clear absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded hover:bg-primary/20 text-primary transition-all';
+                  clearBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                  clearBtn.title = 'Clear Search';
+                  clearBtn.onclick = (e) => {
+                      e.stopPropagation();
+                      searchTerm = '';
+                      searchInput.value = '';
+                      localStorage.setItem('dashboard_search_term', '');
+                      updateSearchUI();
+                      renderDashboardTasks();
+                  };
+                  wrapper.appendChild(clearBtn);
+              }
+          } else {
+              searchInput.classList.add('bg-highlight', 'border-white/5');
+              searchInput.classList.remove('bg-primary/10', 'border-primary/30');
+              searchInput.style.paddingRight = '';
+              const clearBtn = wrapper.querySelector('.search-filter-clear');
+              if (clearBtn) clearBtn.remove();
+          }
+      };
+
+      updateSearchUI();
+
       searchInput.oninput = (e) => {
         searchTerm = e.target.value.toLowerCase().trim();
         localStorage.setItem('dashboard_search_term', searchTerm);
+        updateSearchUI();
         renderDashboardTasks();
       };
     }
@@ -855,10 +905,22 @@ export async function renderDashboard(forceRefresh = false) {
        };
     }
 
+    const getToolbarTimes = () => {
+       const startStr = toolbar.querySelector('#bulk-time-start')?.value || '09:00';
+       const endStr = toolbar.querySelector('#bulk-time-end')?.value || '17:00';
+       return {
+          startHr: parseInt(startStr.split(':')[0]) || 9,
+          startMin: parseInt(startStr.split(':')[1]) || 0,
+          endHr: parseInt(endStr.split(':')[0]) || 17,
+          endMin: parseInt(endStr.split(':')[1]) || 0,
+       };
+    };
+
     const moveTodayBtn = toolbar.querySelector('#bulk-move-today-btn');
     if (moveTodayBtn) {
       moveTodayBtn.onclick = async () => {
-        if (!confirm(`Move ${selectedTaskIds.size} tasks to Today?`)) return;
+        const confirmed = await ConfirmModal.show(`Move ${selectedTaskIds.size} tasks to Today?`, { confirmText: 'Move to Today' });
+        if (!confirmed) return;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString();
@@ -878,10 +940,36 @@ export async function renderDashboard(forceRefresh = false) {
       };
     }
 
+    const moveTomorrowBtn = toolbar.querySelector('#bulk-move-tomorrow-btn');
+    if (moveTomorrowBtn) {
+      moveTomorrowBtn.onclick = async () => {
+        const confirmed = await ConfirmModal.show(`Move ${selectedTaskIds.size} tasks to Tomorrow?`, { confirmText: 'Move to Tomorrow' });
+        if (!confirmed) return;
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        const tomorrowStr = tomorrow.toISOString();
+        
+        try {
+          for (const id of selectedTaskIds) {
+            await api.post('planner.php', { 
+              id, 
+              status: 'todo', 
+              start_date: tomorrowStr,
+              end_date: tomorrowStr 
+            });
+          }
+          selectedTaskIds.clear();
+          refreshView();
+        } catch (err) { alert('Failed to move tasks'); }
+      };
+    }
+
     const moveFutureBtn = toolbar.querySelector('#bulk-move-future-btn');
     if (moveFutureBtn) {
       moveFutureBtn.onclick = async () => {
-        if (!confirm(`Move ${selectedTaskIds.size} tasks into next week?`)) return;
+        const confirmed = await ConfirmModal.show(`Move ${selectedTaskIds.size} tasks into next week?`, { confirmText: 'Move +1 Week' });
+        if (!confirmed) return;
         const tasksToMove = allTasks.filter(t => selectedTaskIds.has(String(t.id)));
         
         // Find the earliest start date among selected tasks to calculate the shift
@@ -895,14 +983,13 @@ export async function renderDashboard(forceRefresh = false) {
         const dayMs = 24 * 60 * 60 * 1000;
         const target = today.getTime() + (7 * dayMs);
         
-        // If earliest is in the past, we shift to target (today+7).
-        // If already in the future, we just add 7 days to the earliest.
         const finalStartForEarliest = Math.max(target, earliest + (7 * dayMs));
         const shiftMs = finalStartForEarliest - earliest;
 
         try {
           for (const t of tasksToMove) {
             const updates = { id: t.id };
+            
             if (t.start_date) {
                const newS = new Date(new Date(t.start_date).getTime() + shiftMs);
                updates.start_date = newS.toISOString();
@@ -920,10 +1007,39 @@ export async function renderDashboard(forceRefresh = false) {
       };
     }
 
+    const setTimesBtn = toolbar.querySelector('#bulk-set-times-btn');
+    if (setTimesBtn) {
+       setTimesBtn.onclick = async () => {
+          const confirmed = await ConfirmModal.show(`Set customized times for ${selectedTaskIds.size} tasks?`, { confirmText: 'Set Times' });
+          if (!confirmed) return;
+          const { startHr, startMin, endHr, endMin } = getToolbarTimes();
+
+          try {
+             const tasksToUpdate = allTasks.filter(t => selectedTaskIds.has(String(t.id)));
+             for (const t of tasksToUpdate) {
+                const startD = t.start_date ? new Date(t.start_date) : new Date();
+                const endD = t.end_date ? new Date(t.end_date) : new Date();
+                
+                startD.setHours(startHr, startMin, 0, 0);
+                endD.setHours(endHr, endMin, 0, 0);
+
+                await api.post('planner.php', {
+                   id: t.id,
+                   start_date: startD.toISOString(),
+                   end_date: endD.toISOString()
+                });
+             }
+             selectedTaskIds.clear();
+             refreshView();
+          } catch (err) { alert('Failed to set times'); }
+       };
+    }
+
     const moveBacklogBtn = toolbar.querySelector('#bulk-move-backlog-btn');
     if (moveBacklogBtn) {
       moveBacklogBtn.onclick = async () => {
-        if (!confirm(`Move ${selectedTaskIds.size} tasks to Backlog?`)) return;
+        const confirmed = await ConfirmModal.show(`Move ${selectedTaskIds.size} tasks to Backlog?`, { confirmText: 'Move to Backlog' });
+        if (!confirmed) return;
         try {
           for (const id of selectedTaskIds) {
             await api.post('planner.php', { id, status: 'backlog', start_date: null, end_date: null });
@@ -937,7 +1053,8 @@ export async function renderDashboard(forceRefresh = false) {
     const deleteBtn = toolbar.querySelector('#bulk-delete-btn');
     if (deleteBtn) {
       deleteBtn.onclick = async () => {
-        if (!confirm(`Are you sure you want to delete ${selectedTaskIds.size} tasks?`)) return;
+        const confirmed = await ConfirmModal.show(`Are you sure you want to delete ${selectedTaskIds.size} tasks?`, { confirmText: 'Delete Tasks', isDestructive: true });
+        if (!confirmed) return;
         try {
           for (const id of selectedTaskIds) {
             await api.delete(`planner.php?id=${id}`);
@@ -962,7 +1079,8 @@ export async function renderDashboard(forceRefresh = false) {
             alignTarget: '#bulk-action-toolbar',
             onChange: async (val) => {
                 if (!val) return;
-                if (!confirm(`Assign ${selectedTaskIds.size} tasks to ${val === 'me' ? 'Unassigned' : val}?`)) {
+                const confirmed = await ConfirmModal.show(`Assign ${selectedTaskIds.size} tasks to ${val === 'me' ? 'Unassigned' : val}?`, { confirmText: 'Assign' });
+                if (!confirmed) {
                     renderBulkToolbar(); // Reset select
                     return;
                 }
@@ -1000,7 +1118,7 @@ export async function renderDashboard(forceRefresh = false) {
     }
 
     // 2. Handle Task List rendering logic (Sections inside TaskList.render)
-    const anyListFilter = taskFilters.today || taskFilters.planned || taskFilters.backlog || taskFilters.completed;
+    const anyListFilter = taskFilters.today || taskFilters.overdue || taskFilters.planned || taskFilters.backlog || taskFilters.completed;
     
     // If search is active but NO filter is on, we act on ALL tasks by temporarily enabling them for rendering
     let effectiveFilters = { ...taskFilters };
@@ -1303,7 +1421,8 @@ export async function renderDashboard(forceRefresh = false) {
       if (deleteTaskBtn) {
         e.stopPropagation();
         const taskId = deleteTaskBtn.dataset.taskId;
-        if (!confirm('Delete this task?')) return;
+        const confirmed = await ConfirmModal.show('Are you sure you want to delete this task?', { confirmText: 'Delete Task', isDestructive: true });
+        if (!confirmed) return;
         try {
           await api.post('planner.php?action=delete', { id: taskId });
           await PlannerState.init();
@@ -1493,7 +1612,8 @@ export async function renderDashboard(forceRefresh = false) {
   // Delete History Entry
   container.querySelectorAll('.delete-history-btn').forEach(btn => {
     btn.onclick = async () => {
-      if (!confirm('Delete this entry?')) return;
+      const confirmed = await ConfirmModal.show('Are you sure you want to delete this entry?', { confirmText: 'Delete Entry', isDestructive: true });
+      if (!confirmed) return;
       try {
         await api.delete(`time-entries.php?id=${btn.dataset.id}`);
         store.update('timeEntries', await api.get('time-entries.php'));

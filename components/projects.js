@@ -19,6 +19,7 @@ import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { ProjectModal } from './project-modal.js';
 import { TaskModal } from './task-modal.js';
+import { ConfirmModal } from './confirm-modal.js';
 
 const applyAlpha = (color, alpha) => {
   if (!color) return 'transparent';
@@ -982,7 +983,8 @@ export async function renderProjects() {
 
     // Bulk Delete
     if (e.target.id === 'bulk-delete') {
-      if (confirm(`CRITICAL: Permanently delete ${selectedProjectIds.size} projects? This cannot be undone.`)) {
+      const confirmed = await ConfirmModal.show(`CRITICAL: Permanently delete ${selectedProjectIds.size} projects? This cannot be undone.`, { confirmText: 'Delete Projects', isDestructive: true });
+      if (confirmed) {
         const arr = Array.from(selectedProjectIds);
         for (const id of arr) {
           await api.delete(`projects.php?id=${id}`);
@@ -1004,7 +1006,8 @@ export async function renderProjects() {
 
     // Bulk Archive
     if (e.target.id === 'bulk-archive') {
-      if (confirm(`Archive ${selectedProjectIds.size} selected projects?`)) {
+      const confirmed = await ConfirmModal.show(`Archive ${selectedProjectIds.size} selected projects?`, { confirmText: 'Archive' });
+      if (confirmed) {
         const arr = Array.from(selectedProjectIds);
         for (const id of arr) {
           await api.get(`projects.php?action=archive&id=${id}`);
@@ -1018,7 +1021,8 @@ export async function renderProjects() {
 
     // Bulk Restore
     if (e.target.id === 'bulk-restore') {
-      if (confirm(`Restore ${selectedProjectIds.size} archived projects?`)) {
+      const confirmed = await ConfirmModal.show(`Restore ${selectedProjectIds.size} archived projects?`, { confirmText: 'Restore' });
+      if (confirmed) {
         const arr = Array.from(selectedProjectIds);
         for (const id of arr) {
           await api.get(`projects.php?action=restore&id=${id}`);
@@ -1035,7 +1039,8 @@ export async function renderProjects() {
     if (archiveBtn) {
       e.stopPropagation();
       const id = archiveBtn.dataset.id;
-      if (confirm('Archive this project? It will be moved to the yearly archive shards.')) {
+      const confirmed = await ConfirmModal.show('Archive this project? It will be moved to the yearly archive shards.', { confirmText: 'Archive' });
+      if (confirmed) {
         await api.get(`projects.php?action=archive&id=${id}`);
         // Success, refresh the main store so other views know
         store.update('projects', await api.get('projects.php'));
@@ -1049,7 +1054,8 @@ export async function renderProjects() {
     if (restoreBtn) {
       e.stopPropagation();
       const id = restoreBtn.dataset.id;
-      if (confirm('Restore this project to the active portfolio?')) {
+      const confirmed = await ConfirmModal.show('Restore this project to the active portfolio?', { confirmText: 'Restore' });
+      if (confirmed) {
         await api.get(`projects.php?action=restore&id=${id}`);
         store.update('projects', await api.get('projects.php'));
         refreshView();
@@ -1062,7 +1068,8 @@ export async function renderProjects() {
     if (deleteBtn) {
       e.stopPropagation();
       const id = deleteBtn.dataset.id;
-      if (confirm('Critical: Wipe project data permanently? This cannot be undone.')) {
+      const confirmed = await ConfirmModal.show('Critical: Wipe project data permanently? This cannot be undone.', { confirmText: 'Wipe Data', isDestructive: true });
+      if (confirmed) {
         await api.delete(`projects.php?id=${id}`);
         const [newProjects, newTasks, newTimeEntries] = await Promise.all([
           api.get('projects.php'),
