@@ -12,7 +12,7 @@ export const ConfirmModal = {
             const isDestructive = options.isDestructive || false;
 
             overlay.innerHTML = `
-                <div class="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-hidden transform transition-all duration-300 scale-95 opacity-0 flex flex-col">
+                <div class="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-x-hidden transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh] overflow-y-auto">
                     <div class="p-8">
                         <div class="flex items-center gap-3 mb-3">
                             ${isDestructive 

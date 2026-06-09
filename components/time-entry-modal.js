@@ -38,7 +38,7 @@ export class TimeEntryModal {
 
         const modalHtml = `
             <div class="time-entry-modal-overlay fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[120] pointer-events-auto">
-                <div id="modal-content" class="bg-card zen-card shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main">
+                <div id="modal-content" class="bg-card zen-card shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main max-h-[90vh] overflow-y-auto">
                     <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -75,31 +75,24 @@ export class TimeEntryModal {
                             </div>
                         </div>
 
-                        <!-- Start/End + Notes -->
+                        <!-- Start/End -->
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Started At</label>
-                                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                                <input type="datetime-local" name="start_time" value="${formatDateForInput(entry.start_time)}" class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all" style="color-scheme: dark;">
                             </div>
                             ${!isLive ? `
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Ended At</label>
-                                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                                <input type="datetime-local" name="end_time" value="${formatDateForInput(entry.end_time)}" class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all" style="color-scheme: dark;">
                             </div>
-                            ` : `
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
-                            </div>
-                            `}
+                            ` : ''}
                         </div>
 
-                        ${!isLive ? `
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Notes</label>
-                            <input type="text" name="notes" value="${escapeHTML(entry.notes || '')}" placeholder="Optional details..." class="w-full zen-input bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            <textarea name="notes" rows="2" placeholder="Optional details..." class="w-full zen-input !h-auto min-h-[60px] bg-highlight border border-subtle text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-y py-3">${escapeHTML(entry.notes || '')}</textarea>
                         </div>
-                        ` : ''}
 
                         <!-- Row: Tags -->
                         <div class="space-y-2">
