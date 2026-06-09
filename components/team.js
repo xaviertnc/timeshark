@@ -54,9 +54,9 @@ export async function renderTeam() {
 
     const modalPortal = document.getElementById('modal-portal');
     modalPortal.innerHTML = `
-        <div id="team-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto items-center justify-center overflow-y-auto">
-            <div class="min-h-screen w-full flex items-center justify-center p-4">
-                <div class="bg-card rounded-2xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative max-h-[90vh] overflow-y-auto" id="team-modal-content">
+        <div id="team-modal" class="fixed inset-0 bg-secondary/40 hidden z-50 backdrop-blur-md pointer-events-auto overflow-y-auto py-6 px-4 flex items-start justify-center">
+            <div class="min-h-[calc(100vh-3rem)] w-full flex items-start justify-center">
+                <div class="bg-card rounded-2xl shadow-xl w-full max-w-sm p-10 transform transition-all scale-95 opacity-0 text-center relative my-auto mx-auto" id="team-modal-content">
                     <button id="close-team-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -66,7 +66,7 @@ export async function renderTeam() {
                         <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Member Details</p>
                     </div>
 
-                    <form id="team-form" class="space-y-8">
+                    <form id="team-form" class="flex flex-col gap-8">
                         <input type="hidden" name="id">
                         <div class="space-y-3">
                              <label class="text-[10px] font-black text-dim uppercase tracking-widest block">Name</label>

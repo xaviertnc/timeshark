@@ -3,6 +3,7 @@ import { api } from '../utils/api.js';
 import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { escapeHTML } from '../utils/dom.js';
+import { ConfirmModal } from './confirm-modal.js';
 
 /**
  * components/project-modal.js
@@ -31,24 +32,33 @@ export class ProjectModal {
         };
 
         const modalHtml = `
-            <div class="project-modal-overlay fixed inset-0 bg-secondary/60 z-[100] backdrop-blur-xl pointer-events-auto overflow-hidden flex justify-center items-center">
-                <div class="w-full flex items-center justify-center p-3 h-full max-h-screen">
-                    <div id="project-modal-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-5xl p-4 sm:p-5 transform scale-95 opacity-0 transition-all duration-300 relative border border-soft text-main text-center max-h-full flex flex-col">
-                        <button id="close-project-modal" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10 shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
+            <div class="project-modal-overlay fixed inset-0 bg-secondary/60 z-[100] backdrop-blur-xl pointer-events-auto overflow-y-auto py-6 px-4 flex items-start justify-center">
+                <div class="w-full flex items-start justify-center min-h-[calc(100vh-3rem)]">
+                    <div id="project-modal-content" class="bg-card rounded-2xl shadow-2xl w-full max-w-5xl p-4 sm:p-5 transform scale-95 opacity-0 transition-all duration-300 relative border border-soft text-main text-left flex flex-col mx-auto my-auto">
+                        <div class="absolute top-4 right-4 flex items-center gap-2 z-10 pr-2">
+                            <button id="close-project-modal" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 shrink-0" title="Close">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
 
-                        <div class="mb-4 shrink-0">
-                            <h3 class="text-2xl font-black text-main tracking-tighter" id="modal-title">${project ? 'Edit Project' : 'New Project'}</h3>
+                        <div class="mb-4 pb-4 border-b border-white/5 shrink-0 flex flex-col items-start w-full">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-2xl font-black text-main tracking-tighter" id="modal-title">${project ? 'Edit Project' : 'New Project'}</h3>
+                                ${project ? `
+                                <button type="button" id="delete-project-btn" class="w-7 h-7 flex items-center justify-center rounded-full bg-red-500/10 text-red-500/70 hover:text-red-500 hover:bg-red-500/20 transition-all group mt-1" title="Delete Project">
+                                    <svg class="w-4 h-4 text-inherit" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                                ` : ''}
+                            </div>
                             <p class="text-[9px] font-black text-dim uppercase tracking-[0.4em] mt-1 opacity-60">Manage Project Configuration</p>
                         </div>
 
-                        <div class="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
-                            <div class="overflow-y-auto custom-scrollbar flex-1 px-1 -mx-1 pr-3 pb-1 w-full text-left lg:border-r lg:border-white/5 lg:mr-2">
-                                <form id="project-form" class="flex flex-col gap-4">
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-1 px-1 -mx-1 pr-3 pb-1 w-full text-left lg:border-r lg:border-white/5 lg:mr-2">
+                                <form id="project-form" class="flex flex-col gap-6">
                                 <input type="hidden" name="id" value="${project ? project.id : ''}">
                                 
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <!-- Name (Full Width) -->
                                     <div class="space-y-1.5 md:col-span-3">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Project Name</label>
@@ -213,15 +223,15 @@ export class ProjectModal {
                                     </div>
                                 </div>
 
-                            <div>
-                                <button type="submit" id="submit-btn" class="w-full bg-primary hover:bg-primary-dark text-white font-black text-[12px] uppercase tracking-[0.5em] rounded-2xl shadow-2xl shadow-primary/30 transition-all hover:-translate-y-1 active:scale-95 py-3.5 leading-none transform">
-                                    Save Project
-                                </button>
-                            </div>
+                             <div class="flex justify-start pl-1 pt-2">
+                                 <button type="submit" id="submit-btn" class="w-full sm:w-auto px-10 zen-btn bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
+                                     Save Project
+                                 </button>
+                             </div>
                             </form>
                             </div>
                             <!-- Right Column: Context Pane -->
-                            <div class="w-full lg:w-[320px] xl:w-[380px] shrink-0 overflow-y-auto custom-scrollbar flex flex-col gap-6 text-left pb-4 px-1 lg:pl-1">
+                            <div class="w-full lg:w-[320px] xl:w-[380px] shrink-0 flex flex-col gap-6 text-left pb-4 px-1 lg:pl-1">
                                 ${project ? `
                                 <div>
                                     <div class="flex items-center justify-between border-b border-soft pb-2 mb-3">
@@ -526,6 +536,19 @@ export class ProjectModal {
 
         overlay.querySelector('#close-project-modal').onclick = closeModal;
         overlay.onclick = (e) => { if (e.target === overlay || e.target === overlay.firstElementChild) closeModal(); };
+
+        const deleteBtn = overlay.querySelector('#delete-project-btn');
+        if (deleteBtn) {
+            deleteBtn.onclick = async () => {
+                const confirmed = await ConfirmModal.show('Delete this project?', { confirmText: 'Delete Project', isDestructive: true });
+                if (confirmed) {
+                    await api.delete(`projects.php?id=${project.id}`);
+                    store.update('projects', await api.get('projects.php'));
+                    closeModal();
+                    onSave();
+                }
+            };
+        }
 
         const updateClientOptions = (orgId, selectedClientId = null) => {
             let filteredClients = [];

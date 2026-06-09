@@ -4,7 +4,7 @@ export const ConfirmModal = {
             const portal = document.getElementById('modal-portal') || document.body;
             
             const overlay = document.createElement('div');
-            overlay.className = 'fixed inset-0 bg-[#0a0f14]/40 z-[9999] flex flex-col items-center justify-center p-4 transition-all duration-200 opacity-0 pointer-events-auto';
+            overlay.className = 'confirm-modal-overlay fixed inset-0 bg-secondary/40 flex items-start justify-center p-4 py-6 z-[200] pointer-events-auto overflow-y-auto backdrop-blur-md';
             
             const title = options.title || 'Confirm Action';
             const confirmText = options.confirmText || 'Confirm';
@@ -12,7 +12,7 @@ export const ConfirmModal = {
             const isDestructive = options.isDestructive || false;
 
             overlay.innerHTML = `
-                <div class="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-x-hidden transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh] overflow-y-auto">
+                <div class="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-x-hidden transform transition-all duration-300 scale-95 opacity-0 flex flex-col my-auto mx-auto">
                     <div class="p-8">
                         <div class="flex items-center gap-3 mb-3">
                             ${isDestructive 

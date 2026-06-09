@@ -37,16 +37,16 @@ export class TimeEntryModal {
         };
 
         const modalHtml = `
-            <div class="time-entry-modal-overlay fixed inset-0 bg-secondary/40 backdrop-blur-md flex items-center justify-center p-4 z-[120] pointer-events-auto">
-                <div id="modal-content" class="bg-card zen-card shadow-soft w-full max-w-lg p-8 md:p-10 transform scale-95 opacity-0 transition-all duration-300 relative pointer-events-auto text-main max-h-[90vh] overflow-y-auto">
+            <div class="time-entry-modal-overlay fixed inset-0 bg-secondary/40 flex items-start justify-center z-[110] backdrop-blur-md pointer-events-auto overflow-y-auto py-6 px-4">
+                <div id="modal-content" class="bg-card zen-card shadow-soft w-full max-w-lg p-6 md:p-8 transform transition-all scale-95 opacity-0 relative mx-3 sm:mx-auto my-auto pointer-events-auto text-main text-left">
                     <button id="close-modal-x" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 z-10" title="Close">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
-                    <div class="text-center mb-8">
+                    <div class="mb-4 pb-4 border-b border-white/5 flex flex-col items-start w-full">
                         <h3 class="text-2xl font-bold tracking-tight">${isLive ? 'Edit Current Task' : 'Edit History Entry'}</h3>
                         <p class="text-[9px] font-black text-dim uppercase tracking-[0.3em] mt-2">${isLive ? 'Live Update' : 'Log Adjustment'}</p>
                     </div>
-                    <form id="edit-time-entry-form" class="space-y-6">
+                    <form id="edit-time-entry-form" class="flex flex-col gap-6">
                         <input type="hidden" name="id" value="${entry.id}">
                         
                         <!-- Description -->
@@ -105,9 +105,9 @@ export class TimeEntryModal {
                         </div>
 
                         <!-- Actions -->
-                        <div class="flex gap-4 pt-4 border-t border-subtle">
-                            <button type="button" id="cancel-modal" class="flex-1 zen-btn text-[10px] font-black uppercase text-dim tracking-widest hover:text-main hover:bg-highlight transition-all">Cancel</button>
-                            <button type="submit" class="flex-[2] zen-btn bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all">Save Changes</button>
+                        <div class="flex justify-start gap-4 pt-4 mt-6">
+                            <button type="submit" class="px-10 py-3 zen-btn bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all hover:-translate-y-0.5 active:scale-[0.98]">Save Changes</button>
+                            <button type="button" id="cancel-modal" class="px-6 py-3 zen-btn bg-transparent text-dim hover:text-main hover:bg-highlight transition-all">Cancel</button>
                         </div>
                     </form>
                 </div>

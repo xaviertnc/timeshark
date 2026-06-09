@@ -30,22 +30,32 @@ export class TaskModal {
         container.innerHTML = `
             <div id="task-modal" class="fixed inset-0 bg-secondary/40 flex items-start justify-center z-[110] backdrop-blur-md pointer-events-auto overflow-y-auto py-6 px-4">
                 <div class="bg-card zen-card shadow-soft w-full max-w-5xl p-8 md:p-10 transform transition-all scale-95 opacity-0 relative mx-3 sm:mx-auto" id="task-modal-content">
-                    <button id="close-task-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-highlight hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-subtle z-10" title="Close">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+                    <div class="absolute top-4 right-4 flex items-center gap-2 z-10 pr-2">
+                        <button id="close-task-modal" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/20 text-dim hover:text-red-400 transition-all hover:rotate-90 hover:scale-110 border border-white/5 shrink-0" title="Close">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
 
-                    <div class="mb-8">
-                        <h3 id="task-modal-title" class="text-2xl font-bold text-main tracking-tight">${task ? 'Edit Task' : 'New Task'}</h3>
-                        <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Planning Registry</p>
+                    <div class="mb-4 pb-4 border-b border-white/5 flex justify-between items-start pr-10 w-full">
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <h3 id="task-modal-title" class="text-2xl font-bold text-main tracking-tight">${task ? 'Edit Task' : 'New Task'}</h3>
+                                ${task ? `
+                                <button type="button" id="delete-task-btn" class="w-7 h-7 flex items-center justify-center rounded-full bg-red-500/10 text-red-500/70 hover:text-red-500 hover:bg-red-500/20 transition-all group mt-1" title="Delete Task">
+                                    <svg class="w-4 h-4 text-inherit" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                                ` : ''}
+                            </div>
+                            <p class="text-[10px] font-black text-dim uppercase tracking-[0.3em] mt-2">Planning Registry</p>
+                        </div>
                     </div>
 
                     <div class="flex flex-col lg:flex-row gap-8">
                         <div class="flex-1 min-w-0 lg:border-r lg:border-subtle lg:pr-8">
-                            <form id="task-form" class="space-y-6">
-                        <input type="hidden" name="id" value="${task?.id || ''}">
-
-                        <!-- Title -->
-                        <div class="space-y-2">
+                            <form id="task-form" class="flex flex-col gap-6">
+                                <input type="hidden" name="id" value="${task ? task.id : ''}">
+                                
+                                <div class="space-y-2">
                             <label class="text-[10px] font-black text-dim uppercase tracking-widest block ml-1">Task Name</label>
                             <input type="text" name="title" required placeholder="What needs to be done?" class="w-full zen-input bg-highlight border border-subtle focus:ring-2 focus:ring-primary/20 text-main outline-none transition-all" value="${escapeHTML(task?.title || '')}">
                         </div>
@@ -223,19 +233,10 @@ export class TaskModal {
                         </div>
 
                         <!-- Actions -->
-                        <div class="pt-4 grid grid-cols-4 gap-3">
-                            ${task ? `
-                                <button type="button" id="delete-task-btn" class="col-span-1 h-12 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold rounded-xl transition-all">
-                                    <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                                <button type="submit" id="commit-task-btn" class="col-span-3 zen-btn bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
-                                    Update Task
-                                </button>
-                            ` : `
-                                <button type="submit" id="commit-task-btn" class="col-span-4 zen-btn bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
-                                    Create Task
-                                </button>
-                            `}
+                        <div class="pt-4 flex justify-start">
+                            <button type="submit" id="commit-task-btn" class="w-full sm:w-auto px-10 zen-btn bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
+                                ${task ? 'Update Task' : 'Create Task'}
+                            </button>
                         </div>
                     </form>
                     </div>
