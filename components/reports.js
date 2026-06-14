@@ -160,8 +160,14 @@ export async function renderReports() {
             <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === todayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${todayStr}">Today</button>
             <button class="day-select-btn flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${dailyReportDate === yesterdayStr ? 'bg-primary text-white shadow-md' : 'text-dim hover:text-main'}" data-date="${yesterdayStr}">Yesterday</button>
           </div>
-          <div class="flex items-center justify-center px-2 py-3 rounded-xl border transition-all ${(![todayStr, yesterdayStr].includes(dailyReportDate)) ? 'bg-primary border-primary text-white shadow-md' : 'bg-app/50 border-soft'}">
-            <input type="date" id="daily-date-picker" value="${dailyReportDate}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest ${(![todayStr, yesterdayStr].includes(dailyReportDate)) ? 'text-white' : 'text-main'} focus:ring-0 cursor-pointer p-0 text-center">
+          <div class="flex items-center justify-between px-2 py-3 rounded-xl border transition-all ${(![todayStr, yesterdayStr].includes(dailyReportDate)) ? 'bg-primary border-primary text-white shadow-md' : 'bg-app/50 border-soft'}">
+            <button class="prev-daily-btn w-6 h-6 flex items-center justify-center rounded hover:bg-black/10 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <input type="date" id="daily-date-picker" value="${dailyReportDate}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest ${(![todayStr, yesterdayStr].includes(dailyReportDate)) ? 'text-white' : 'text-main'} focus:ring-0 cursor-pointer p-0 text-center flex-1 mx-1">
+            <button class="next-daily-btn w-6 h-6 flex items-center justify-center rounded hover:bg-black/10 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+            </button>
           </div>
           <div class="pt-4 space-y-6">
             <h4 class="text-[9px] font-black text-dim uppercase tracking-widest px-1">Daily Mix</h4>
@@ -291,6 +297,22 @@ export async function renderReports() {
         dailyReportDate = dayBtn.dataset.date; 
         localStorage.setItem('timeshark_reports_daily_date', dailyReportDate);
         refreshView(); 
+    }
+    
+    if (e.target.closest('.prev-daily-btn')) {
+        const d = new Date(dailyReportDate + 'T00:00:00');
+        d.setDate(d.getDate() - 1);
+        dailyReportDate = d.toLocaleDateString('en-CA');
+        localStorage.setItem('timeshark_reports_daily_date', dailyReportDate);
+        refreshView();
+    }
+    
+    if (e.target.closest('.next-daily-btn')) {
+        const d = new Date(dailyReportDate + 'T00:00:00');
+        d.setDate(d.getDate() + 1);
+        dailyReportDate = d.toLocaleDateString('en-CA');
+        localStorage.setItem('timeshark_reports_daily_date', dailyReportDate);
+        refreshView();
     }
     
     const scaleBtn = e.target.closest('.analytics-scale-btn');

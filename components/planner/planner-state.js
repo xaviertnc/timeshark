@@ -99,7 +99,9 @@ export const PlannerState = {
         // We attach time entries to the simplified data structure for rendering
         const resourceRows = resources.map(resourceName => {
             // Tasks for this resource
-            const assignedTasks = scheduledTasks.filter(t => t.resource_id === resourceName);
+            const assignedTasks = scheduledTasks.filter(t => 
+                (t.resource_id === resourceName) || (!t.resource_id && resourceName === 'General')
+            );
 
             // Time entries for this resource
             const assignedEntries = timeEntries.filter(te =>
