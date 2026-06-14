@@ -1,3 +1,22 @@
+<?php
+/**
+ * index.php
+ *
+ * Main Application Entry
+ *
+ * Purpose: Application shell.
+ *
+ * @package Time Shark
+ *
+ * Last 3 version commits:
+ * @version 2.6 - UPD - 09 Jun 2026 - Standardize modals, delete/save button placement & overflow scrolling.
+ * @version 2.5 - FIX - 09 Jun 2026 - Responsive popup windows & layout improvements for TASK EDIT.
+ * @version 2.4 - FT - 26 May 2026 - TODO List Improvements, bulk moves, Confirm Dialog & bug fixes.
+ */
+
+define('APP_VERSION', 'v2.6');
+$appVersion = APP_VERSION;
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,7 +79,8 @@
             <!-- Navigation icons will be injected here. We'll simplify sidebar.js too -->
         </nav>
 
-        <div class="p-3 flex flex-col items-center shrink-0">
+        <div class="p-3 flex flex-col items-center shrink-0" title="App Version" id="app-version-container">
+            <span class="text-xs text-slate-300 font-bold tracking-widest block mt-2 cursor-default hover:text-primary transition-colors"><?= htmlspecialchars($appVersion) ?></span>
         </div>
     </aside>
 
