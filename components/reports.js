@@ -187,7 +187,6 @@ export async function renderReports() {
             <h1 class="text-3xl font-light text-main tracking-tight">Delivery <span class="font-bold italic text-primary">Overview.</span></h1>
           </div>
           <div class="flex items-center gap-3">
-             <div id="reports-project-filter-container" class="w-[200px] h-7 relative z-10 shrink-0 mr-2"></div>
              <div class="flex gap-2">
                  ${['week', 'month', 'quarter'].map(s => {
                      const labels = { week: 'Past Week', month: 'Past Month', quarter: 'Past Quarter' };
@@ -195,6 +194,7 @@ export async function renderReports() {
                      return `<button class="analytics-scale-btn px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${active ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-scale="${s}">${labels[s]}</button>`;
                  }).join('')}
              </div>
+             <div id="reports-project-filter-container" class="w-[200px] h-7 relative z-10 shrink-0"></div>
           </div>
         </div>
         <div id="project-analytics-container" class="w-full bg-card/10 rounded-xl border border-white/5 overflow-hidden flex flex-col h-[500px]"></div>

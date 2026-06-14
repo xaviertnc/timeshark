@@ -715,6 +715,24 @@ export class TaskModal {
                     const now = new Date();
                     data.completed_at = now.toISOString();
                 }
+                // Backdate future dates when completing a task
+                if (data.start_date) {
+                    const now = new Date();
+                    const todayStr = now.toISOString().split('T')[0];
+                    const startTime = new Date(data.start_date).getTime();
+                    const endTime = data.end_date ? new Date(data.end_date).getTime() : startTime;
+                    const nowTime = now.getTime();
+                    
+                    if (startTime > nowTime && endTime > nowTime) {
+                        // Both future → set both to today with 1hr duration
+                        data.start_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+                        const endDt = new Date(now.getTime() + 3600000);
+                        data.end_date = `${todayStr}T${endDt.toTimeString().substring(0, 5)}:00`;
+                    } else if (endTime > nowTime) {
+                        // Start is past but end is future → just pull end to today
+                        data.end_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+                    }
+                }
             } else {
                 data.completed_at = null;
             }

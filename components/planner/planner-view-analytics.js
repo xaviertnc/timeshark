@@ -41,40 +41,32 @@ export const PlannerAnalytics = {
                 let start = t.start_date ? new Date(t.start_date).getTime() : 0;
                 if (t.status === 'done') {
                     const comp = t.completed_at ? new Date(t.completed_at).getTime() : start;
-                    if (comp > 0 && comp < start) {
+                    if (comp > 0 && (start === 0 || comp < start)) {
                         start = comp;
                     }
                 }
                 return start;
             };
 
+            // Derive task creation time from its uniqid-based hex ID (first 8 hex chars = unix seconds)
+            const getCreatedAt = (t) => {
+                if (!t.id || typeof t.id !== 'string') return 0;
+                const hexSec = t.id.substring(0, 8);
+                const sec = parseInt(hexSec, 16);
+                return isNaN(sec) ? 0 : sec * 1000;
+            };
+
             const processingDates = [...dates];
-            const lastConfigDate = processingDates[processingDates.length - 1].getTime();
-            let maxTaskTime = lastConfigDate;
-            
-            allTasks.forEach(t => {
-                const s = getEffectiveStart(t);
-                if (s > maxTaskTime) maxTaskTime = s;
-            });
-            
-            // Limit lookahead to 21 days maximum
-            const maxLookahead = lastConfigDate + (21 * 86400000);
-            if (maxTaskTime > lastConfigDate) {
-                let nextTime = lastConfigDate + 86400000;
-                const endLimit = Math.min(maxTaskTime, maxLookahead);
-                while (nextTime <= endLimit) {
-                    processingDates.push(new Date(nextTime));
-                    nextTime += 86400000;
-                }
-            }
 
             processingDates.forEach(d => {
                 // Find tasks created up to this date
                 const dTime = d.getTime();
                 
+                // Scope = tasks created up to this date (using immutable creation timestamp)
+                // Use baseDoneOffset (not baseScopeOffset) so the gap = outstanding work is preserved
                 let tasksUntilNow = allTasks.filter(t => {
-                    const start = getEffectiveStart(t);
-                    return start > 0 && start <= dTime + 86400000; 
+                    const created = getCreatedAt(t);
+                    return created > 0 && created <= dTime + 86400000; 
                 }).length - baseDoneOffset;
                 if (tasksUntilNow < 0) tasksUntilNow = 0;
 
@@ -86,8 +78,8 @@ export const PlannerAnalytics = {
                 if (doneUntilNow < 0) doneUntilNow = 0;
 
                 const addedToday = allTasks.filter(t => {
-                    const start = getEffectiveStart(t);
-                    return start > dTime && start <= dTime + 86400000; 
+                    const created = getCreatedAt(t);
+                    return created > dTime && created <= dTime + 86400000;
                 }).length;
 
                 const doneToday = allTasks.filter(t => {
@@ -111,12 +103,17 @@ export const PlannerAnalytics = {
         if (burnupData.length > 0) {
             const maxVal = Math.max(...burnupData.map(d => d.total), 10);
             
-            const bars = burnupData.map(d => {
+            const bars = burnupData.map((d, idx) => {
                 const totalHp = Math.max((d.total / maxVal) * 100, 0);
                 const doneHp = d.total > 0 ? Math.max((d.done / maxVal) * 100, 0) : 0;
                 
                 const addedHp = Math.max((d.addedToday / maxVal) * 100, 0);
                 const doneTodayHp = Math.max((d.doneToday / maxVal) * 100, 0);
+
+                // Position tooltip to avoid clipping at edges
+                const isNearEnd = idx >= burnupData.length - 2;
+                const isNearStart = idx <= 1;
+                const tooltipAlign = isNearEnd ? 'right-0' : isNearStart ? 'left-0' : 'left-1/2 -translate-x-1/2';
 
                 return `
                     <div class="flex-1 flex flex-col justify-end items-center group relative h-[200px]">
@@ -131,7 +128,7 @@ export const PlannerAnalytics = {
                         ${doneTodayHp > 0 ? `<div class="absolute w-1/3 max-w-[12px] bg-green-500/90 rounded-t-sm z-20 transition-all duration-300 shadow-[0_0_8px_rgba(34,197,94,0.4)]" style="bottom: ${doneHp - doneTodayHp}%; height: ${doneTodayHp}%;"></div>` : ''}
                         
                         <!-- Tooltip -->
-                        <div class="absolute bottom-full mb-3 bg-card border border-white/10 px-3 py-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 min-w-[150px]">
+                        <div class="absolute bottom-full mb-3 ${tooltipAlign} bg-card border border-white/10 px-3 py-2 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 whitespace-nowrap">
                             <div class="text-[9px] text-dim font-black uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1 flex justify-between">
                                 <span>${d.date.toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
                             </div>
@@ -139,9 +136,13 @@ export const PlannerAnalytics = {
                                 <span class="text-white/60 font-bold uppercase">Total Scope:</span>
                                 <span class="text-main font-black">${d.total} <span class="text-[8px] text-amber-500/80 ml-1 font-bold">${d.addedToday > 0 ? `(+${d.addedToday})` : ''}</span></span>
                             </div>
-                            <div class="flex justify-between items-center gap-4 text-[10px]">
+                            <div class="flex justify-between items-center gap-4 text-[10px] mb-1">
                                 <span class="text-primary/70 font-bold uppercase">Completed:</span>
                                 <span class="text-primary font-black">${d.done} <span class="text-[8px] text-green-500/90 ml-1 font-bold">${d.doneToday > 0 ? `(+${d.doneToday})` : ''}</span></span>
+                            </div>
+                            <div class="flex justify-between items-center gap-4 text-[10px] border-t border-white/5 pt-1">
+                                <span class="text-white/30 font-bold uppercase">Todo:</span>
+                                <span class="text-white/40 font-black">${Math.max(d.total - d.done, 0)}</span>
                             </div>
                         </div>
                     </div>
@@ -174,7 +175,7 @@ export const PlannerAnalytics = {
                         </div>
                     </div>
                     
-                    <div class="flex items-end h-[200px] border-b border-light/5 w-full relative pl-10 pr-2">
+                    <div class="flex items-end h-[200px] border-b border-light/5 w-full relative pl-10 pr-2 overflow-visible">
                         <!-- Y-Axis Labels -->
                         <div class="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between text-[9px] font-bold text-dim/30 py-0 border-r border-white/5 pr-2 items-end">
                             <span class="-mt-2.5">${maxVal}</span>

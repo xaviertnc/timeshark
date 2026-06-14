@@ -9,12 +9,12 @@
  * @package Time Shark
  *
  * Last 3 version commits:
+ * @version 2.7 - FIX - 14 Jun 2026 - Fix the burnup graph logic and resetting future task dates when we complete them early.
  * @version 2.6 - UPD - 09 Jun 2026 - Standardize modals, delete/save button placement & overflow scrolling.
  * @version 2.5 - FIX - 09 Jun 2026 - Responsive popup windows & layout improvements for TASK EDIT.
- * @version 2.4 - FT - 26 May 2026 - TODO List Improvements, bulk moves, Confirm Dialog & bug fixes.
  */
 
-define('APP_VERSION', 'v2.6');
+define('APP_VERSION', 'v2.7');
 $appVersion = APP_VERSION;
 ?>
 <!DOCTYPE html>

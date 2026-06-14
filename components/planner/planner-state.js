@@ -70,13 +70,17 @@ export const PlannerState = {
         const backlogTasks = [];
 
         filteredTasks.forEach(task => {
-            if (task.status === 'backlog' || !task.start_date) {
+            if (task.status === 'backlog' || (!task.start_date && task.status !== 'done')) {
                 backlogTasks.push(task);
             } else {
                 // Default duration: 30 minutes if no end date
                 if (!task.end_date) {
-                    const s = new Date(task.start_date);
-                    task.end_date = new Date(s.getTime() + 30 * 60 * 1000).toISOString();
+                    if (task.start_date) {
+                        const s = new Date(task.start_date);
+                        task.end_date = new Date(s.getTime() + 30 * 60 * 1000).toISOString();
+                    } else if (task.completed_at) {
+                        task.end_date = task.completed_at;
+                    }
                 }
                 // Ensure date strings are valid
                 scheduledTasks.push(task);

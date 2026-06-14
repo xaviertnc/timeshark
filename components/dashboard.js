@@ -1361,9 +1361,24 @@ export async function renderDashboard(forceRefresh = false) {
         const task = (store.get().tasks || []).find(t => String(t.id) === String(taskId));
         if (!task) return;
         const isDone = task.status === 'done';
+        const now = new Date();
         const update = isDone
           ? { id: taskId, status: 'todo', progress: 0, completed_at: null }
-          : { id: taskId, status: 'done', progress: 100, completed_at: new Date().toISOString() };
+          : { id: taskId, status: 'done', progress: 100, completed_at: now.toISOString() };
+        // Backdate future dates when marking done
+        if (!isDone && task.start_date) {
+          const todayStr = now.toISOString().split('T')[0];
+          const startTime = new Date(task.start_date).getTime();
+          const endTime = task.end_date ? new Date(task.end_date).getTime() : startTime;
+          const nowTime = now.getTime();
+          if (startTime > nowTime && endTime > nowTime) {
+            update.start_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+            const endDt = new Date(nowTime + 3600000);
+            update.end_date = `${todayStr}T${endDt.toTimeString().substring(0, 5)}:00`;
+          } else if (endTime > nowTime) {
+            update.end_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+          }
+        }
         try {
           await api.post('planner.php', update);
           await PlannerState.init();
@@ -1383,7 +1398,24 @@ export async function renderDashboard(forceRefresh = false) {
         const newProgress = steps[nextIdx] !== undefined ? steps[nextIdx] : steps[0];
         const newStatus = newProgress >= 100 ? 'done' : newProgress > 0 ? 'in-progress' : 'todo';
         const update = { id: taskId, progress: newProgress, status: newStatus };
-        if (newStatus === 'done') update.completed_at = new Date().toISOString();
+        if (newStatus === 'done') {
+          const now = new Date();
+          update.completed_at = now.toISOString();
+          const task = allTasks.find(t => String(t.id) === String(taskId));
+          if (task && task.start_date) {
+            const todayStr = now.toISOString().split('T')[0];
+            const startTime = new Date(task.start_date).getTime();
+            const endTime = task.end_date ? new Date(task.end_date).getTime() : startTime;
+            const nowTime = now.getTime();
+            if (startTime > nowTime && endTime > nowTime) {
+              update.start_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+              const endDt = new Date(nowTime + 3600000);
+              update.end_date = `${todayStr}T${endDt.toTimeString().substring(0, 5)}:00`;
+            } else if (endTime > nowTime) {
+              update.end_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+            }
+          }
+        }
         if (newStatus !== 'done') update.completed_at = null;
         try {
           await api.post('planner.php', update);

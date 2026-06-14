@@ -298,11 +298,30 @@ export const PlannerKanban = {
                             task._renderStatus = newStatus;
                             PlannerKanban.render(container, data, config, today, projectFilter, callbacks);
                             
-                            await api.post('planner.php?action=update_task', {
+                            const updatePayload = {
                                 id: task.id,
                                 status: task.status,
                                 progress: task.progress
-                            });
+                            };
+                            // Backdate future dates when dropping into Done
+                            if (newStatus === 'done') {
+                                const now = new Date();
+                                updatePayload.completed_at = now.toISOString();
+                                if (task.start_date) {
+                                    const todayStr = now.toISOString().split('T')[0];
+                                    const startTime = new Date(task.start_date).getTime();
+                                    const endTime = task.end_date ? new Date(task.end_date).getTime() : startTime;
+                                    const nowTime = now.getTime();
+                                    if (startTime > nowTime && endTime > nowTime) {
+                                        updatePayload.start_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+                                        const endDt = new Date(nowTime + 3600000);
+                                        updatePayload.end_date = `${todayStr}T${endDt.toTimeString().substring(0, 5)}:00`;
+                                    } else if (endTime > nowTime) {
+                                        updatePayload.end_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+                                    }
+                                }
+                            }
+                            await api.post('planner.php?action=update_task', updatePayload);
                             refresh();
                         } catch (err) {
                             console.error("Failed to update status", err);

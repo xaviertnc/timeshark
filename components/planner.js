@@ -330,7 +330,26 @@ export async function renderPlanner() {
                 if (newProgress >= 100) task.status = 'done';
                 else if (task.status === 'done') task.status = 'todo';
                 updateUI();
-                await api.post('planner.php?action=update_task', { id: taskId, progress: newProgress, status: task.status });
+                const updatePayload = { id: taskId, progress: newProgress, status: task.status };
+                // Backdate future dates when completing
+                if (task.status === 'done') {
+                    const now = new Date();
+                    updatePayload.completed_at = now.toISOString();
+                    if (task.start_date) {
+                        const todayStr = now.toISOString().split('T')[0];
+                        const startTime = new Date(task.start_date).getTime();
+                        const endTime = task.end_date ? new Date(task.end_date).getTime() : startTime;
+                        const nowTime = now.getTime();
+                        if (startTime > nowTime && endTime > nowTime) {
+                            updatePayload.start_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+                            const endDt = new Date(nowTime + 3600000);
+                            updatePayload.end_date = `${todayStr}T${endDt.toTimeString().substring(0, 5)}:00`;
+                        } else if (endTime > nowTime) {
+                            updatePayload.end_date = `${todayStr}T${now.toTimeString().substring(0, 5)}:00`;
+                        }
+                    }
+                }
+                await api.post('planner.php?action=update_task', updatePayload);
             }
             return;
         }
