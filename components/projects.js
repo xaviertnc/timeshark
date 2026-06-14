@@ -35,7 +35,8 @@ const applyAlpha = (color, alpha) => {
 
 // Persistent UI State
 let searchTerm = '';
-let statusFilter = localStorage.getItem('project_status_filter') || 'active'; // 'all', 'active', 'on hold', 'completed', 'cancelled', 'archived'
+let viewMode = localStorage.getItem('project_view_mode') || 'table';
+let statusFilter = localStorage.getItem(viewMode === 'kanban' ? 'project_status_kanban' : 'project_status_table') || localStorage.getItem('project_status_filter') || 'active'; // 'all', 'active', 'on hold', 'completed', 'cancelled', 'archived'
 let sortConfig = JSON.parse(localStorage.getItem('project_sort_config') || '{"key":"list_order","direction":"asc"}');
 let groupByOrg = localStorage.getItem('project_group_by_org') === 'true';
 let groupByTag = localStorage.getItem('project_group_by_tag') === 'true';
@@ -49,7 +50,6 @@ let leadFilter = localStorage.getItem('project_lead_filter') || '';
 let devFilter = localStorage.getItem('project_dev_filter') || '';
 let selectedProjectIds = new Set();
 let lastCheckedProjectValue = null;
-let viewMode = localStorage.getItem('project_view_mode') || 'table';
 let hiddenKanbanProjects = new Set(JSON.parse(localStorage.getItem('hidden_kanban_projects') || '[]'));
 let compactKanban = localStorage.getItem('compact_kanban') === 'true';
 
@@ -707,10 +707,20 @@ export async function renderProjects() {
   // --- ACTIONS ---
 
   const kanbanBtn = container.querySelector('#view-kanban-btn');
-  if (kanbanBtn) kanbanBtn.onclick = () => { localStorage.setItem('project_view_mode', 'kanban'); viewMode = 'kanban'; refreshView(); };
+  if (kanbanBtn) kanbanBtn.onclick = () => { 
+      localStorage.setItem('project_view_mode', 'kanban'); 
+      viewMode = 'kanban'; 
+      statusFilter = localStorage.getItem('project_status_kanban') || localStorage.getItem('project_status_filter') || 'active';
+      refreshView(); 
+  };
   
   const tableBtn = container.querySelector('#view-table-btn');
-  if (tableBtn) tableBtn.onclick = () => { localStorage.setItem('project_view_mode', 'table'); viewMode = 'table'; refreshView(); };
+  if (tableBtn) tableBtn.onclick = () => { 
+      localStorage.setItem('project_view_mode', 'table'); 
+      viewMode = 'table'; 
+      statusFilter = localStorage.getItem('project_status_table') || localStorage.getItem('project_status_filter') || 'active';
+      refreshView(); 
+  };
 
   const unhideSelect = container.querySelector('#unhide-project-select');
   if (unhideSelect) {
@@ -789,6 +799,7 @@ export async function renderProjects() {
     btn.onclick = () => {
       statusFilter = btn.dataset.status;
       localStorage.setItem('project_status_filter', statusFilter);
+      localStorage.setItem(viewMode === 'kanban' ? 'project_status_kanban' : 'project_status_table', statusFilter);
       refreshView();
     };
   });
