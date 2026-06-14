@@ -10,7 +10,7 @@ export const PlannerAnalytics = {
         if (!container) return;
 
         container.innerHTML = '';
-        container.className = 'w-full h-full p-6 bg-app overflow-y-auto custom-scrollbar flex flex-col gap-6';
+        container.classList.add('flex', 'flex-col', 'w-full', 'h-full');
 
         const allTasks = [];
         if (data.rows) {
@@ -21,7 +21,6 @@ export const PlannerAnalytics = {
         
         const dates = config.dates || [];
         
-
 
         // Burnup Data Calculation
         // Iterate through config.dates (or generate past 14 days if not available)
@@ -150,7 +149,7 @@ export const PlannerAnalytics = {
             }).join('');
 
             chartHtml = `
-                <div class="w-full bg-card/50 border border-white/5 rounded-xl p-6 relative">
+                <div class="w-full h-full p-8 relative flex flex-col justify-center">
                     <div class="flex items-center justify-between mb-8">
                         <h3 class="text-xs font-black uppercase tracking-widest text-dim">Delivery Burnup</h3>
                         

@@ -4,6 +4,7 @@ import { TimeEntryModal } from './time-entry-modal.js';
 import { ConfirmModal } from './confirm-modal.js';
 import { PlannerState } from './planner/planner-state.js';
 import { PlannerAnalytics } from './planner/planner-view-analytics.js';
+import { PlannerActivity } from './planner/planner-view-activity.js';
 import { SearchableSelect } from './searchable-select.js';
 
 /**
@@ -179,7 +180,7 @@ export async function renderReports() {
     </div>
 
     <!-- Analytics Section -->
-    <div class="mt-16 pt-8 border-t border-white/5">
+    <div class="mt-16 pt-8 border-t border-b border-white/5 pb-12 mb-12">
         <div class="flex items-end justify-between px-2 mb-6">
           <div>
             <h2 class="text-[10px] font-black text-dim uppercase tracking-[0.4em] mb-2 opacity-50">Project Analytics</h2>
@@ -198,6 +199,8 @@ export async function renderReports() {
         </div>
         <div id="project-analytics-container" class="w-full bg-card/10 rounded-xl border border-white/5 overflow-hidden flex flex-col h-[500px]"></div>
     </div>
+    
+    <div id="reports-activity-container" class="w-full flex flex-col mt-4"></div>
   `;
 
   setTimeout(() => {
@@ -271,6 +274,11 @@ export async function renderReports() {
     const analyticsContainer = container.querySelector('#project-analytics-container');
     if (analyticsContainer) {
         PlannerAnalytics.render(analyticsContainer, plannerData, analyticsConfig, today, projectFilter);
+    }
+
+    const activityContainer = container.querySelector('#reports-activity-container');
+    if (activityContainer) {
+        PlannerActivity.render(activityContainer, PlannerState.getCombinedData('all'));
     }
     
     const filterContainer = container.querySelector('#reports-project-filter-container');
