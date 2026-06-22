@@ -9,6 +9,7 @@ import { TimeEntryModal } from './time-entry-modal.js';
 import { TaskFilterBar } from './task-filter-bar.js';
 import { ProjectModal } from './project-modal.js';
 import { ConfirmModal } from './confirm-modal.js';
+import { ExportModal } from './export-modal.js';
 import { escapeHTML } from '../utils/dom.js';
 
 /**
@@ -216,6 +217,10 @@ export async function renderDashboard(forceRefresh = false) {
           <div id="project-filter-wrapper" class="flex items-center gap-1 pl-1 pr-1 h-9 bg-highlight border border-white/5 rounded-lg transition-all focus-within:border-primary/20">
               <div id="task-project-filter-container" class="w-48 h-full"></div>
           </div>
+
+          <button id="export-tasks-btn" class="h-9 px-3 rounded-lg transition-all text-dim hover:text-main hover:bg-white/10 bg-highlight border border-white/5 flex items-center justify-center shrink-0" title="Export Tasks">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          </button>
       </div>
 
       <!-- Row 2: Primary Group Filters -->
@@ -337,6 +342,9 @@ export async function renderDashboard(forceRefresh = false) {
             </div>
             <button id="history-compact-toggle" class="p-1 rounded-md transition-all ${isHistoryCompact ? 'bg-primary/20 text-primary' : 'text-dim hover:text-main hover:bg-highlight'}" title="Toggle Compact Mode">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <button id="export-history-btn" class="p-1 rounded-md transition-all text-dim hover:text-main hover:bg-highlight" title="Export Time Entries">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             </button>
         </div>
       </div>
@@ -647,6 +655,16 @@ export async function renderDashboard(forceRefresh = false) {
     app.innerHTML = '';
     app.appendChild(await renderDashboard());
   };
+
+  const exportBtn = container.querySelector('#export-history-btn');
+  if (exportBtn) {
+    exportBtn.onclick = () => ExportModal.open();
+  }
+
+  const exportTasksBtn = container.querySelector('#export-tasks-btn');
+  if (exportTasksBtn) {
+    exportTasksBtn.onclick = () => ExportModal.open({ type: 'tasks' });
+  }
 
   // ─── TASK PANEL LOGIC ───
 
