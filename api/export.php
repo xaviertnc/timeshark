@@ -19,9 +19,9 @@ if ($format !== 'csv' && $format !== 'json') {
 }
 
 $store = new JsonStore();
-if ($type === 'time_entries') {
+if ($type === 'time_entries' || $type === 'time_entry_tasks' || $type === 'time_entry_projects') {
     $entries = $store->get('time-entries') ?? [];
-} else if ($type === 'tasks') {
+} else if ($type === 'tasks' || $type === 'projects') {
     $entries = $store->get('tasks') ?? [];
 } else {
     http_response_code(400);
@@ -141,6 +141,30 @@ usort($filtered, function($a, $b) use ($type) {
     return strcmp($timeA, $timeB);
 });
 
+if ($type === 'projects' || $type === 'time_entry_projects') {
+    $linkedProjectIds = array_unique(array_column($filtered, 'project_id'));
+    $allProjects = $store->get('projects') ?? [];
+    $filtered = array_values(array_filter($allProjects, function($p) use ($linkedProjectIds) {
+        return in_array($p['id'], $linkedProjectIds);
+    }));
+    
+    // Sort projects by name
+    usort($filtered, function($a, $b) {
+        return strcmp($a['name'] ?? '', $b['name'] ?? '');
+    });
+} else if ($type === 'time_entry_tasks') {
+    $linkedTaskIds = array_unique(array_column($filtered, 'task_id'));
+    $allTasks = $store->get('tasks') ?? [];
+    $filtered = array_values(array_filter($allTasks, function($t) use ($linkedTaskIds) {
+        return in_array($t['id'], $linkedTaskIds);
+    }));
+    
+    // Sort tasks by start date
+    usort($filtered, function($a, $b) {
+        return strcmp($a['start_date'] ?? '', $b['start_date'] ?? '');
+    });
+}
+
 // Enhance data with Project details
 $projects = $store->get('projects') ?? [];
 $projMap = [];
@@ -161,6 +185,28 @@ foreach ($customers as $c) {
 }
 
 foreach ($filtered as &$e) {
+    if ($type === 'projects' || $type === 'time_entry_projects') {
+        $custName = '';
+        if (isset($e['customer_id'])) {
+            $c = $customerMap[$e['customer_id']] ?? null;
+            if ($c) $custName = $c['name'];
+        }
+        $e['organization_name'] = $custName;
+        continue;
+    }
+    
+    if ($type === 'time_entry_tasks') {
+        $proj = $projMap[$e['project_id']] ?? null;
+        $e['project_name'] = $proj ? ($proj['name'] ?? 'Unknown Project') : ($e['project_name'] ?? 'Unknown');
+        $custName = '';
+        if ($proj && isset($proj['customer_id'])) {
+            $c = $customerMap[$proj['customer_id']] ?? null;
+            if ($c) $custName = $c['name'];
+        }
+        $e['organization_name'] = $custName;
+        continue;
+    }
+    
     $proj = $projMap[$e['project_id']] ?? null;
     $e['project_name'] = $proj ? ($proj['name'] ?? 'Unknown Project') : ($e['project_name'] ?? 'Unknown');
     
@@ -197,28 +243,90 @@ foreach ($filtered as &$e) {
     }
 }
 
-$filenamePrefix = $type === 'tasks' ? 'timeshark_tasks' : 'timeshark_time_entries';
-$filename = "{$filenamePrefix}_{$period}." . $format;
+$filenamePrefix = 'timeshark_time_entries';
+if ($type === 'tasks') $filenamePrefix = 'timeshark_tasks';
+else if ($type === 'projects') $filenamePrefix = 'timeshark_tasks_projects';
+else if ($type === 'time_entry_tasks') $filenamePrefix = 'timeshark_time_entries_tasks';
+else if ($type === 'time_entry_projects') $filenamePrefix = 'timeshark_time_entries_projects';
+
+$timestamp = date('Ymd_His');
+$filename = "{$filenamePrefix}_{$period}_{$timestamp}." . $format;
 header("Content-Disposition: attachment; filename=\"$filename\"");
 
 if ($format === 'json') {
     header('Content-Type: application/json');
-    echo json_encode($filtered, JSON_PRETTY_PRINT);
+    
+    $result = $filtered;
+    
+    if ($type === 'time_entries') {
+        $linkedTaskIds = array_unique(array_column($filtered, 'task_id'));
+        $allTasks = $store->get('tasks') ?? [];
+        $companionTasks = array_values(array_filter($allTasks, function($t) use ($linkedTaskIds) {
+            return in_array($t['id'], $linkedTaskIds);
+        }));
+        foreach ($companionTasks as &$ct) {
+            $p = $projMap[$ct['project_id']] ?? null;
+            $ct['project_name'] = $p ? ($p['name'] ?? 'Unknown Project') : 'Unknown';
+            $custName = '';
+            if ($p && isset($p['customer_id'])) {
+                $c = $customerMap[$p['customer_id']] ?? null;
+                if ($c) $custName = $c['name'];
+            }
+            $ct['organization_name'] = $custName;
+        }
+
+        $linkedProjectIds = array_unique(array_column($filtered, 'project_id'));
+        $allProjects = $store->get('projects') ?? [];
+        $companionProjects = array_values(array_filter($allProjects, function($p) use ($linkedProjectIds) {
+            return in_array($p['id'], $linkedProjectIds);
+        }));
+        foreach ($companionProjects as &$cp) {
+            $custName = '';
+            if (isset($cp['customer_id'])) {
+                $c = $customerMap[$cp['customer_id']] ?? null;
+                if ($c) $custName = $c['name'];
+            }
+            $cp['organization_name'] = $custName;
+        }
+
+        $result = [
+            "time_entries" => $filtered,
+            "tasks" => $companionTasks,
+            "projects" => $companionProjects
+        ];
+    } else if ($type === 'tasks') {
+        $linkedProjectIds = array_unique(array_column($filtered, 'project_id'));
+        $allProjects = $store->get('projects') ?? [];
+        $companionProjects = array_values(array_filter($allProjects, function($p) use ($linkedProjectIds) {
+            return in_array($p['id'], $linkedProjectIds);
+        }));
+        foreach ($companionProjects as &$cp) {
+            $custName = '';
+            if (isset($cp['customer_id'])) {
+                $c = $customerMap[$cp['customer_id']] ?? null;
+                if ($c) $custName = $c['name'];
+            }
+            $cp['organization_name'] = $custName;
+        }
+
+        $result = [
+            "tasks" => $filtered,
+            "projects" => $companionProjects
+        ];
+    }
+
+    echo json_encode($result, JSON_PRETTY_PRINT);
     exit;
 }
 
 if ($format === 'csv') {
-    header('Content-Type: text/csv');
-    $output = fopen("php://output", "w");
-    if (count($filtered) > 0) {
-        if ($type === 'time_entries') {
-            $fields = [
-                'ID', 'Resource', 'Organization', 'Project', 'Task Title', 'Description', 'Notes', 'Tags', 'Start Time', 'End Time', 'Duration (seconds)'
-            ];
-            fputcsv($output, $fields);
-            
-            foreach ($filtered as $row) {
-                fputcsv($output, [
+    // Helper to generate CSV content as a string
+    $toCsv = function($fields, $data, $typeStr, $projMap, $taskMap, $customerMap) {
+        $fp = fopen('php://temp', 'r+');
+        fputcsv($fp, $fields);
+        foreach ($data as $row) {
+            if ($typeStr === 'time_entries') {
+                fputcsv($fp, [
                     $row['id'] ?? '',
                     $row['resource_id'] ?? 'Main',
                     $row['organization_name'] ?? '',
@@ -231,15 +339,8 @@ if ($format === 'csv') {
                     $row['end_time'] ?? '',
                     $row['duration_seconds'] ?? 0
                 ]);
-            }
-        } else if ($type === 'tasks') {
-            $fields = [
-                'ID', 'Resource', 'Organization', 'Project', 'Title', 'Status', 'Progress', 'Priority', 'Notes', 'Tags', 'Start Date', 'End Date', 'Completed At'
-            ];
-            fputcsv($output, $fields);
-            
-            foreach ($filtered as $row) {
-                fputcsv($output, [
+            } else if ($typeStr === 'tasks') {
+                fputcsv($fp, [
                     $row['id'] ?? '',
                     $row['resource_id'] ?? 'Main',
                     $row['organization_name'] ?? '',
@@ -254,11 +355,102 @@ if ($format === 'csv') {
                     $row['end_date'] ?? '',
                     $row['completed_at'] ?? ''
                 ]);
+            } else if ($typeStr === 'projects') {
+                fputcsv($fp, [
+                    $row['id'] ?? '',
+                    $row['organization_name'] ?? '',
+                    $row['name'] ?? '',
+                    $row['code'] ?? '',
+                    $row['color'] ?? '',
+                    $row['status'] ?? '',
+                    ($row['archived'] ?? false) ? 'Yes' : 'No'
+                ]);
             }
         }
+        rewind($fp);
+        $csv = stream_get_contents($fp);
+        fclose($fp);
+        return $csv;
+    };
+
+    if ($type === 'time_entries' || $type === 'tasks') {
+        // Multi-file export via ZIP
+        $zip = new ZipArchive();
+        $zipFile = tempnam(sys_get_temp_dir(), 'ts_export');
+        
+        if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+            $timestamp = date('Ymd_His');
+            
+            if ($type === 'time_entries') {
+                // 1. Time Entries
+                $fields = ['ID', 'Resource', 'Organization', 'Project', 'Task Title', 'Description', 'Notes', 'Tags', 'Start Time', 'End Time', 'Duration (seconds)'];
+                $zip->addFromString("timeshark_time_entries_{$period}_{$timestamp}.csv", $toCsv($fields, $filtered, 'time_entries', $projMap, $taskMap, $customerMap));
+                
+                // 2. Linked Tasks
+                $linkedTaskIds = array_unique(array_column($filtered, 'task_id'));
+                $allTasks = $store->get('tasks') ?? [];
+                $companionTasks = array_values(array_filter($allTasks, function($t) use ($linkedTaskIds) { return in_array($t['id'], $linkedTaskIds); }));
+                foreach ($companionTasks as &$ct) {
+                    $p = $projMap[$ct['project_id']] ?? null;
+                    $ct['project_name'] = $p ? ($p['name'] ?? 'Unknown Project') : 'Unknown';
+                    $custName = ''; if ($p && isset($p['customer_id'])) { $c = $customerMap[$p['customer_id']] ?? null; if ($c) $custName = $c['name']; }
+                    $ct['organization_name'] = $custName;
+                }
+                $fieldsTasks = ['ID', 'Resource', 'Organization', 'Project', 'Title', 'Status', 'Progress', 'Priority', 'Notes', 'Tags', 'Start Date', 'End Date', 'Completed At'];
+                $zip->addFromString("timeshark_time_entries_tasks_{$period}_{$timestamp}.csv", $toCsv($fieldsTasks, $companionTasks, 'tasks', $projMap, $taskMap, $customerMap));
+                
+                // 3. Linked Projects
+                $linkedProjectIds = array_unique(array_column($filtered, 'project_id'));
+                $allProjects = $store->get('projects') ?? [];
+                $companionProjects = array_values(array_filter($allProjects, function($p) use ($linkedProjectIds) { return in_array($p['id'], $linkedProjectIds); }));
+                foreach ($companionProjects as &$cp) {
+                    $custName = ''; if (isset($cp['customer_id'])) { $c = $customerMap[$cp['customer_id']] ?? null; if ($c) $custName = $c['name']; }
+                    $cp['organization_name'] = $custName;
+                }
+                $fieldsProj = ['ID', 'Organization', 'Name', 'Code', 'Color', 'Status', 'Archived'];
+                $zip->addFromString("timeshark_time_entries_projects_{$period}_{$timestamp}.csv", $toCsv($fieldsProj, $companionProjects, 'projects', $projMap, $taskMap, $customerMap));
+                
+            } else if ($type === 'tasks') {
+                // 1. Tasks
+                $fieldsTasks = ['ID', 'Resource', 'Organization', 'Project', 'Title', 'Status', 'Progress', 'Priority', 'Notes', 'Tags', 'Start Date', 'End Date', 'Completed At'];
+                $zip->addFromString("timeshark_tasks_{$period}_{$timestamp}.csv", $toCsv($fieldsTasks, $filtered, 'tasks', $projMap, $taskMap, $customerMap));
+                
+                // 2. Linked Projects
+                $linkedProjectIds = array_unique(array_column($filtered, 'project_id'));
+                $allProjects = $store->get('projects') ?? [];
+                $companionProjects = array_values(array_filter($allProjects, function($p) use ($linkedProjectIds) { return in_array($p['id'], $linkedProjectIds); }));
+                foreach ($companionProjects as &$cp) {
+                    $custName = ''; if (isset($cp['customer_id'])) { $c = $customerMap[$cp['customer_id']] ?? null; if ($c) $custName = $c['name']; }
+                    $cp['organization_name'] = $custName;
+                }
+                $fieldsProj = ['ID', 'Organization', 'Name', 'Code', 'Color', 'Status', 'Archived'];
+                $zip->addFromString("timeshark_tasks_projects_{$period}_{$timestamp}.csv", $toCsv($fieldsProj, $companionProjects, 'projects', $projMap, $taskMap, $customerMap));
+            }
+            
+            $zip->close();
+            
+            $zipFilename = ($type === 'tasks' ? 'timeshark_tasks_bundle_' : 'timeshark_entries_bundle_') . "{$period}_{$timestamp}.zip";
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="'.$zipFilename.'"');
+            header('Content-Length: ' . filesize($zipFile));
+            readfile($zipFile);
+            unlink($zipFile);
+            exit;
+        }
     } else {
-        fputcsv($output, ['No entries found for the selected period.']);
+        // Single file export (projects specifically requested)
+        header('Content-Type: text/csv');
+        $output = fopen("php://output", "w");
+        if ($type === 'projects' || $type === 'time_entry_projects') {
+             fputcsv($output, ['ID', 'Organization', 'Name', 'Code', 'Color', 'Status', 'Archived']);
+             foreach ($filtered as $row) {
+                 fputcsv($output, [
+                    $row['id'] ?? '', $row['organization_name'] ?? '', $row['name'] ?? '', $row['code'] ?? '', 
+                    $row['color'] ?? '', $row['status'] ?? '', ($row['archived'] ?? false) ? 'Yes' : 'No'
+                 ]);
+             }
+        }
+        fclose($output);
+        exit;
     }
-    fclose($output);
-    exit;
 }
