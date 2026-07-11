@@ -62,6 +62,19 @@ export async function renderDashboard(forceRefresh = false) {
 
   const container = document.createElement('div');
   container.className = 'max-w-6xl mx-auto pb-10 space-y-8';
+  const disposers = [];
+  const registerDisposer = (dispose) => {
+    if (typeof dispose === 'function') disposers.push(dispose);
+  };
+  container.__dispose = () => {
+    disposers.splice(0).forEach(dispose => {
+      try { dispose(); } catch (err) { console.warn('Dashboard cleanup failed', err); }
+    });
+    container.querySelectorAll('*').forEach(el => {
+      if (typeof el.__ssDispose === 'function') el.__ssDispose();
+      if (typeof el.__spansCleanup === 'function') el.__spansCleanup();
+    });
+  };
 
   const shiftColor = (color, percent) => {
     if (!color || typeof color !== 'string' || !color.startsWith('#')) return color;
@@ -652,6 +665,7 @@ export async function renderDashboard(forceRefresh = false) {
     // Explicitly fetch fresh data before re-rendering
     await PlannerState.init();
     const app = document.getElementById('app');
+    if (typeof container.__dispose === 'function') container.__dispose();
     app.innerHTML = '';
     app.appendChild(await renderDashboard());
   };
@@ -674,6 +688,7 @@ export async function renderDashboard(forceRefresh = false) {
     renderDashboardTasks();
   };
   window.addEventListener('compact-mode-change', handleCompactChange);
+  registerDisposer(() => window.removeEventListener('compact-mode-change', handleCompactChange));
 
   const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{}');
   const filterDefaults = { today: true, overdue: true, planned: false, projects: false, timeline: true, backlog: false, completed: false };
@@ -1196,6 +1211,7 @@ export async function renderDashboard(forceRefresh = false) {
   const renderSpansChart = (spans) => {
     const chartEl = container.querySelector('#dashboard-spans-chart');
     if (!chartEl) return;
+    if (typeof chartEl.__spansCleanup === 'function') chartEl.__spansCleanup();
 
     if (!spans || spans.length === 0) {
       chartEl.innerHTML = ``;
@@ -1340,7 +1356,7 @@ export async function renderDashboard(forceRefresh = false) {
       </div>
     `;
 
-    chartEl.addEventListener('click', (e) => {
+    const handleSpansClick = (e) => {
       const spanEl = e.target.closest('[data-span-project-id]');
       if (spanEl) {
         const projectId = spanEl.dataset.spanProjectId;
@@ -1349,15 +1365,22 @@ export async function renderDashboard(forceRefresh = false) {
           ProjectModal.open(project, { onSave: refreshView });
         }
       }
-    });
+    };
 
-    chartEl.addEventListener('change', (e) => {
+    const handleSpansChange = (e) => {
       if (e.target.id === 'dashboard-show-epics-toggle') {
         localStorage.setItem('dashboard_show_epics', String(e.target.checked));
         isDashboardShowEpics = e.target.checked;
         refreshView();
       }
-    });
+    };
+    chartEl.addEventListener('click', handleSpansClick);
+    chartEl.addEventListener('change', handleSpansChange);
+    chartEl.__spansCleanup = () => {
+      chartEl.removeEventListener('click', handleSpansClick);
+      chartEl.removeEventListener('change', handleSpansChange);
+      chartEl.__spansCleanup = null;
+    };
   };
 
   renderTaskToggles();
@@ -1525,6 +1548,10 @@ export async function renderDashboard(forceRefresh = false) {
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    registerDisposer(() => {
+      clearInterval(interval);
+      observer.disconnect();
+    });
   }
 
   // Active Timer Actions

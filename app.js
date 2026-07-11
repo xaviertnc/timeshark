@@ -30,6 +30,20 @@ import { renderTeam } from './components/team.js';
 const app = document.getElementById('app');
 const headerContainer = document.getElementById('page-header-container');
 const pageTitle = document.getElementById('page-title');
+let currentRouteCleanup = null;
+
+function disposeCurrentRoute() {
+    if (typeof currentRouteCleanup !== 'function') return;
+    try {
+        currentRouteCleanup();
+    } catch (error) {
+        console.warn('Route cleanup failed', error);
+    } finally {
+        currentRouteCleanup = null;
+    }
+}
+
+window.__timesharkDisposeCurrentView = disposeCurrentRoute;
 
 // Router
 const routes = {
@@ -47,6 +61,7 @@ async function handleRoute() {
 
     // Smooth header transition
     headerContainer.style.opacity = '0';
+    disposeCurrentRoute();
 
     app.innerHTML = '<div class="flex items-center justify-center h-full"><div class="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div></div>';
 
@@ -54,6 +69,7 @@ async function handleRoute() {
         const content = await route.render();
         app.innerHTML = '';
         app.appendChild(content);
+        currentRouteCleanup = typeof content.__dispose === 'function' ? content.__dispose : null;
 
         pageTitle.textContent = route.title;
 

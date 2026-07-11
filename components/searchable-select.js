@@ -22,6 +22,10 @@ export const SearchableSelect = {
             clearable = false
         } = options;
 
+        if (typeof container.__ssDispose === 'function') {
+            container.__ssDispose();
+        }
+
         let currentValue = multiple ? (Array.isArray(value) ? [...value] : []) : String(value);
 
         const getName = (item) => item[nameField] || item.name || item.title || 'Unnamed';
@@ -93,6 +97,7 @@ export const SearchableSelect = {
 
         if (container.__ssDropdown) {
             container.__ssDropdown.remove();
+            container.__ssDropdown = null;
         }
 
         const dropdown = document.createElement('div');
@@ -306,6 +311,15 @@ export const SearchableSelect = {
             }
         };
         document.addEventListener('click', outsideClick);
+
+        container.__ssDispose = () => {
+            document.removeEventListener('click', outsideClick);
+            if (container.__ssDropdown) {
+                container.__ssDropdown.remove();
+                container.__ssDropdown = null;
+            }
+            container.__ssDispose = null;
+        };
     }
 };
 
