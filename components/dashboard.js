@@ -63,6 +63,7 @@ export async function renderDashboard(forceRefresh = false) {
   const container = document.createElement('div');
   container.className = 'max-w-6xl mx-auto pb-10 space-y-8';
   const disposers = [];
+  let taskSearchRenderTimeout = null;
   let historySearchRefreshTimeout = null;
   let historyFocusRestoreTimeout = null;
   const registerDisposer = (dispose) => {
@@ -72,6 +73,7 @@ export async function renderDashboard(forceRefresh = false) {
     disposers.splice(0).forEach(dispose => {
       try { dispose(); } catch (err) { console.warn('Dashboard cleanup failed', err); }
     });
+    if (taskSearchRenderTimeout) clearTimeout(taskSearchRenderTimeout);
     if (historySearchRefreshTimeout) clearTimeout(historySearchRefreshTimeout);
     if (historyFocusRestoreTimeout) clearTimeout(historyFocusRestoreTimeout);
     container.querySelectorAll('*').forEach(el => {
@@ -842,7 +844,11 @@ export async function renderDashboard(forceRefresh = false) {
         searchTerm = e.target.value.toLowerCase().trim();
         localStorage.setItem('dashboard_search_term', searchTerm);
         updateSearchUI();
-        renderDashboardTasks();
+        if (taskSearchRenderTimeout) clearTimeout(taskSearchRenderTimeout);
+        taskSearchRenderTimeout = setTimeout(() => {
+          taskSearchRenderTimeout = null;
+          renderDashboardTasks();
+        }, 120);
       };
     }
 
