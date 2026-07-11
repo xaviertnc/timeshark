@@ -712,6 +712,7 @@ export async function renderDashboard(forceRefresh = false) {
   let isSelectionMode = false;
   let lastCheckedTaskId = null;
   let selectedTaskIds = new Set();
+  let quickAddRendered = false;
   const allTasks = state.tasks || [];
 
   const renderTaskToggles = () => {
@@ -719,11 +720,12 @@ export async function renderDashboard(forceRefresh = false) {
     if (!toggleContainer) return;
 
     const quickAddContainer = container.querySelector('#dashboard-quick-add-container');
-    if (quickAddContainer) {
+    if (quickAddContainer && !quickAddRendered) {
       TaskQuickAdd.render(quickAddContainer, projects, {
         onAdd: refreshView,
         placeholder: 'Add a task...'
       });
+      quickAddRendered = true;
     }
 
     TaskFilterBar.render(toggleContainer, taskFilters, {
