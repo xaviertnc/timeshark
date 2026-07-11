@@ -63,6 +63,8 @@ export async function renderDashboard(forceRefresh = false) {
   const container = document.createElement('div');
   container.className = 'max-w-6xl mx-auto pb-10 space-y-8';
   const disposers = [];
+  let historySearchRefreshTimeout = null;
+  let historyFocusRestoreTimeout = null;
   const registerDisposer = (dispose) => {
     if (typeof dispose === 'function') disposers.push(dispose);
   };
@@ -70,6 +72,8 @@ export async function renderDashboard(forceRefresh = false) {
     disposers.splice(0).forEach(dispose => {
       try { dispose(); } catch (err) { console.warn('Dashboard cleanup failed', err); }
     });
+    if (historySearchRefreshTimeout) clearTimeout(historySearchRefreshTimeout);
+    if (historyFocusRestoreTimeout) clearTimeout(historyFocusRestoreTimeout);
     container.querySelectorAll('*').forEach(el => {
       if (typeof el.__ssDispose === 'function') el.__ssDispose();
       if (typeof el.__spansCleanup === 'function') el.__spansCleanup();
@@ -1728,13 +1732,14 @@ export async function renderDashboard(forceRefresh = false) {
   if (historySearchInput) {
     historySearchInput.oninput = (e) => {
       localStorage.setItem('dashboard_history_search', e.target.value);
-      if (historySearchInput._timeout) clearTimeout(historySearchInput._timeout);
-      historySearchInput._timeout = setTimeout(() => {
+      if (historySearchRefreshTimeout) clearTimeout(historySearchRefreshTimeout);
+      historySearchRefreshTimeout = setTimeout(() => {
+          historySearchRefreshTimeout = null;
           refreshView();
       }, 300);
     };
 
-    setTimeout(() => {
+    historyFocusRestoreTimeout = setTimeout(() => {
       if (document.activeElement?.id === 'history-search-input') return;
       if (window._focusHistorySearch) {
         const input = container.querySelector('#history-search-input');
@@ -1744,6 +1749,7 @@ export async function renderDashboard(forceRefresh = false) {
             input.setSelectionRange(len, len);
         }
       }
+      historyFocusRestoreTimeout = null;
     }, 10);
     historySearchInput.addEventListener('focus', () => window._focusHistorySearch = true);
     historySearchInput.addEventListener('blur', () => window._focusHistorySearch = false);
