@@ -120,6 +120,7 @@ export const SearchableSelect = {
         const listContainer = dropdown.querySelector('.ss-list');
 
         let isOpen = false;
+        let animationTimeout = null;
         let highlightedIndex = -1;
         let filteredItems = [];
 
@@ -168,7 +169,13 @@ export const SearchableSelect = {
             highlightedIndex = -1;
         };
 
+        const clearAnimationTimeout = () => {
+            if (animationTimeout) clearTimeout(animationTimeout);
+            animationTimeout = null;
+        };
+
         const toggleDropdown = (show) => {
+            clearAnimationTimeout();
             isOpen = show !== undefined ? show : !isOpen;
             if (isOpen) {
                 // Calculate position relative to viewport
@@ -199,10 +206,12 @@ export const SearchableSelect = {
                 }
 
                 dropdown.classList.remove('hidden');
-                setTimeout(() => {
+                animationTimeout = setTimeout(() => {
+                    animationTimeout = null;
+                    if (container.__ssDropdown !== dropdown) return;
                     dropdown.classList.remove('scale-95', 'opacity-0');
                     dropdown.classList.add('scale-100', 'opacity-100');
-                    caret.classList.add('rotate-180');
+                    caret?.classList.add('rotate-180');
                     searchInput.focus();
                 }, 10);
                 updateList();
@@ -210,7 +219,10 @@ export const SearchableSelect = {
                 dropdown.classList.remove('scale-100', 'opacity-100');
                 dropdown.classList.add('scale-95', 'opacity-0');
                 caret.classList.remove('rotate-180');
-                setTimeout(() => dropdown.classList.add('hidden'), 200);
+                animationTimeout = setTimeout(() => {
+                    animationTimeout = null;
+                    if (container.__ssDropdown === dropdown) dropdown.classList.add('hidden');
+                }, 200);
                 searchInput.value = '';
             }
         };
@@ -314,6 +326,7 @@ export const SearchableSelect = {
 
         container.__ssDispose = () => {
             document.removeEventListener('click', outsideClick);
+            clearAnimationTimeout();
             if (container.__ssDropdown) {
                 container.__ssDropdown.remove();
                 container.__ssDropdown = null;
