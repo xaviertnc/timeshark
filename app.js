@@ -30,6 +30,20 @@ import { renderTeam } from './components/team.js';
 const app = document.getElementById('app');
 const headerContainer = document.getElementById('page-header-container');
 const pageTitle = document.getElementById('page-title');
+let currentRouteCleanup = null;
+
+function disposeCurrentRoute() {
+    if (typeof currentRouteCleanup !== 'function') return;
+    try {
+        currentRouteCleanup();
+    } catch (error) {
+        console.warn('Route cleanup failed', error);
+    } finally {
+        currentRouteCleanup = null;
+    }
+}
+
+window.__timesharkDisposeCurrentView = disposeCurrentRoute;
 
 // Router
 const routes = {
@@ -47,6 +61,7 @@ async function handleRoute() {
 
     // Smooth header transition
     headerContainer.style.opacity = '0';
+    disposeCurrentRoute();
 
     app.innerHTML = '<div class="flex items-center justify-center h-full"><div class="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div></div>';
 
@@ -54,19 +69,12 @@ async function handleRoute() {
         const content = await route.render();
         app.innerHTML = '';
         app.appendChild(content);
+        currentRouteCleanup = typeof content.__dispose === 'function' ? content.__dispose : null;
 
         pageTitle.textContent = route.title;
 
-        // Hide header timer on dashboard
-        const headerTimer = document.getElementById('active-timer-display');
-        if (headerTimer) {
-            const isDashboard = hash === '' || hash === '#' || hash === '#dashboard';
-            if (isDashboard) {
-                headerTimer.style.display = 'none';
-            } else if (store.get().activeTimer) {
-                headerTimer.style.display = 'flex';
-            }
-        }
+        syncHeaderTicker();
+
 
         setTimeout(() => headerContainer.style.opacity = '1', 100);
 
@@ -120,8 +128,6 @@ async function init() {
             activeTimer
         });
 
-        if (activeTimer) startHeaderTicker(activeTimer);
-
     } catch (e) {
         console.error("Failed to load initial data", e);
     }
@@ -130,27 +136,51 @@ async function init() {
     handleRoute();
 }
 
+function isDashboardRoute() {
+    const hash = window.location.hash;
+    return hash === '' || hash === '#' || hash === '#dashboard';
+}
+
+function stopHeaderTicker() {
+    if (window.timerInterval) clearInterval(window.timerInterval);
+    window.timerInterval = null;
+    window.timerEntryId = null;
+
+    const display = document.getElementById('active-timer-display');
+    if (display) {
+        display.style.display = 'none';
+        display.classList.add('hidden');
+    }
+}
+
+function syncHeaderTicker() {
+    const activeTimer = store.get().activeTimer;
+    if (!activeTimer || isDashboardRoute()) {
+        stopHeaderTicker();
+        return;
+    }
+
+    startHeaderTicker(activeTimer);
+}
+
 function startHeaderTicker(timerEntry) {
     const display = document.getElementById('active-timer-display');
     const projectName = document.getElementById('timer-project-name');
     const counter = document.getElementById('timer-counter');
     const stopBtn = document.getElementById('stop-timer-btn-header');
+    if (!display || !projectName || !counter || !stopBtn) return;
 
-    const hash = window.location.hash;
-    if (hash === '' || hash === '#') {
-        display.style.display = 'none';
-    } else {
-        display.style.display = 'flex';
-        display.classList.remove('hidden');
-    }
+    display.style.display = 'flex';
+    display.classList.remove('hidden');
+    projectName.textContent = timerEntry.project_name || 'Project';
 
-    projectName.textContent = timerEntry.project_name;
-
+    if (window.timerInterval && window.timerEntryId === timerEntry.id) return;
     if (window.timerInterval) clearInterval(window.timerInterval);
+    window.timerEntryId = timerEntry.id;
 
     const startTime = new Date(timerEntry.start_time).getTime();
 
-    window.timerInterval = setInterval(() => {
+    const updateCounter = () => {
         const now = new Date().getTime();
         const diff = now - startTime;
 
@@ -159,7 +189,10 @@ function startHeaderTicker(timerEntry) {
         const s = Math.floor((diff % (1000 * 60)) / 1000);
 
         counter.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }, 1000);
+    };
+
+    updateCounter();
+    window.timerInterval = setInterval(updateCounter, 1000);
 
     stopBtn.onclick = async () => {
         try {
@@ -173,15 +206,8 @@ function startHeaderTicker(timerEntry) {
     };
 }
 
-store.subscribe(state => {
-    if (state.activeTimer && !window.timerInterval) {
-        startHeaderTicker(state.activeTimer);
-    } else if (!state.activeTimer && window.timerInterval) {
-        clearInterval(window.timerInterval);
-        document.getElementById('active-timer-display').classList.add('hidden');
-        window.timerInterval = null;
-    }
+store.subscribe(() => {
+    syncHeaderTicker();
 });
-
 init();
 

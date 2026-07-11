@@ -114,7 +114,21 @@ export async function renderReports() {
 
   const container = document.createElement('div');
   container.className = "max-w-7xl mx-auto pb-20 px-4";
-
+  const charts = [];
+  let renderTimeout = null;
+  const trackChart = (chart) => {
+    charts.push(chart);
+    return chart;
+  };
+  container.__dispose = () => {
+    if (renderTimeout) clearTimeout(renderTimeout);
+    charts.splice(0).forEach(chart => {
+      if (chart && typeof chart.destroy === 'function') chart.destroy();
+    });
+    container.querySelectorAll('*').forEach(el => {
+      if (typeof el.__ssDispose === 'function') el.__ssDispose();
+    });
+  };
   const todayStr = new Date().toLocaleDateString('en-CA');
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toLocaleDateString('en-CA');
@@ -203,33 +217,33 @@ export async function renderReports() {
     <div id="reports-activity-container" class="w-full flex flex-col mt-4"></div>
   `;
 
-  setTimeout(() => {
+  renderTimeout = setTimeout(() => {
     const cumCtx = container.querySelector('#cumulative-build-chart');
     if (cumCtx) {
-      new Chart(cumCtx, {
+      trackChart(new Chart(cumCtx, {
         type: 'line',
         data: {
           labels: Array.from({ length: 1440 }, (_, i) => `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`),
           datasets: [{ label: 'Time Logged', data: cumulativePoints, borderColor: '#338a81', backgroundColor: 'rgba(51, 138, 129, 0.1)', borderWidth: 3, fill: true, pointRadius: 0, tension: 0.2 }, { label: 'Target (8h)', data: Array(1440).fill(480), borderColor: '#ef4444', borderWidth: 1, borderDash: [5, 5], fill: false, pointRadius: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 240 === 0 ? `${i / 60}:00` : '' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, ticks: { font: { size: 9 }, color: '#64748b', stepSize: 60, callback: (v) => `${(v / 60).toFixed(0)}h` } } } }
-      });
+      }));
     }
 
     const dailyBarCtx = container.querySelector('#daily-stacked-bar');
     if (dailyBarCtx) {
       const datasets = Object.entries(dailyProjectData).map(([pid, data]) => ({ label: projects.find(p => String(p.id) === String(pid))?.name || 'Unassigned', data: data.hourly, backgroundColor: projects.find(p => String(p.id) === String(pid))?.color || '#eceff1', borderRadius: 4, borderWidth: 0 }));
-      new Chart(dailyBarCtx, {
+      trackChart(new Chart(dailyBarCtx, {
         type: 'bar',
         data: { labels: Array.from({ length: 24 }, (_, i) => `${i}:00`), datasets },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index' } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, color: '#64748b', callback: (v, i) => i % 4 === 0 ? `${i}:00` : '' } }, y: { stacked: true, beginAtZero: true, max: 60, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 }, color: '#64748b', stepSize: 15, callback: (v) => `${v}m` } } } }
-      });
+      }));
     }
 
     const dailyPieCtx = container.querySelector('#daily-pie');
     if (dailyPieCtx) {
       const pieData = Object.entries(dailyProjectData).map(([pid, data]) => ({ total: data.total, color: projects.find(p => String(p.id) === String(pid))?.color || '#eceff1', name: projects.find(p => String(p.id) === String(pid))?.name || 'Unassigned' }));
-      new Chart(dailyPieCtx, {
+      trackChart(new Chart(dailyPieCtx, {
         type: 'doughnut',
         data: { labels: pieData.map(d => d.name), datasets: [{ data: pieData.map(d => d.total / 60), backgroundColor: pieData.map(d => d.color), borderWidth: 0, cutout: '80%' }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
@@ -259,7 +273,7 @@ export async function renderReports() {
             ctx.restore();
           }
         }]
-      });
+      }));
       container.querySelector('#daily-pie-legend').innerHTML = pieData.map(d => `
         <div class="flex items-center justify-between text-[10px] font-bold">
           <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -360,6 +374,7 @@ export async function renderReports() {
     const scrollY = window.scrollY;
     const appScroll = app.scrollTop;
 
+    if (typeof container.__dispose === 'function') container.__dispose();
     const newContent = await renderReports();
     app.innerHTML = '';
     app.appendChild(newContent);

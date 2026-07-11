@@ -62,6 +62,25 @@ export async function renderDashboard(forceRefresh = false) {
 
   const container = document.createElement('div');
   container.className = 'max-w-6xl mx-auto pb-10 space-y-8';
+  const disposers = [];
+  let taskSearchRenderTimeout = null;
+  let historySearchRefreshTimeout = null;
+  let historyFocusRestoreTimeout = null;
+  const registerDisposer = (dispose) => {
+    if (typeof dispose === 'function') disposers.push(dispose);
+  };
+  container.__dispose = () => {
+    disposers.splice(0).forEach(dispose => {
+      try { dispose(); } catch (err) { console.warn('Dashboard cleanup failed', err); }
+    });
+    if (taskSearchRenderTimeout) clearTimeout(taskSearchRenderTimeout);
+    if (historySearchRefreshTimeout) clearTimeout(historySearchRefreshTimeout);
+    if (historyFocusRestoreTimeout) clearTimeout(historyFocusRestoreTimeout);
+    container.querySelectorAll('*').forEach(el => {
+      if (typeof el.__ssDispose === 'function') el.__ssDispose();
+      if (typeof el.__spansCleanup === 'function') el.__spansCleanup();
+    });
+  };
 
   const shiftColor = (color, percent) => {
     if (!color || typeof color !== 'string' || !color.startsWith('#')) return color;
@@ -652,6 +671,7 @@ export async function renderDashboard(forceRefresh = false) {
     // Explicitly fetch fresh data before re-rendering
     await PlannerState.init();
     const app = document.getElementById('app');
+    if (typeof container.__dispose === 'function') container.__dispose();
     app.innerHTML = '';
     app.appendChild(await renderDashboard());
   };
@@ -674,6 +694,7 @@ export async function renderDashboard(forceRefresh = false) {
     renderDashboardTasks();
   };
   window.addEventListener('compact-mode-change', handleCompactChange);
+  registerDisposer(() => window.removeEventListener('compact-mode-change', handleCompactChange));
 
   const taskFilters = JSON.parse(localStorage.getItem('dashboard_task_filters') || '{}');
   const filterDefaults = { today: true, overdue: true, planned: false, projects: false, timeline: true, backlog: false, completed: false };
@@ -691,6 +712,7 @@ export async function renderDashboard(forceRefresh = false) {
   let isSelectionMode = false;
   let lastCheckedTaskId = null;
   let selectedTaskIds = new Set();
+  let quickAddRendered = false;
   const allTasks = state.tasks || [];
 
   const renderTaskToggles = () => {
@@ -698,11 +720,12 @@ export async function renderDashboard(forceRefresh = false) {
     if (!toggleContainer) return;
 
     const quickAddContainer = container.querySelector('#dashboard-quick-add-container');
-    if (quickAddContainer) {
+    if (quickAddContainer && !quickAddRendered) {
       TaskQuickAdd.render(quickAddContainer, projects, {
         onAdd: refreshView,
         placeholder: 'Add a task...'
       });
+      quickAddRendered = true;
     }
 
     TaskFilterBar.render(toggleContainer, taskFilters, {
@@ -823,7 +846,11 @@ export async function renderDashboard(forceRefresh = false) {
         searchTerm = e.target.value.toLowerCase().trim();
         localStorage.setItem('dashboard_search_term', searchTerm);
         updateSearchUI();
-        renderDashboardTasks();
+        if (taskSearchRenderTimeout) clearTimeout(taskSearchRenderTimeout);
+        taskSearchRenderTimeout = setTimeout(() => {
+          taskSearchRenderTimeout = null;
+          renderDashboardTasks();
+        }, 120);
       };
     }
 
@@ -1196,6 +1223,7 @@ export async function renderDashboard(forceRefresh = false) {
   const renderSpansChart = (spans) => {
     const chartEl = container.querySelector('#dashboard-spans-chart');
     if (!chartEl) return;
+    if (typeof chartEl.__spansCleanup === 'function') chartEl.__spansCleanup();
 
     if (!spans || spans.length === 0) {
       chartEl.innerHTML = ``;
@@ -1340,7 +1368,7 @@ export async function renderDashboard(forceRefresh = false) {
       </div>
     `;
 
-    chartEl.addEventListener('click', (e) => {
+    const handleSpansClick = (e) => {
       const spanEl = e.target.closest('[data-span-project-id]');
       if (spanEl) {
         const projectId = spanEl.dataset.spanProjectId;
@@ -1349,15 +1377,22 @@ export async function renderDashboard(forceRefresh = false) {
           ProjectModal.open(project, { onSave: refreshView });
         }
       }
-    });
+    };
 
-    chartEl.addEventListener('change', (e) => {
+    const handleSpansChange = (e) => {
       if (e.target.id === 'dashboard-show-epics-toggle') {
         localStorage.setItem('dashboard_show_epics', String(e.target.checked));
         isDashboardShowEpics = e.target.checked;
         refreshView();
       }
-    });
+    };
+    chartEl.addEventListener('click', handleSpansClick);
+    chartEl.addEventListener('change', handleSpansChange);
+    chartEl.__spansCleanup = () => {
+      chartEl.removeEventListener('click', handleSpansClick);
+      chartEl.removeEventListener('change', handleSpansChange);
+      chartEl.__spansCleanup = null;
+    };
   };
 
   renderTaskToggles();
@@ -1525,6 +1560,10 @@ export async function renderDashboard(forceRefresh = false) {
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    registerDisposer(() => {
+      clearInterval(interval);
+      observer.disconnect();
+    });
   }
 
   // Active Timer Actions
@@ -1701,13 +1740,14 @@ export async function renderDashboard(forceRefresh = false) {
   if (historySearchInput) {
     historySearchInput.oninput = (e) => {
       localStorage.setItem('dashboard_history_search', e.target.value);
-      if (historySearchInput._timeout) clearTimeout(historySearchInput._timeout);
-      historySearchInput._timeout = setTimeout(() => {
+      if (historySearchRefreshTimeout) clearTimeout(historySearchRefreshTimeout);
+      historySearchRefreshTimeout = setTimeout(() => {
+          historySearchRefreshTimeout = null;
           refreshView();
       }, 300);
     };
 
-    setTimeout(() => {
+    historyFocusRestoreTimeout = setTimeout(() => {
       if (document.activeElement?.id === 'history-search-input') return;
       if (window._focusHistorySearch) {
         const input = container.querySelector('#history-search-input');
@@ -1717,6 +1757,7 @@ export async function renderDashboard(forceRefresh = false) {
             input.setSelectionRange(len, len);
         }
       }
+      historyFocusRestoreTimeout = null;
     }, 10);
     historySearchInput.addEventListener('focus', () => window._focusHistorySearch = true);
     historySearchInput.addEventListener('blur', () => window._focusHistorySearch = false);

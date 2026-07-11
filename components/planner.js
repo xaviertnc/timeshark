@@ -34,6 +34,13 @@ export async function renderPlanner() {
 
     const container = document.createElement('div');
     container.className = 'planner-main h-full flex flex-col gap-6';
+    let resizeObserver = null;
+    container.__dispose = () => {
+        if (resizeObserver) resizeObserver.disconnect();
+        container.querySelectorAll('*').forEach(el => {
+            if (typeof el.__ssDispose === 'function') el.__ssDispose();
+        });
+    };
 
     const state = store.get();
     const projects = state.projects || [];
@@ -434,7 +441,7 @@ export async function renderPlanner() {
     });
 
     // Resize Observer for basic cleanup
-    let resizeObserver = new ResizeObserver(() => {
+    resizeObserver = new ResizeObserver(() => {
         const data = PlannerState.getCombinedData(projectFilter);
         const today = new Date();
         const config = PlannerUtils.getTimelineConfig(currentScale, timeOffset, today);
