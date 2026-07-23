@@ -1,6 +1,6 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { TaskModal } from './task-modal.js';
+import { TaskModal } from './task-modal.js?v=20260723.2';
 import { PlannerState } from './planner/planner-state.js';
 import { TaskList } from './task-list.js';
 import { TaskQuickAdd } from './task-quick-add.js';
@@ -16,7 +16,17 @@ import { escapeHTML } from '../utils/dom.js';
  * components/dashboard.js
  *
  * Dashboard - 08 Feb 2026
- * Fixed modals, pointer events and strict project selection logic.
+ *
+ * Purpose: Render and manage the main task dashboard.
+ *
+ * @package Time Shark
+ *
+ * @author Senpai
+ *
+ * Last 3 version commits:
+ * @version 1.1 - FIX - 08 Feb 2026 - Fixed modals, pointer events and project selection
+ * @version 1.2 - FIX - 23 Jul 2026 - Preserve local dates when moving tasks
+ * @version 1.3 - FIX - 23 Jul 2026 - Default moved tasks to working hours
  */
 
 export async function renderDashboard(forceRefresh = false) {
@@ -967,16 +977,15 @@ export async function renderDashboard(forceRefresh = false) {
         const confirmed = await ConfirmModal.show(`Move ${selectedTaskIds.size} tasks to Today?`, { confirmText: 'Move to Today' });
         if (!confirmed) return;
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString();
+        const todayStr = today.toLocaleDateString('en-CA');
         
         try {
           for (const id of selectedTaskIds) {
             await api.post('planner.php', { 
               id, 
               status: 'todo', 
-              start_date: todayStr,
-              end_date: todayStr 
+              start_date: `${todayStr}T09:00:00`,
+              end_date: `${todayStr}T17:00:00`
             });
           }
           selectedTaskIds.clear();
@@ -992,16 +1001,15 @@ export async function renderDashboard(forceRefresh = false) {
         if (!confirmed) return;
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        const tomorrowStr = tomorrow.toISOString();
+        const tomorrowStr = tomorrow.toLocaleDateString('en-CA');
         
         try {
           for (const id of selectedTaskIds) {
             await api.post('planner.php', { 
               id, 
               status: 'todo', 
-              start_date: tomorrowStr,
-              end_date: tomorrowStr 
+              start_date: `${tomorrowStr}T09:00:00`,
+              end_date: `${tomorrowStr}T17:00:00`
             });
           }
           selectedTaskIds.clear();

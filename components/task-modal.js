@@ -1,8 +1,18 @@
 /**
  * components/task-modal.js
- * 
- * Centralized Task/Todo Editor.
- * Replaces legacy PlannerModal with a dynamic, self-cleaning static interface.
+ *
+ * Task Editor - 08 Feb 2026
+ *
+ * Purpose: Edit tasks through a centralized, self-cleaning modal.
+ *
+ * @package Time Shark
+ *
+ * @author Senpai
+ *
+ * Last 3 version commits:
+ * @version 1.0 - INIT - 08 Feb 2026 - Replaced the legacy planner modal
+ * @version 1.1 - FIX - 23 Jul 2026 - Hydrate task dates and times in local time
+ * @version 1.2 - FIX - 23 Jul 2026 - Default missing times to working hours
  */
 
 import { api } from '../utils/api.js';
@@ -484,12 +494,14 @@ export class TaskModal {
             form.start_time.value = now.toTimeString().substring(0, 5);
             form.end_time.value = end.toTimeString().substring(0, 5);
         } else if (task.start_date) {
-            const startParts = task.start_date.split('T');
-            const endParts = (task.end_date || task.start_date).split('T');
-            form.start_date.value = startParts[0];
-            form.end_date.value = endParts[0];
-            form.start_time.value = startParts[1] ? startParts[1].substring(0, 5) : '09:00';
-            form.end_time.value = endParts[1] ? endParts[1].substring(0, 5) : '17:00';
+            const start = new Date(task.start_date);
+            const end = new Date(task.end_date || task.start_date);
+            const startHasTime = task.start_date.includes('T') && (start.getHours() || start.getMinutes());
+            const endHasTime = task.end_date?.includes('T') && (end.getHours() || end.getMinutes());
+            form.start_date.value = start.toLocaleDateString('en-CA');
+            form.end_date.value = end.toLocaleDateString('en-CA');
+            form.start_time.value = startHasTime ? start.toTimeString().substring(0, 5) : '09:00';
+            form.end_time.value = endHasTime ? end.toTimeString().substring(0, 5) : '17:00';
         }
 
         // Completed Date Defaults
