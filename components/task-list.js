@@ -12,6 +12,7 @@
  * Last 3 version commits:
  * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
  * @version 1.1 - UPD - 23 Jul 2026 - Sort URGENT-tagged tasks first in each group
+ * @version 1.2 - FT - 23 Jul 2026 - Collapsible major and project group headers
  */
 
 import { TaskItem } from './task-item.js';
@@ -219,6 +220,8 @@ export const TaskList = {
                 backlog: '#338a81'
             };
             const dotColor = dotColors[key] || '#64748b';
+            const isGroupCollapsed = this._isGroupCollapsed(container, key);
+            const collapsedProjects = this._getCollapsedProjects(container);
 
             let tasksHtml = '';
             if (groupTasks.length > 0) {
@@ -245,18 +248,21 @@ export const TaskList = {
                         const proj = projects.find(p => String(p.id) === String(bucket.pid));
                         const projName = proj ? proj.name : 'Unassigned';
                         const projColor = proj ? proj.color : '#eceff1';
+                        const projKey = `${key}:${bucket.pid}`;
+                        const isProjCollapsed = !!collapsedProjects[projKey];
                         
                         const header = `
-                            <div class="flex items-center gap-2 mb-2.5 pointer-events-none select-none pl-6">
+                            <button type="button" class="task-proj-toggle flex items-center gap-2 mb-2.5 pl-6 cursor-pointer group/proj text-left w-full" data-group="${key}" data-proj="${bucket.pid}">
+                                <svg class="w-2.5 h-2.5 text-dim/40 group-hover/proj:text-dim transition-transform shrink-0 ${isProjCollapsed ? '-rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
                                 <span class="w-[5px] h-[5px] opacity-80 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style="background-color: ${projColor}"></span>
                                 <span class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: ${projColor}">${escapeHTML(projName)}</span>
-                            </div>
+                            </button>
                         `;
                         const items = bucket.tasks.map(t => TaskItem.render(t, projects, { mode, selectionMode: options.selectionMode, hideProjectName: true })).join('');
                         return `
                         <div class="mb-5 last:mb-0 mt-2">
                             ${header}
-                            <div class="${mode === 'full' ? 'grid grid-cols-1 gap-2' : 'space-y-[3px]'} ml-[27px] relative">
+                            <div class="task-proj-body ${isProjCollapsed ? 'hidden' : ''} ${mode === 'full' ? 'grid grid-cols-1 gap-2' : 'space-y-[3px]'} ml-[27px] relative">
                                 ${items}
                             </div>
                         </div>
@@ -269,20 +275,25 @@ export const TaskList = {
 
             groupEl.innerHTML = `
                 <div class="flex items-center gap-3 mb-4 px-1 mt-5 first:mt-0">
-                    <div class="w-[6px] h-[6px] rounded-full shadow-[0_0_8px_rgba(51,138,129,0.2)]" style="background-color: ${dotColor};"></div>
-                    <span class="text-xs font-black uppercase tracking-[0.3em]" style="color: ${key === 'overdue' ? '#ef4444' : 'var(--primary)'}">${group.label}</span>
-                    <div class="px-2 py-0.5 rounded-full bg-highlight text-[9px] font-black text-dim/40 tabular-nums border border-white/5">
-                        ${groupTasks.length}${groupTasks.length < group.tasks.length ? `<span class="opacity-30 mx-1">/</span>${group.tasks.length}` : ''}
-                    </div>
+                    <button type="button" class="task-group-toggle flex items-center gap-3 cursor-pointer group/header text-left shrink-0" data-group="${key}">
+                        <svg class="w-2.5 h-2.5 text-dim/40 group-hover/header:text-dim transition-transform shrink-0 ${isGroupCollapsed ? '-rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        <div class="w-[6px] h-[6px] rounded-full shadow-[0_0_8px_rgba(51,138,129,0.2)]" style="background-color: ${dotColor};"></div>
+                        <span class="text-xs font-black uppercase tracking-[0.3em]" style="color: ${key === 'overdue' ? '#ef4444' : 'var(--primary)'}">${group.label}</span>
+                        <div class="px-2 py-0.5 rounded-full bg-highlight text-[9px] font-black text-dim/40 tabular-nums border border-white/5">
+                            ${groupTasks.length}${groupTasks.length < group.tasks.length ? `<span class="opacity-30 mx-1">/</span>${group.tasks.length}` : ''}
+                        </div>
+                    </button>
                     <div class="flex-grow h-px bg-white/[0.04] ml-2"></div>
                     ${headerAnchor}
                 </div>
-                ${emptyLabel ? emptyLabel : `
-                    <div class="${options.isProjectGrouped ? '' : (mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-0.5')}">
-                        ${tasksHtml}
-                    </div>
-                `}
-                ${showMoreBtn}
+                <div class="task-group-body ${isGroupCollapsed ? 'hidden' : ''}">
+                    ${emptyLabel ? emptyLabel : `
+                        <div class="${options.isProjectGrouped ? '' : (mode === 'full' ? 'grid grid-cols-1 gap-3' : 'space-y-0.5')}">
+                            ${tasksHtml}
+                        </div>
+                    `}
+                    ${showMoreBtn}
+                </div>
             `;
             listDiv.appendChild(groupEl);
         });
@@ -347,6 +358,33 @@ export const TaskList = {
                     this.render(container, tasks, projects, options);
                 };
             });
+
+            if (!container._collapseBound) {
+                container._collapseBound = true;
+                container.addEventListener('click', (e) => {
+                    const groupBtn = e.target.closest('.task-group-toggle');
+                    if (groupBtn) {
+                        const groupKey = groupBtn.dataset.group;
+                        const collapsed = this._getCollapsedGroups(container);
+                        collapsed[groupKey] = !collapsed[groupKey];
+                        localStorage.setItem('tasks_collapsed_groups', JSON.stringify(collapsed));
+                        const groupEl = groupBtn.closest('.task-group');
+                        groupEl?.querySelector('.task-group-body')?.classList.toggle('hidden', collapsed[groupKey]);
+                        groupBtn.querySelector('svg')?.classList.toggle('-rotate-90', collapsed[groupKey]);
+                        return;
+                    }
+                    const projBtn = e.target.closest('.task-proj-toggle');
+                    if (projBtn) {
+                        const projKey = `${projBtn.dataset.group}:${projBtn.dataset.proj}`;
+                        const collapsed = this._getCollapsedProjects(container);
+                        collapsed[projKey] = !collapsed[projKey];
+                        localStorage.setItem('tasks_collapsed_projects', JSON.stringify(collapsed));
+                        const wrap = projBtn.parentElement;
+                        wrap?.querySelector('.task-proj-body')?.classList.toggle('hidden', collapsed[projKey]);
+                        projBtn.querySelector('svg')?.classList.toggle('-rotate-90', collapsed[projKey]);
+                    }
+                });
+            }
         }
     },
 
@@ -357,6 +395,29 @@ export const TaskList = {
     _getCompletedDisplayDate(t) {
         if (!t.completed_at) return null;
         return new Date(t.completed_at);
+    },
+
+
+    _getCollapsedGroups(container) {
+        if (!container._collapsedGroups) {
+            try { container._collapsedGroups = JSON.parse(localStorage.getItem('tasks_collapsed_groups') || '{}'); }
+            catch { container._collapsedGroups = {}; }
+        }
+        return container._collapsedGroups;
+    },
+
+
+    _getCollapsedProjects(container) {
+        if (!container._collapsedProjects) {
+            try { container._collapsedProjects = JSON.parse(localStorage.getItem('tasks_collapsed_projects') || '{}'); }
+            catch { container._collapsedProjects = {}; }
+        }
+        return container._collapsedProjects;
+    },
+
+
+    _isGroupCollapsed(container, key) {
+        return !!this._getCollapsedGroups(container)[key];
     },
 
 
