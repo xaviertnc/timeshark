@@ -1,8 +1,17 @@
 /**
  * components/task-list.js
- * 
- * Reusable component for rendering lists of tasks.
- * Handles grouping, sorting, and delegates row rendering to TaskItem.
+ *
+ * Task List - 28 Jun 2025
+ *
+ * Purpose: Reusable component for rendering lists of tasks with grouping and sorting.
+ *
+ * @package Time Shark
+ *
+ * @author Senpai
+ *
+ * Last 3 version commits:
+ * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
+ * @version 1.1 - UPD - 23 Jul 2026 - Sort URGENT-tagged tasks first in each group
  */
 
 import { TaskItem } from './task-item.js';
@@ -350,6 +359,21 @@ export const TaskList = {
         return new Date(t.completed_at);
     },
 
+
+    _isUrgent(t) {
+        return (t.tags || []).some(tag => tag && tag.toLowerCase().includes('urgent'));
+    },
+
+
+    _sortByUrgentThenStartDate(a, b) {
+        const ua = this._isUrgent(a), ub = this._isUrgent(b);
+        if (ua !== ub) return ub - ua;
+        const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
+        const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
+        return da - db;
+    },
+
+
     getGroupedTasks(tasks) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const groups = {
@@ -360,11 +384,7 @@ export const TaskList = {
             completed: { label: 'Completed', tasks: [], color: 'text-primary' }
         };
 
-        const sorted = [...tasks].sort((a, b) => {
-            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
-            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
-            return da - db; // Earliest first
-        });
+        const sorted = [...tasks].sort((a, b) => this._sortByUrgentThenStartDate(a, b));
 
         sorted.forEach(t => {
             if (t.status === 'done') {
@@ -390,12 +410,7 @@ export const TaskList = {
             else groups.planned.tasks.push(t);
         });
 
-        // Sort Today group: earliest start_date first
-        groups.today.tasks.sort((a, b) => {
-            const da = a.start_date ? new Date(a.start_date).getTime() : Infinity;
-            const db = b.start_date ? new Date(b.start_date).getTime() : Infinity;
-            return da - db;
-        });
+        groups.today.tasks.sort((a, b) => this._sortByUrgentThenStartDate(a, b));
 
         // Special Sort for Completed (Earliest display date first)
         groups.completed.tasks.sort((a, b) => {
