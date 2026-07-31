@@ -3,7 +3,7 @@ import { api } from '../utils/api.js';
 import { TaskModal } from './task-modal.js?v=3.2.1';
 import { TaskState } from './tasks/task-state.js';
 import { TaskList } from './task-list.js?v=3.3';
-import { TaskQuickAdd } from './task-quick-add.js?v=3.2.1';
+import { TaskQuickAdd } from './task-quick-add.js?v=3.3';
 import { SearchableSelect } from './searchable-select.js';
 import { TimeEntryModal } from './time-entry-modal.js?v=3.2.1';
 import { TaskFilterBar } from './task-filter-bar.js';

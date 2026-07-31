@@ -5,6 +5,7 @@
  *
  * Last 3 version commits:
  * @version 3.2 - CHORE - 31 Jul 2026 - Tasks API renamed to tasks.php
+ * @version 3.3 - FIX - 31 Jul 2026 - Rank Recently Used projects by newest task adds, padded with time-entry recency
  */
 
 import { api } from '../utils/api.js';
@@ -61,14 +62,13 @@ export const TaskQuickAdd = {
 
         let selectedProjectId = '';
 
-        // Recently used projects
+        // Recently used projects: newest task adds first (tasks.json is in insertion order), padded with time-entry recency
         const state = store.get();
-        const entries = state.timeEntries || [];
-        const recentIds = [...new Set(entries
-            .filter(e => e.project_id)
-            .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
-            .map(e => String(e.project_id))
-        )].slice(0, 5);
+        const recentSources = [
+            ...( state.tasks || [] ).slice().reverse(),
+            ...( state.timeEntries || [] ).slice().sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
+        ];
+        const recentIds = [...new Set(recentSources.filter(x => x.project_id).map(x => String(x.project_id)))].slice(0, 5);
 
         SearchableSelect.render(projectContainer, projects, {
             value: selectedProjectId,
