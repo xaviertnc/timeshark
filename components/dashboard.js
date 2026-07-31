@@ -24,9 +24,9 @@ import { escapeHTML } from '../utils/dom.js';
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.2 - FIX - 23 Jul 2026 - Preserve local dates when moving tasks
  * @version 1.3 - FIX - 23 Jul 2026 - Default moved tasks to working hours
  * @version 3.2 - CHORE - 31 Jul 2026 - Planner page removed; TaskState + tasks.php renames
+ * @version 3.3 - FT - 31 Jul 2026 - Timeline bar drag/resize; Show Completed toggle
  */
 
 export async function renderDashboard(forceRefresh = false) {
@@ -36,6 +36,7 @@ export async function renderDashboard(forceRefresh = false) {
   let isTodosCollapsed = localStorage.getItem('dashboard_todos_collapsed') === 'true';
   let isHistoryCollapsed = localStorage.getItem('dashboard_history_collapsed') === 'true';
   let isDashboardShowEpics = localStorage.getItem('dashboard_show_epics') !== 'false';
+  let isDashboardShowCompleted = localStorage.getItem('dashboard_show_completed') !== 'false';
   let historySearchTerm = localStorage.getItem('dashboard_history_search') || '';
   let historyLimit = localStorage.getItem('dashboard_history_limit') || 'today';
 
@@ -1244,6 +1245,7 @@ export async function renderDashboard(forceRefresh = false) {
     // Parse dates and filter out spans without valid dates or missing/archived projects
     const parsed = spans.map(p => {
       if (p.type === 'epic' && !isDashboardShowEpics) return null;
+      if (p.status === 'Completed' && !isDashboardShowCompleted) return null;
       const startDate = p.started_at ? new Date(p.started_at) : null;
       const endDate = p.completed_at ? new Date(p.completed_at) : null;
       return { project_id: p.id, proj: p, startDate, endDate };
@@ -1309,6 +1311,13 @@ export async function renderDashboard(forceRefresh = false) {
           <div class="w-[6px] h-[6px] rounded-full shadow-[0_0_8px_rgba(51,138,129,0.2)]" style="background-color: #338a81;"></div>
           <span class="text-[10px] font-black uppercase tracking-[0.3em] text-primary">PROJECTS TIMELINE</span>
           <div class="flex-grow h-px bg-white/[0.04] ml-2"></div>
+          <label class="flex items-center gap-2 cursor-pointer group mb-0 mr-4">
+             <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5 whitespace-nowrap">Show Completed</span>
+             <div class="relative w-8 h-5 bg-black/20 rounded-full border border-white/10 transition-colors">
+                 <input type="checkbox" id="dashboard-show-completed-toggle" class="sr-only" ${isDashboardShowCompleted ? 'checked' : ''}>
+                 <div class="absolute left-1 top-1 w-3 h-3 rounded-full transition-all ${isDashboardShowCompleted ? 'translate-x-3 bg-primary shadow-[0_0_8px_rgba(51,138,129,0.5)]' : 'bg-dim'} pointer-events-none"></div>
+             </div>
+          </label>
           <label class="flex items-center gap-2 cursor-pointer group mb-0">
              <span class="text-[9px] font-black uppercase tracking-widest text-dim group-hover:text-main transition-colors mt-0.5 whitespace-nowrap">Show Epics</span>
              <div class="relative w-8 h-5 bg-black/20 rounded-full border border-white/10 transition-colors">
@@ -1367,9 +1376,11 @@ export async function renderDashboard(forceRefresh = false) {
             </div>
 
             <!-- Bar -->
-            <div class="absolute rounded-xl overflow-hidden cursor-pointer ${isPast ? 'opacity-40' : ''} ${isCurrent && !useSubtle ? 'shadow-lg shadow-primary/5' : ''} hover:ring-2 hover:ring-white/10 transition-all" style="left: ${left}%; width: ${width}%; top: ${barTop}px; height: ${barHeight}px; background-color: ${useSubtle ? s.proj.color + '40' : s.proj.color + '10'}; border: 1px solid ${useSubtle ? 'transparent' : s.proj.color + '20'};" data-span-project-id="${s.project_id}">
+            <div class="absolute rounded-xl overflow-hidden cursor-grab ${isPast ? 'opacity-40' : ''} ${isCurrent && !useSubtle ? 'shadow-lg shadow-primary/5' : ''} hover:ring-2 hover:ring-white/10 transition-all" style="left: ${left}%; width: ${width}%; top: ${barTop}px; height: ${barHeight}px; background-color: ${useSubtle ? s.proj.color + '40' : s.proj.color + '10'}; border: 1px solid ${useSubtle ? 'transparent' : s.proj.color + '20'};" data-span-project-id="${s.project_id}" data-span-bar>
               <!-- Progress fill -->
               <div class="absolute inset-y-0 left-0 ${useSubtle ? 'rounded-full' : 'rounded-xl'}" style="width: ${Math.max(prog, 1)}%; background-color: ${s.proj.color}; opacity: ${useSubtle ? '0.8' : '0.4'};"></div>
+              <div class="span-resize absolute inset-y-0 left-0 w-2 cursor-ew-resize" data-edge="start"></div>
+              <div class="span-resize absolute inset-y-0 right-0 w-2 cursor-ew-resize" data-edge="end"></div>
             </div>
           `;
     }).join('')}
@@ -1377,7 +1388,62 @@ export async function renderDashboard(forceRefresh = false) {
       </div>
     `;
 
+    const DAY_MS = 86400000;
+    let dragMoved = false;
+
+    const handleSpansPointerDown = (e) => {
+      const bar = e.target.closest('[data-span-bar]');
+      if (!bar || e.button !== 0) return;
+      const span = parsed.find(s => String(s.project_id) === bar.dataset.spanProjectId);
+      if (!span) return;
+      e.preventDefault();
+      const edge = e.target.closest('.span-resize')?.dataset.edge || null;
+      const chartWidth = bar.parentElement.getBoundingClientRect().width;
+      const startX = e.clientX;
+      const origLeft = parseFloat(bar.style.left);
+      const origWidth = parseFloat(bar.style.width);
+      const pctPerDay = (DAY_MS / scaleMs) * 100;
+      const spanDays = Math.round((span.endDate - span.startDate) / DAY_MS);
+      let days = 0;
+
+      const onMove = (ev) => {
+        let d = Math.round(((ev.clientX - startX) / chartWidth) * scaleMs / DAY_MS);
+        if (edge === 'start') d = Math.min(d, spanDays);
+        if (edge === 'end') d = Math.max(d, -spanDays);
+        days = d;
+        if (d !== 0) dragMoved = true;
+        const shift = d * pctPerDay;
+        if (edge === 'start') {
+          bar.style.left = `${origLeft + shift}%`;
+          bar.style.width = `${origWidth - shift}%`;
+        } else if (edge === 'end') {
+          bar.style.width = `${origWidth + shift}%`;
+        } else {
+          bar.style.left = `${origLeft + shift}%`;
+        }
+      };
+
+      const onUp = async () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        setTimeout(() => { dragMoved = false; }, 0);
+        if (days === 0) return;
+        const fmt = (d) => d.toISOString().split('T')[0];
+        const shiftMs = days * DAY_MS;
+        const started = edge === 'end' ? span.startDate : new Date(span.startDate.getTime() + shiftMs);
+        const completed = edge === 'start' ? span.endDate : new Date(span.endDate.getTime() + shiftMs);
+        try {
+          await api.post('projects.php', { id: span.project_id, started_at: fmt(started), completed_at: fmt(completed) });
+        } catch { alert('Failed to update project dates'); }
+        refreshView();
+      };
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    };
+
     const handleSpansClick = (e) => {
+      if (dragMoved) return;
       const spanEl = e.target.closest('[data-span-project-id]');
       if (spanEl) {
         const projectId = spanEl.dataset.spanProjectId;
@@ -1393,13 +1459,19 @@ export async function renderDashboard(forceRefresh = false) {
         localStorage.setItem('dashboard_show_epics', String(e.target.checked));
         isDashboardShowEpics = e.target.checked;
         refreshView();
+      } else if (e.target.id === 'dashboard-show-completed-toggle') {
+        localStorage.setItem('dashboard_show_completed', String(e.target.checked));
+        isDashboardShowCompleted = e.target.checked;
+        refreshView();
       }
     };
     chartEl.addEventListener('click', handleSpansClick);
     chartEl.addEventListener('change', handleSpansChange);
+    chartEl.addEventListener('pointerdown', handleSpansPointerDown);
     chartEl.__spansCleanup = () => {
       chartEl.removeEventListener('click', handleSpansClick);
       chartEl.removeEventListener('change', handleSpansChange);
+      chartEl.removeEventListener('pointerdown', handleSpansPointerDown);
       chartEl.__spansCleanup = null;
     };
   };
