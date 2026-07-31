@@ -107,11 +107,11 @@ export async function renderDashboard(forceRefresh = false) {
 
   let activeDisplayTags = [];
   if (activeTimer) {
-     const activeTaskObj = activeTimer.task_id ? (state.tasks || []).find(t => String(t.id) === String(activeTimer.task_id)) : null;
-     const projTags = activeProj?.tags || [];
-     const taskTags = activeTaskObj?.tags || [];
-     const entryTags = activeTimer.tags || [];
-     activeDisplayTags = [...new Set([...projTags, ...taskTags, ...entryTags])];
+    const activeTaskObj = activeTimer.task_id ? (state.tasks || []).find(t => String(t.id) === String(activeTimer.task_id)) : null;
+    const projTags = activeProj?.tags || [];
+    const taskTags = activeTaskObj?.tags || [];
+    const entryTags = activeTimer.tags || [];
+    activeDisplayTags = [...new Set([...projTags, ...taskTags, ...entryTags])];
   }
 
   container.innerHTML = `
@@ -139,11 +139,11 @@ export async function renderDashboard(forceRefresh = false) {
               ${activeTimer.notes ? `<p class="mt-1.5 text-xs text-dim italic">${escapeHTML(activeTimer.notes)}</p>` : ''}
               <div class="absolute top-3 right-3 opacity-0 group-hover/task:opacity-100 transition-opacity flex items-center gap-2">
                 ${activeTimer.task_id ? (() => {
-                   const t = (state.tasks || []).find(task => String(task.id) === String(activeTimer.task_id));
-                   return `<div class="bg-primary/20 rounded-full p-2 text-primary cursor-help shadow-sm hover:scale-110 transition-transform" title="Linked to: ${t ? escapeHTML(t.title) : 'Unknown Todo'}">
+        const t = (state.tasks || []).find(task => String(task.id) === String(activeTimer.task_id));
+        return `<div class="bg-primary/20 rounded-full p-2 text-primary cursor-help shadow-sm hover:scale-110 transition-transform" title="Linked to: ${t ? escapeHTML(t.title) : 'Unknown Todo'}">
                              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                            </div>`;
-                })() : `
+      })() : `
                    <button type="button" class="turn-task-btn bg-white/5 hover:bg-emerald-500/10 rounded-full p-2 text-dim hover:text-emerald-500 hover:border-emerald-500/20 transition-all shadow-sm hover:scale-110" data-id="${activeTimer.id}" title="Make Task">
                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                    </button>
@@ -380,76 +380,76 @@ export async function renderDashboard(forceRefresh = false) {
 
       <div id="dashboard-history-content" class="${isHistoryCollapsed ? 'hidden' : ''} ${isHistoryCompact ? 'space-y-0' : 'space-y-3'}">
         ${(() => {
-            let filteredHistory = entries.filter(e => e.end_time);
-            
-            if (historyLimit === 'today') {
-                const now = new Date();
-                const todayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                filteredHistory = filteredHistory.filter(e => {
-                    const d = new Date(e.start_time);
-                    const eDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-                    return eDay === todayMs;
-                });
-            }
+      let filteredHistory = entries.filter(e => e.end_time);
 
-            if (historySearchTerm) {
-                const term = historySearchTerm.toLowerCase();
-                filteredHistory = filteredHistory.filter(e => {
-                    const desc = (e.description || '').toLowerCase();
-                    const notes = (e.notes || '').toLowerCase();
-                    const tTags = (e.tags || []).join(' ').toLowerCase();
-                    const proj = projects.find(p => String(p.id) === String(e.project_id));
-                    const projName = (proj ? proj.name : '').toLowerCase();
-                    
-                    const tsk = e.task_id ? (state.tasks || []).find(t => String(t.id) === String(e.task_id)) : null;
-                    const taskName = (tsk ? tsk.title : '').toLowerCase();
-                    const tagList = [...new Set([...(proj?.tags||[]), ...(tsk?.tags||[]), ...(e.tags||[])])].join(' ').toLowerCase();
+      if (historyLimit === 'today') {
+        const now = new Date();
+        const todayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        filteredHistory = filteredHistory.filter(e => {
+          const d = new Date(e.start_time);
+          const eDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+          return eDay === todayMs;
+        });
+      }
 
-                    return desc.includes(term) || notes.includes(term) || tTags.includes(term) || projName.includes(term) || taskName.includes(term) || tagList.includes(term);
-                });
-            }
+      if (historySearchTerm) {
+        const term = historySearchTerm.toLowerCase();
+        filteredHistory = filteredHistory.filter(e => {
+          const desc = (e.description || '').toLowerCase();
+          const notes = (e.notes || '').toLowerCase();
+          const tTags = (e.tags || []).join(' ').toLowerCase();
+          const proj = projects.find(p => String(p.id) === String(e.project_id));
+          const projName = (proj ? proj.name : '').toLowerCase();
 
-            // Sort by start_time descending (newest first)
-            filteredHistory.sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
+          const tsk = e.task_id ? (state.tasks || []).find(t => String(t.id) === String(e.task_id)) : null;
+          const taskName = (tsk ? tsk.title : '').toLowerCase();
+          const tagList = [...new Set([...(proj?.tags || []), ...(tsk?.tags || []), ...(e.tags || [])])].join(' ').toLowerCase();
 
-            if (historyLimit !== 'all' && historyLimit !== 'today') {
-                const n = parseInt(historyLimit) || 10;
-                filteredHistory = filteredHistory.slice(0, n);
-            }
+          return desc.includes(term) || notes.includes(term) || tTags.includes(term) || projName.includes(term) || taskName.includes(term) || tagList.includes(term);
+        });
+      }
 
-            const getDayStr = (dateStr) => {
-                if (!dateStr) return 'Unknown';
-                const d = new Date(dateStr);
-                const today = new Date();
-                const yest = new Date(today); yest.setDate(yest.getDate() - 1);
-                if (d.toDateString() === today.toDateString()) return 'Today';
-                if (d.toDateString() === yest.toDateString()) return 'Yesterday';
-                return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-            };
+      // Sort by start_time descending (newest first)
+      filteredHistory.sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
 
-            let currentDayStr = null;
+      if (historyLimit !== 'all' && historyLimit !== 'today') {
+        const n = parseInt(historyLimit) || 10;
+        filteredHistory = filteredHistory.slice(0, n);
+      }
 
-            return filteredHistory.map(e => {
-                const dayStr = getDayStr(e.start_time);
-                let dayHeader = '';
-                if (dayStr !== currentDayStr) {
-                    currentDayStr = dayStr;
-                    dayHeader = `<div class="pt-3 pb-1 mt-1 first:mt-0 first:pt-0 pointer-events-none select-none w-full"><span class="text-[9px] font-black text-dim uppercase tracking-[0.3em] bg-white/5 border border-white/5 rounded-md px-2 py-0.5">${escapeHTML(dayStr)}</span></div>`;
-                }
+      const getDayStr = (dateStr) => {
+        if (!dateStr) return 'Unknown';
+        const d = new Date(dateStr);
+        const today = new Date();
+        const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+        if (d.toDateString() === today.toDateString()) return 'Today';
+        if (d.toDateString() === yest.toDateString()) return 'Yesterday';
+        return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+      };
 
-    const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
-    const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
-    const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
-    const taskColor = shiftColor(proj.color, -10);
+      let currentDayStr = null;
 
-    const taskObj = e.task_id ? (state.tasks || []).find(t => String(t.id) === String(e.task_id)) : null;
-    const projTags = proj.tags || [];
-    const taskTags = taskObj?.tags || [];
-    const entryTags = e.tags || [];
-    const displayTags = [...new Set([...projTags, ...taskTags, ...entryTags])];
+      return filteredHistory.map(e => {
+        const dayStr = getDayStr(e.start_time);
+        let dayHeader = '';
+        if (dayStr !== currentDayStr) {
+          currentDayStr = dayStr;
+          dayHeader = `<div class="pt-3 pb-1 mt-1 first:mt-0 first:pt-0 pointer-events-none select-none w-full"><span class="text-[9px] font-black text-dim uppercase tracking-[0.3em] bg-white/5 border border-white/5 rounded-md px-2 py-0.5">${escapeHTML(dayStr)}</span></div>`;
+        }
 
-    if (isHistoryCompact) {
-      return dayHeader + `
+        const proj = projects.find(p => String(p.id) === String(e.project_id)) || { name: 'Unassigned', color: '#eceff1' };
+        const org = proj.customer_id ? customers.find(c => c.id == proj.customer_id && c.is_client == 1) : null;
+        const duration = (new Date(e.end_time) - new Date(e.start_time)) / 1000;
+        const taskColor = shiftColor(proj.color, -10);
+
+        const taskObj = e.task_id ? (state.tasks || []).find(t => String(t.id) === String(e.task_id)) : null;
+        const projTags = proj.tags || [];
+        const taskTags = taskObj?.tags || [];
+        const entryTags = e.tags || [];
+        const displayTags = [...new Set([...projTags, ...taskTags, ...entryTags])];
+
+        if (isHistoryCompact) {
+          return dayHeader + `
             <div class="task-item group/row px-2 py-0 rounded-lg hover:bg-highlight transition-all cursor-pointer relative grid grid-cols-[4px_1fr_180px_120px_100px_min-content] gap-4 items-center border border-transparent hover:border-subtle" data-entry-id="${e.id}">
               <div class="w-1 h-4 rounded-full" style="background-color: ${taskColor}"></div>
               <div class="min-w-0">
@@ -485,9 +485,9 @@ export async function renderDashboard(forceRefresh = false) {
               </div>
             </div>
           `;
-    }
+        }
 
-    return dayHeader + `
+        return dayHeader + `
             <div class="bg-card rounded-xl p-4 border border-soft shadow-sm group/row hover:border-primary/20 transition-all duration-300 flex items-center justify-between text-main cursor-pointer" data-entry-id="${e.id}">
               <div class="flex items-center gap-4 flex-1">
                 <div class="w-1 h-10 rounded-full" style="background-color: ${taskColor}"></div>
@@ -506,17 +506,17 @@ export async function renderDashboard(forceRefresh = false) {
                     ` : ''}
                   </div>
                   ${(() => {
-        if (e.task_id) {
-          const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
-          return `<div class="mt-1 flex items-center gap-1.5">
+            if (e.task_id) {
+              const t = (state.tasks || []).find(task => String(task.id) === String(e.task_id));
+              return `<div class="mt-1 flex items-center gap-1.5">
                       <span class="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10 flex items-center gap-1 uppercase tracking-tighter">
                         <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                         Linked Todo: ${t ? escapeHTML(t.title) : 'Deleted Todo'}
                       </span>
                     </div>`;
-        }
-        return '';
-      })()}
+            }
+            return '';
+          })()}
                   ${e.notes ? `<p class="text-xs text-dim italic mt-1.5">${escapeHTML(e.notes)}</p>` : ''}
                 </div>
               </div>
@@ -549,7 +549,8 @@ export async function renderDashboard(forceRefresh = false) {
             </div>
           `;
 
-  }).join(''); })()}
+      }).join('');
+    })()}
         ${entries.length === 0 ? '<p class="text-center py-6 text-dim font-bold uppercase tracking-widest text-xs opacity-30">No history yet</p>' : ''}
       </div>
     </div>
@@ -571,16 +572,16 @@ export async function renderDashboard(forceRefresh = false) {
 
     let initialProjectId = localStorage.getItem('timer_last_project_id');
     if (initialProjectId === null) {
-        initialProjectId = recentProjectIds[0] || '';
+      initialProjectId = recentProjectIds[0] || '';
     }
     projectInput.value = initialProjectId;
-    
+
     let initialTodoId = localStorage.getItem('timer_last_todo_id') || '';
     todoInput.value = initialTodoId;
 
     const tagsInput = container.querySelector('input[name="tags"]');
     if (tagsInput) {
-        tagsInput.addEventListener('input', () => renderTodoSelect(projectInput.value));
+      tagsInput.addEventListener('input', () => renderTodoSelect(projectInput.value));
     }
 
     const renderProjectSelect = (pid) => {
@@ -602,15 +603,15 @@ export async function renderDashboard(forceRefresh = false) {
 
     const renderTodoSelect = (pid) => {
       const activeTags = tagsInput ? tagsInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
-      
+
       const tasks = (state.tasks || []).filter(t => {
         if (pid && String(t.project_id) !== String(pid)) return false;
-        
+
         if (activeTags.length > 0) {
-            const taskTags = t.tags ? t.tags.map(x => x.toLowerCase()) : [];
-            if (!activeTags.some(tag => taskTags.includes(tag))) return false;
+          const taskTags = t.tags ? t.tags.map(x => x.toLowerCase()) : [];
+          if (!activeTags.some(tag => taskTags.includes(tag))) return false;
         }
-        
+
         return t.status !== 'done';
       }).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
 
@@ -627,11 +628,11 @@ export async function renderDashboard(forceRefresh = false) {
           if (task && !descInput.value.trim()) {
             descInput.value = task.title;
           }
-          
+
           if (task && task.project_id && String(task.project_id) !== String(projectInput.value)) {
-              projectInput.value = task.project_id;
-              localStorage.setItem('timer_last_project_id', task.project_id);
-              renderProjectSelect(task.project_id);
+            projectInput.value = task.project_id;
+            localStorage.setItem('timer_last_project_id', task.project_id);
+            renderProjectSelect(task.project_id);
           }
         }
       });
@@ -660,19 +661,19 @@ export async function renderDashboard(forceRefresh = false) {
       const iconContainer = todosCollapseToggle.querySelector('div');
       const svgIcon = todosCollapseToggle.querySelector('svg');
       if (isTodosCollapsed) {
-          divider?.classList.add('hidden');
-          content?.classList.add('hidden');
-          const historyDivider = container.querySelector('#dashboard-history-divider');
-          if (historyDivider) historyDivider.classList.add('hidden');
-          iconContainer.className = 'p-1 rounded-md transition-all text-primary';
-          svgIcon.classList.add('rotate-180');
+        divider?.classList.add('hidden');
+        content?.classList.add('hidden');
+        const historyDivider = container.querySelector('#dashboard-history-divider');
+        if (historyDivider) historyDivider.classList.add('hidden');
+        iconContainer.className = 'p-1 rounded-md transition-all text-primary';
+        svgIcon.classList.add('rotate-180');
       } else {
-          divider?.classList.remove('hidden');
-          content?.classList.remove('hidden');
-          const historyDivider = container.querySelector('#dashboard-history-divider');
-          if (historyDivider) historyDivider.classList.remove('hidden');
-          iconContainer.className = 'p-1 rounded-md transition-all text-dim group-hover:text-main';
-          svgIcon.classList.remove('rotate-180');
+        divider?.classList.remove('hidden');
+        content?.classList.remove('hidden');
+        const historyDivider = container.querySelector('#dashboard-history-divider');
+        if (historyDivider) historyDivider.classList.remove('hidden');
+        iconContainer.className = 'p-1 rounded-md transition-all text-dim group-hover:text-main';
+        svgIcon.classList.remove('rotate-180');
       }
     };
   }
@@ -714,10 +715,10 @@ export async function renderDashboard(forceRefresh = false) {
   let searchTerm = localStorage.getItem('dashboard_search_term') || '';
   let projectFilter = [];
   try {
-      const stored = localStorage.getItem('dashboard_project_filter');
-      projectFilter = stored ? JSON.parse(stored) : [];
-  } catch(e) {
-      projectFilter = [];
+    const stored = localStorage.getItem('dashboard_project_filter');
+    projectFilter = stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    projectFilter = [];
   }
   let isSelectionMode = false;
   let lastCheckedTaskId = null;
@@ -777,8 +778,8 @@ export async function renderDashboard(forceRefresh = false) {
         localStorage.setItem('dashboard_search_visible', String(val));
         const searchRow = container.querySelector('#dashboard-search-row');
         if (searchRow) {
-            if (val) searchRow.classList.remove('hidden');
-            else searchRow.classList.add('hidden');
+          if (val) searchRow.classList.remove('hidden');
+          else searchRow.classList.add('hidden');
         }
         renderTaskToggles();
       },
@@ -793,61 +794,61 @@ export async function renderDashboard(forceRefresh = false) {
     const selToggle = container.querySelector('#selection-mode-toggle');
     const selIcon = container.querySelector('#selection-mode-icon');
     const selLabel = container.querySelector('#selection-mode-label');
-    
-    if (selToggle) {
-        if (isSelectionMode) {
-            selToggle.className = 'h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap bg-primary border-primary text-white shadow-lg shadow-primary/20';
-            selIcon.textContent = '✓';
-            selLabel.textContent = 'Selecting';
-        } else {
-            selToggle.className = 'h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap border-white/5 text-dim hover:text-main hover:bg-highlight';
-            selIcon.textContent = '⊞';
-            selLabel.textContent = 'Bulk Select';
-        }
 
-        selToggle.onclick = () => {
-            isSelectionMode = !isSelectionMode;
-            if (!isSelectionMode) selectedTaskIds.clear();
-            renderTaskToggles();
-            renderDashboardTasks();
-            renderBulkToolbar();
-        };
+    if (selToggle) {
+      if (isSelectionMode) {
+        selToggle.className = 'h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap bg-primary border-primary text-white shadow-lg shadow-primary/20';
+        selIcon.textContent = '✓';
+        selLabel.textContent = 'Selecting';
+      } else {
+        selToggle.className = 'h-9 px-4 flex items-center gap-2 rounded-lg border transition-all whitespace-nowrap border-white/5 text-dim hover:text-main hover:bg-highlight';
+        selIcon.textContent = '⊞';
+        selLabel.textContent = 'Bulk Select';
+      }
+
+      selToggle.onclick = () => {
+        isSelectionMode = !isSelectionMode;
+        if (!isSelectionMode) selectedTaskIds.clear();
+        renderTaskToggles();
+        renderDashboardTasks();
+        renderBulkToolbar();
+      };
     }
 
     // Search input logic
     const searchInput = container.querySelector('#task-search-input');
     if (searchInput) {
       searchInput.value = searchTerm;
-      
+
       const updateSearchUI = () => {
-          const wrapper = searchInput.parentElement;
-          if (searchTerm) {
-              searchInput.classList.remove('bg-highlight', 'border-white/5');
-              searchInput.classList.add('bg-primary/10', 'border-primary/30');
-              searchInput.style.paddingRight = '2rem';
-              let clearBtn = wrapper.querySelector('.search-filter-clear');
-              if (!clearBtn) {
-                  clearBtn = document.createElement('button');
-                  clearBtn.className = 'search-filter-clear absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded hover:bg-primary/20 text-primary transition-all';
-                  clearBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                  clearBtn.title = 'Clear Search';
-                  clearBtn.onclick = (e) => {
-                      e.stopPropagation();
-                      searchTerm = '';
-                      searchInput.value = '';
-                      localStorage.setItem('dashboard_search_term', '');
-                      updateSearchUI();
-                      renderDashboardTasks();
-                  };
-                  wrapper.appendChild(clearBtn);
-              }
-          } else {
-              searchInput.classList.add('bg-highlight', 'border-white/5');
-              searchInput.classList.remove('bg-primary/10', 'border-primary/30');
-              searchInput.style.paddingRight = '';
-              const clearBtn = wrapper.querySelector('.search-filter-clear');
-              if (clearBtn) clearBtn.remove();
+        const wrapper = searchInput.parentElement;
+        if (searchTerm) {
+          searchInput.classList.remove('bg-highlight', 'border-white/5');
+          searchInput.classList.add('bg-primary/10', 'border-primary/30');
+          searchInput.style.paddingRight = '2rem';
+          let clearBtn = wrapper.querySelector('.search-filter-clear');
+          if (!clearBtn) {
+            clearBtn = document.createElement('button');
+            clearBtn.className = 'search-filter-clear absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded hover:bg-primary/20 text-primary transition-all';
+            clearBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            clearBtn.title = 'Clear Search';
+            clearBtn.onclick = (e) => {
+              e.stopPropagation();
+              searchTerm = '';
+              searchInput.value = '';
+              localStorage.setItem('dashboard_search_term', '');
+              updateSearchUI();
+              renderDashboardTasks();
+            };
+            wrapper.appendChild(clearBtn);
           }
+        } else {
+          searchInput.classList.add('bg-highlight', 'border-white/5');
+          searchInput.classList.remove('bg-primary/10', 'border-primary/30');
+          searchInput.style.paddingRight = '';
+          const clearBtn = wrapper.querySelector('.search-filter-clear');
+          if (clearBtn) clearBtn.remove();
+        }
       };
 
       updateSearchUI();
@@ -866,40 +867,40 @@ export async function renderDashboard(forceRefresh = false) {
 
     // Project filter logic
     const projectFilterContainer = container.querySelector('#task-project-filter-container');
-      const updateWrapperState = () => {
-        const wrapper = container.querySelector('#project-filter-wrapper');
-        if (!wrapper) return;
-        if (projectFilter && projectFilter.length > 0) {
-            wrapper.className = 'flex items-center pl-1 pr-1 gap-1 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-primary/10 border border-primary/30';
-            let clearBtn = wrapper.querySelector('.project-filter-clear');
-            if (!clearBtn) {
-                clearBtn = document.createElement('button');
-                clearBtn.className = 'project-filter-clear flex items-center justify-center w-6 h-6 rounded hover:bg-primary/20 text-primary transition-all';
-                clearBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                clearBtn.title = 'Clear Filter';
-                clearBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    projectFilter = [];
-                    localStorage.setItem('dashboard_project_filter', JSON.stringify(projectFilter));
-                    renderTaskToggles();
-                    renderDashboardTasks();
-                };
-                wrapper.appendChild(clearBtn);
-            }
-        } else {
-            wrapper.className = 'flex items-center gap-1 pl-1 pr-1 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-highlight border border-white/5';
-            const clearBtn = wrapper.querySelector('.project-filter-clear');
-            if (clearBtn) clearBtn.remove();
+    const updateWrapperState = () => {
+      const wrapper = container.querySelector('#project-filter-wrapper');
+      if (!wrapper) return;
+      if (projectFilter && projectFilter.length > 0) {
+        wrapper.className = 'flex items-center pl-1 pr-1 gap-1 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-primary/10 border border-primary/30';
+        let clearBtn = wrapper.querySelector('.project-filter-clear');
+        if (!clearBtn) {
+          clearBtn = document.createElement('button');
+          clearBtn.className = 'project-filter-clear flex items-center justify-center w-6 h-6 rounded hover:bg-primary/20 text-primary transition-all';
+          clearBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
+          clearBtn.title = 'Clear Filter';
+          clearBtn.onclick = (e) => {
+            e.stopPropagation();
+            projectFilter = [];
+            localStorage.setItem('dashboard_project_filter', JSON.stringify(projectFilter));
+            renderTaskToggles();
+            renderDashboardTasks();
+          };
+          wrapper.appendChild(clearBtn);
         }
-      };
-      
-      updateWrapperState(); // run once on init
+      } else {
+        wrapper.className = 'flex items-center gap-1 pl-1 pr-1 h-9 rounded-lg transition-all focus-within:border-primary/20 bg-highlight border border-white/5';
+        const clearBtn = wrapper.querySelector('.project-filter-clear');
+        if (clearBtn) clearBtn.remove();
+      }
+    };
+
+    updateWrapperState(); // run once on init
 
     if (projectFilterContainer) {
       const recentIds = [...new Set((state.timeEntries || [])
-          .filter(e => e.project_id)
-          .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
-          .map(e => String(e.project_id))
+        .filter(e => e.project_id)
+        .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
+        .map(e => String(e.project_id))
       )].slice(0, 5);
 
       SearchableSelect.render(projectFilterContainer, projects, {
@@ -951,24 +952,24 @@ export async function renderDashboard(forceRefresh = false) {
 
     const closeBtn = toolbar.querySelector('#bulk-close-btn');
     if (closeBtn) {
-       closeBtn.onclick = () => {
-          isSelectionMode = false;
-          selectedTaskIds.clear();
-          renderTaskToggles();
-          renderDashboardTasks();
-          renderBulkToolbar();
-       };
+      closeBtn.onclick = () => {
+        isSelectionMode = false;
+        selectedTaskIds.clear();
+        renderTaskToggles();
+        renderDashboardTasks();
+        renderBulkToolbar();
+      };
     }
 
     const getToolbarTimes = () => {
-       const startStr = toolbar.querySelector('#bulk-time-start')?.value || '09:00';
-       const endStr = toolbar.querySelector('#bulk-time-end')?.value || '17:00';
-       return {
-          startHr: parseInt(startStr.split(':')[0]) || 9,
-          startMin: parseInt(startStr.split(':')[1]) || 0,
-          endHr: parseInt(endStr.split(':')[0]) || 17,
-          endMin: parseInt(endStr.split(':')[1]) || 0,
-       };
+      const startStr = toolbar.querySelector('#bulk-time-start')?.value || '09:00';
+      const endStr = toolbar.querySelector('#bulk-time-end')?.value || '17:00';
+      return {
+        startHr: parseInt(startStr.split(':')[0]) || 9,
+        startMin: parseInt(startStr.split(':')[1]) || 0,
+        endHr: parseInt(endStr.split(':')[0]) || 17,
+        endMin: parseInt(endStr.split(':')[1]) || 0,
+      };
     };
 
     const moveTodayBtn = toolbar.querySelector('#bulk-move-today-btn');
@@ -978,12 +979,12 @@ export async function renderDashboard(forceRefresh = false) {
         if (!confirmed) return;
         const today = new Date();
         const todayStr = today.toLocaleDateString('en-CA');
-        
+
         try {
           for (const id of selectedTaskIds) {
-            await api.post('planner.php', { 
-              id, 
-              status: 'todo', 
+            await api.post('planner.php', {
+              id,
+              status: 'todo',
               start_date: `${todayStr}T09:00:00`,
               end_date: `${todayStr}T17:00:00`
             });
@@ -1002,12 +1003,12 @@ export async function renderDashboard(forceRefresh = false) {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const tomorrowStr = tomorrow.toLocaleDateString('en-CA');
-        
+
         try {
           for (const id of selectedTaskIds) {
-            await api.post('planner.php', { 
-              id, 
-              status: 'todo', 
+            await api.post('planner.php', {
+              id,
+              status: 'todo',
               start_date: `${tomorrowStr}T09:00:00`,
               end_date: `${tomorrowStr}T17:00:00`
             });
@@ -1024,7 +1025,7 @@ export async function renderDashboard(forceRefresh = false) {
         const confirmed = await ConfirmModal.show(`Move ${selectedTaskIds.size} tasks into next week?`, { confirmText: 'Move +1 Week' });
         if (!confirmed) return;
         const tasksToMove = allTasks.filter(t => selectedTaskIds.has(String(t.id)));
-        
+
         // Find the earliest start date among selected tasks to calculate the shift
         const startDates = tasksToMove.map(t => t.start_date ? new Date(t.start_date).getTime() : null).filter(d => d !== null);
         if (startDates.length === 0) return;
@@ -1032,26 +1033,26 @@ export async function renderDashboard(forceRefresh = false) {
         const earliest = Math.min(...startDates);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const dayMs = 24 * 60 * 60 * 1000;
         const target = today.getTime() + (7 * dayMs);
-        
+
         const finalStartForEarliest = Math.max(target, earliest + (7 * dayMs));
         const shiftMs = finalStartForEarliest - earliest;
 
         try {
           for (const t of tasksToMove) {
             const updates = { id: t.id };
-            
+
             if (t.start_date) {
-               const newS = new Date(new Date(t.start_date).getTime() + shiftMs);
-               updates.start_date = newS.toISOString();
+              const newS = new Date(new Date(t.start_date).getTime() + shiftMs);
+              updates.start_date = newS.toISOString();
             }
             if (t.end_date) {
-               const newE = new Date(new Date(t.end_date).getTime() + shiftMs);
-               updates.end_date = newE.toISOString();
+              const newE = new Date(new Date(t.end_date).getTime() + shiftMs);
+              updates.end_date = newE.toISOString();
             }
-            updates.status = 'todo'; 
+            updates.status = 'todo';
             await api.post('planner.php', updates);
           }
           selectedTaskIds.clear();
@@ -1062,30 +1063,30 @@ export async function renderDashboard(forceRefresh = false) {
 
     const setTimesBtn = toolbar.querySelector('#bulk-set-times-btn');
     if (setTimesBtn) {
-       setTimesBtn.onclick = async () => {
-          const confirmed = await ConfirmModal.show(`Set customized times for ${selectedTaskIds.size} tasks?`, { confirmText: 'Set Times' });
-          if (!confirmed) return;
-          const { startHr, startMin, endHr, endMin } = getToolbarTimes();
+      setTimesBtn.onclick = async () => {
+        const confirmed = await ConfirmModal.show(`Set customized times for ${selectedTaskIds.size} tasks?`, { confirmText: 'Set Times' });
+        if (!confirmed) return;
+        const { startHr, startMin, endHr, endMin } = getToolbarTimes();
 
-          try {
-             const tasksToUpdate = allTasks.filter(t => selectedTaskIds.has(String(t.id)));
-             for (const t of tasksToUpdate) {
-                const startD = t.start_date ? new Date(t.start_date) : new Date();
-                const endD = t.end_date ? new Date(t.end_date) : new Date();
-                
-                startD.setHours(startHr, startMin, 0, 0);
-                endD.setHours(endHr, endMin, 0, 0);
+        try {
+          const tasksToUpdate = allTasks.filter(t => selectedTaskIds.has(String(t.id)));
+          for (const t of tasksToUpdate) {
+            const startD = t.start_date ? new Date(t.start_date) : new Date();
+            const endD = t.end_date ? new Date(t.end_date) : new Date();
 
-                await api.post('planner.php', {
-                   id: t.id,
-                   start_date: startD.toISOString(),
-                   end_date: endD.toISOString()
-                });
-             }
-             selectedTaskIds.clear();
-             refreshView();
-          } catch (err) { alert('Failed to set times'); }
-       };
+            startD.setHours(startHr, startMin, 0, 0);
+            endD.setHours(endHr, endMin, 0, 0);
+
+            await api.post('planner.php', {
+              id: t.id,
+              start_date: startD.toISOString(),
+              end_date: endD.toISOString()
+            });
+          }
+          selectedTaskIds.clear();
+          refreshView();
+        } catch (err) { alert('Failed to set times'); }
+      };
     }
 
     const moveBacklogBtn = toolbar.querySelector('#bulk-move-backlog-btn');
@@ -1120,33 +1121,33 @@ export async function renderDashboard(forceRefresh = false) {
 
     const assignContainer = toolbar.querySelector('#bulk-assign-select-container');
     if (assignContainer) {
-        const state = store.get();
-        const resources = (state.team || []).map(m => ({ id: m.name, name: m.name }));
-        if (!resources.some(r => r.id === 'General')) resources.push({ id: 'General', name: 'General' });
-        resources.unshift({ id: 'me', name: 'Unassigned' });
+      const state = store.get();
+      const resources = (state.team || []).map(m => ({ id: m.name, name: m.name }));
+      if (!resources.some(r => r.id === 'General')) resources.push({ id: 'General', name: 'General' });
+      resources.unshift({ id: 'me', name: 'Unassigned' });
 
-        SearchableSelect.render(assignContainer, resources, {
-            value: '',
-            placeholder: 'Assign to...',
-            allLabel: 'Team Members',
-            alignTarget: '#bulk-action-toolbar',
-            onChange: async (val) => {
-                if (!val) return;
-                const confirmed = await ConfirmModal.show(`Assign ${selectedTaskIds.size} tasks to ${val === 'me' ? 'Unassigned' : val}?`, { confirmText: 'Assign' });
-                if (!confirmed) {
-                    renderBulkToolbar(); // Reset select
-                    return;
-                }
-                const assignedVal = val;
-                try {
-                  for (const id of selectedTaskIds) {
-                    await api.post('planner.php', { id, resource_id: assignedVal });
-                  }
-                  selectedTaskIds.clear();
-                  refreshView();
-                } catch (err) { alert('Failed to assign tasks'); }
+      SearchableSelect.render(assignContainer, resources, {
+        value: '',
+        placeholder: 'Assign to...',
+        allLabel: 'Team Members',
+        alignTarget: '#bulk-action-toolbar',
+        onChange: async (val) => {
+          if (!val) return;
+          const confirmed = await ConfirmModal.show(`Assign ${selectedTaskIds.size} tasks to ${val === 'me' ? 'Unassigned' : val}?`, { confirmText: 'Assign' });
+          if (!confirmed) {
+            renderBulkToolbar(); // Reset select
+            return;
+          }
+          const assignedVal = val;
+          try {
+            for (const id of selectedTaskIds) {
+              await api.post('planner.php', { id, resource_id: assignedVal });
             }
-        });
+            selectedTaskIds.clear();
+            refreshView();
+          } catch (err) { alert('Failed to assign tasks'); }
+        }
+      });
     }
   };
 
@@ -1172,11 +1173,11 @@ export async function renderDashboard(forceRefresh = false) {
 
     // 2. Handle Task List rendering logic (Sections inside TaskList.render)
     const anyListFilter = taskFilters.today || taskFilters.overdue || taskFilters.planned || taskFilters.backlog || taskFilters.completed;
-    
+
     // If search is active but NO filter is on, we act on ALL tasks by temporarily enabling them for rendering
     let effectiveFilters = { ...taskFilters };
     if (searchTerm.length > 0 && !anyListFilter) {
-        effectiveFilters = { ...effectiveFilters, today: true, overdue: true, planned: true, backlog: true, completed: true };
+      effectiveFilters = { ...effectiveFilters, today: true, overdue: true, planned: true, backlog: true, completed: true };
     }
 
     const shouldShowList = anyListFilter || searchTerm.length > 0;
@@ -1199,24 +1200,24 @@ export async function renderDashboard(forceRefresh = false) {
         cb.onclick = (e) => {
           e.stopPropagation();
           const taskId = cb.dataset.taskId;
-          
+
           if (e.shiftKey && lastCheckedTaskId) {
-              const allCbs = [...taskListEl.querySelectorAll('.task-bulk-checkbox')];
-              const startIdx = allCbs.findIndex(x => x.dataset.taskId === String(lastCheckedTaskId));
-              const endIdx = allCbs.findIndex(x => x.dataset.taskId === String(taskId));
-              
-              if (startIdx !== -1 && endIdx !== -1) {
-                  const [min, max] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
-                  const isChecking = e.target.checked;
-                  allCbs.slice(min, max + 1).forEach(el => {
-                      el.checked = isChecking;
-                      if (isChecking) selectedTaskIds.add(el.dataset.taskId);
-                      else selectedTaskIds.delete(el.dataset.taskId);
-                  });
-              }
+            const allCbs = [...taskListEl.querySelectorAll('.task-bulk-checkbox')];
+            const startIdx = allCbs.findIndex(x => x.dataset.taskId === String(lastCheckedTaskId));
+            const endIdx = allCbs.findIndex(x => x.dataset.taskId === String(taskId));
+
+            if (startIdx !== -1 && endIdx !== -1) {
+              const [min, max] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
+              const isChecking = e.target.checked;
+              allCbs.slice(min, max + 1).forEach(el => {
+                el.checked = isChecking;
+                if (isChecking) selectedTaskIds.add(el.dataset.taskId);
+                else selectedTaskIds.delete(el.dataset.taskId);
+              });
+            }
           } else {
-              if (e.target.checked) selectedTaskIds.add(String(taskId));
-              else selectedTaskIds.delete(String(taskId));
+            if (e.target.checked) selectedTaskIds.add(String(taskId));
+            else selectedTaskIds.delete(String(taskId));
           }
           lastCheckedTaskId = taskId;
           renderBulkToolbar();
@@ -1349,7 +1350,7 @@ export async function renderDashboard(forceRefresh = false) {
       const prog = progress(s);
       const isPast = s.endDate < now;
       const isCurrent = s.startDate <= now && s.endDate >= now;
-      
+
       const isEpic = s.proj.type === 'epic';
       const useSubtle = isEpic; // Always subtle when shown
       const barHeight = useSubtle ? 4 : 28;
@@ -1601,10 +1602,10 @@ export async function renderDashboard(forceRefresh = false) {
       const manualTags = data.tags ? data.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
       let taskTags = [];
       if (data.task_id) {
-          const matchedTask = (state.tasks || []).find(t => String(t.id) === String(data.task_id));
-          if (matchedTask && matchedTask.tags) {
-              taskTags = matchedTask.tags;
-          }
+        const matchedTask = (state.tasks || []).find(t => String(t.id) === String(data.task_id));
+        if (matchedTask && matchedTask.tags) {
+          taskTags = matchedTask.tags;
+        }
       }
       data.tags = [...new Set([...manualTags, ...taskTags])];
 
@@ -1654,48 +1655,48 @@ export async function renderDashboard(forceRefresh = false) {
     // Turn to Task Button
     const turnTaskBtn = e.target.closest('.turn-task-btn');
     if (turnTaskBtn) {
-        e.stopPropagation();
-        const entryId = turnTaskBtn.dataset.id;
-        const entry = (activeTimer && String(activeTimer.id) === String(entryId)) ? activeTimer : (state.timeEntries || []).find(en => String(en.id) === String(entryId));
-        if (entry) {
-            // Create a task instantly
-            const taskData = {
-                title: entry.description || 'New Task',
-                project_id: entry.project_id || null,
-                resource_id: entry.resource_id || 'me',
-                tags: entry.tags || [],
-                notes: entry.notes || '',
-                status: 'todo',
-                priority: 'medium',
-                progress: 0,
-                start_date: null,
-                end_date: null,
-                completed_at: null
-            };
-            try {
-                const newTask = await api.post('planner.php', taskData);
-                const tasks = store.get().tasks || [];
-                store.update('tasks', [...tasks, newTask]);
-                
-                // Update time entry
-                const updatedEntry = { ...entry, task_id: newTask.id };
-                updatedEntry.project_name = projects.find(p => p.id == updatedEntry.project_id)?.name || 'Unassigned';
-                // Adjust times for server format
-                updatedEntry.start_time = new Date(entry.start_time).toISOString();
-                if (entry.end_time) updatedEntry.end_time = new Date(entry.end_time).toISOString();
-                
-                const result = await api.post('time-entries.php', updatedEntry);
-                if (!entry.end_time) {
-                    store.update('activeTimer', result);
-                }
-                store.update('timeEntries', await api.get('time-entries.php'));
-                refreshView();
-            } catch (err) {
-                console.error('Turn to task failed', err);
-                alert('Turn to task failed!');
-            }
+      e.stopPropagation();
+      const entryId = turnTaskBtn.dataset.id;
+      const entry = (activeTimer && String(activeTimer.id) === String(entryId)) ? activeTimer : (state.timeEntries || []).find(en => String(en.id) === String(entryId));
+      if (entry) {
+        // Create a task instantly
+        const taskData = {
+          title: entry.description || 'New Task',
+          project_id: entry.project_id || null,
+          resource_id: entry.resource_id || 'me',
+          tags: entry.tags || [],
+          notes: entry.notes || '',
+          status: 'todo',
+          priority: 'medium',
+          progress: 0,
+          start_date: null,
+          end_date: null,
+          completed_at: null
+        };
+        try {
+          const newTask = await api.post('planner.php', taskData);
+          const tasks = store.get().tasks || [];
+          store.update('tasks', [...tasks, newTask]);
+
+          // Update time entry
+          const updatedEntry = { ...entry, task_id: newTask.id };
+          updatedEntry.project_name = projects.find(p => p.id == updatedEntry.project_id)?.name || 'Unassigned';
+          // Adjust times for server format
+          updatedEntry.start_time = new Date(entry.start_time).toISOString();
+          if (entry.end_time) updatedEntry.end_time = new Date(entry.end_time).toISOString();
+
+          const result = await api.post('time-entries.php', updatedEntry);
+          if (!entry.end_time) {
+            store.update('activeTimer', result);
+          }
+          store.update('timeEntries', await api.get('time-entries.php'));
+          refreshView();
+        } catch (err) {
+          console.error('Turn to task failed', err);
+          alert('Turn to task failed!');
         }
-        return;
+      }
+      return;
     }
 
     // History Entry Row Click (Edit)
@@ -1729,17 +1730,17 @@ export async function renderDashboard(forceRefresh = false) {
       const controls = container.querySelector('#history-controls-container');
       const iconContainer = historyCollapseToggle.querySelector('div');
       const svgIcon = historyCollapseToggle.querySelector('svg');
-      
+
       if (isHistoryCollapsed) {
-          content?.classList.add('hidden');
-          controls?.classList.add('hidden');
-          iconContainer.className = 'p-1 rounded-md transition-all text-primary';
-          svgIcon.classList.add('rotate-180');
+        content?.classList.add('hidden');
+        controls?.classList.add('hidden');
+        iconContainer.className = 'p-1 rounded-md transition-all text-primary';
+        svgIcon.classList.add('rotate-180');
       } else {
-          content?.classList.remove('hidden');
-          controls?.classList.remove('hidden');
-          iconContainer.className = 'p-1 rounded-md transition-all text-dim group-hover:text-main';
-          svgIcon.classList.remove('rotate-180');
+        content?.classList.remove('hidden');
+        controls?.classList.remove('hidden');
+        iconContainer.className = 'p-1 rounded-md transition-all text-dim group-hover:text-main';
+        svgIcon.classList.remove('rotate-180');
       }
     };
   }
@@ -1750,8 +1751,8 @@ export async function renderDashboard(forceRefresh = false) {
       localStorage.setItem('dashboard_history_search', e.target.value);
       if (historySearchRefreshTimeout) clearTimeout(historySearchRefreshTimeout);
       historySearchRefreshTimeout = setTimeout(() => {
-          historySearchRefreshTimeout = null;
-          refreshView();
+        historySearchRefreshTimeout = null;
+        refreshView();
       }, 300);
     };
 
@@ -1760,9 +1761,9 @@ export async function renderDashboard(forceRefresh = false) {
       if (window._focusHistorySearch) {
         const input = container.querySelector('#history-search-input');
         if (input) {
-            input.focus();
-            const len = input.value.length;
-            input.setSelectionRange(len, len);
+          input.focus();
+          const len = input.value.length;
+          input.setSelectionRange(len, len);
         }
       }
       historyFocusRestoreTimeout = null;

@@ -72,24 +72,24 @@ export async function renderPlanner() {
             <div class="flex items-center gap-3 flex-wrap">
                 <div id="view-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5">
                     ${['timeline', 'kanban'].map(v => {
-                        const labels = { timeline: 'Gantt', kanban: 'Kanban' };
-                        return `<button class="view-toggle px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-view="${v}">${labels[v]}</button>`;
-                    }).join('')}
+        const labels = { timeline: 'Gantt', kanban: 'Kanban' };
+        return `<button class="view-toggle px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentView === v ? 'bg-card text-primary shadow-sm ring-1 ring-white/10' : 'text-dim opacity-40 hover:opacity-100 hover:bg-white/5'}" data-view="${v}">${labels[v]}</button>`;
+    }).join('')}
                 </div>
 
                 <div class="w-px h-5 bg-white/10"></div>
 
                 <div id="scale-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView !== 'timeline' && currentView !== 'kanban' ? 'hidden' : ''}">
                     ${['day', 'week', 'month', 'year'].map(s => {
-                        const tooltips = { day: 'Tactical execution & time logging', week: 'Operational planning & sprint tracking', month: 'Strategic milestones & bottlenecks', year: 'Executive roadmap' };
-                        return `<button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-scale="${s}" title="${tooltips[s]}">${s}</button>`;
-                    }).join('')}
+        const tooltips = { day: 'Tactical execution & time logging', week: 'Operational planning & sprint tracking', month: 'Strategic milestones & bottlenecks', year: 'Executive roadmap' };
+        return `<button class="scale-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentScale === s ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-scale="${s}" title="${tooltips[s]}">${s}</button>`;
+    }).join('')}
                 </div>
                 <div id="zoom-toggle-container" class="flex items-center bg-app/30 p-0.5 rounded-lg border border-white/5 ${currentView !== 'timeline' ? 'hidden' : ''}">
                     ${['compact', 'regular', 'relaxed'].map(z => {
-                        const tooltips = { compact: 'High density for pattern recognition & heat-mapping', regular: 'Standard view for daily work', relaxed: 'Presentation sizing' };
-                        return `<button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-zoom="${z}" title="${tooltips[z]}">${z}</button>`;
-                    }).join('')}
+        const tooltips = { compact: 'High density for pattern recognition & heat-mapping', regular: 'Standard view for daily work', relaxed: 'Presentation sizing' };
+        return `<button class="zoom-toggle px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${currentZoom === z ? 'bg-card text-primary shadow-sm' : 'text-dim opacity-40'}" data-zoom="${z}" title="${tooltips[z]}">${z}</button>`;
+    }).join('')}
                 </div>
 
                 <div id="epic-span-toggle-container" class="flex items-center bg-app/30 px-2 h-7 rounded-lg border border-white/5 gap-4 ${currentView !== 'timeline' ? 'hidden' : ''}">
@@ -156,7 +156,7 @@ export async function renderPlanner() {
                 alignTarget: '#project-filter-container',
                 onChange: (newVal) => {
                     projectFilter = newVal;
-                    updateUI(); 
+                    updateUI();
                 }
             });
         }
@@ -381,8 +381,8 @@ export async function renderPlanner() {
         if (navBtn) { const dir = parseInt(navBtn.dataset.dir); timeOffset = (dir === 0 ? 0 : timeOffset + dir); updateUI(); return; }
 
         const scaleBtn = e.target.closest('.scale-toggle');
-        if (scaleBtn) { 
-            currentScale = scaleBtn.dataset.scale; 
+        if (scaleBtn) {
+            currentScale = scaleBtn.dataset.scale;
             localStorage.setItem('timeshark_planner_scale', currentScale);
             currentZoom = localStorage.getItem(`timeshark_planner_zoom_${currentScale}`) || 'regular';
             subtleEpics = localStorage.getItem(`timeshark_planner_subtle_epics_${currentScale}`) === 'true';
@@ -390,25 +390,25 @@ export async function renderPlanner() {
             showTimeEntries = localStorage.getItem(`timeshark_planner_show_time_entries_${currentScale}`) !== 'false';
             showTasks = localStorage.getItem(`timeshark_planner_show_tasks_${currentScale}`) !== 'false';
             showOps = localStorage.getItem(`timeshark_planner_show_ops_${currentScale}`) !== 'false';
-            timeOffset = 0; 
-            updateUI(); 
-            return; 
+            timeOffset = 0;
+            updateUI();
+            return;
         }
 
         const zoomBtn = e.target.closest('.zoom-toggle');
-        if (zoomBtn) { 
-            currentZoom = zoomBtn.dataset.zoom; 
+        if (zoomBtn) {
+            currentZoom = zoomBtn.dataset.zoom;
             localStorage.setItem(`timeshark_planner_zoom_${currentScale}`, currentZoom);
-            updateUI(); 
-            return; 
+            updateUI();
+            return;
         }
 
         const viewBtn = e.target.closest('.view-toggle');
-        if (viewBtn) { 
-            currentView = viewBtn.dataset.view; 
+        if (viewBtn) {
+            currentView = viewBtn.dataset.view;
             localStorage.setItem('timeshark_planner_view', currentView);
-            updateUI(); 
-            return; 
+            updateUI();
+            return;
         }
     });
 

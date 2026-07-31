@@ -215,8 +215,26 @@ select {
     transition: all 0.2s ease;
 }
 
+/* Textarea: min-height enforces minimum rows visible; do NOT set height here as it overrides the
+   browser UA stylesheet's rows-attribute-based sizing. min-height is safe — it acts as a floor
+   without conflicting with the rows attribute. */
+textarea {
+    min-height: 90px;               /* Guarantees at least 3 rows visible at text-sm font size */
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    scrollbar-gutter: stable;       /* Reserve scrollbar space so it never covers the resize handle */
+}
+
+textarea:focus {
+    outline: none;
+}
+
 input:focus,
 select:focus,
+textarea:focus,
 .zen-focus-within:focus-within {
     background-color: var(--bg-card) !important;
     border-color: var(--primary) !important; /* Highlight border on focus */
@@ -268,6 +286,34 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .dark ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.25);
+}
+
+/* Textarea scrollbar — wider so it doesn't obscure the resize handle */
+textarea::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+textarea::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 0 0.75rem 0.75rem 0; /* Match textarea border radius */
+}
+
+textarea::-webkit-scrollbar-thumb {
+    background: var(--border-soft);
+    border-radius: 6px;
+    border: 2px solid transparent;      /* Padding makes thumb appear narrower, cleaner */
+    background-clip: content-box;
+}
+
+.dark textarea::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    background-clip: content-box;
+}
+
+.dark textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+    background-clip: content-box;
 }
 
 /* Theme Toggle Button */

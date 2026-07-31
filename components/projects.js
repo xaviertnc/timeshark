@@ -81,9 +81,9 @@ export async function renderProjects() {
   // Filter Logic
   let filtered = projects.filter(p => {
     if (statusFilter === 'active') {
-        if (p.status !== 'Active' && p.status !== undefined) return false;
+      if (p.status !== 'Active' && p.status !== undefined) return false;
     } else if (statusFilter !== 'all' && statusFilter !== 'archived') {
-        if ((p.status || '').toLowerCase() !== statusFilter.toLowerCase()) return false;
+      if ((p.status || '').toLowerCase() !== statusFilter.toLowerCase()) return false;
     }
 
     if (tagFilter && (!p.tags || !p.tags.includes(tagFilter))) return false;
@@ -227,20 +227,20 @@ export async function renderProjects() {
             </div>
 
             <div class="flex items-center gap-1.5 p-1 bg-card/30 rounded-xl border border-white/5 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                ${['all', 'active', 'on hold', 'completed', 'cancelled', 'archived'].map(status => 
-                '<button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ' + (statusFilter === status ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim') + '" data-status="' + status + '">' + status + '</button>'
-                ).join('')}
+                ${['all', 'active', 'on hold', 'completed', 'cancelled', 'archived'].map(status =>
+    '<button class="status-filter-btn px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ' + (statusFilter === status ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dim/50 hover:text-dim') + '" data-status="' + status + '">' + status + '</button>'
+  ).join('')}
             </div>
             
-            ${viewMode === 'kanban' && [...hiddenKanbanProjects].length > 0 ? 
-            '<div class="relative group ml-auto"><select id="unhide-project-select" class="bg-primary/10 text-primary border border-primary/20 rounded-xl pl-4 pr-10 py-2.5 text-[10px] uppercase tracking-widest font-bold outline-none focus:ring-2 focus:ring-primary/30 transition-all appearance-none cursor-pointer"><option value="">Unhide Project...</option>' +
-            [...hiddenKanbanProjects].map(id => {
-                const p = projects.find(x => String(x.id) === String(id));
-                return p ? '<option value="' + p.id + '">' + p.name + '</option>' : '';
-            }).join('') + '<option value="ALL">-- SHOW ALL --</option></select></div>' : ''}
+            ${viewMode === 'kanban' && [...hiddenKanbanProjects].length > 0 ?
+      '<div class="relative group ml-auto"><select id="unhide-project-select" class="bg-primary/10 text-primary border border-primary/20 rounded-xl pl-4 pr-10 py-2.5 text-[10px] uppercase tracking-widest font-bold outline-none focus:ring-2 focus:ring-primary/30 transition-all appearance-none cursor-pointer"><option value="">Unhide Project...</option>' +
+      [...hiddenKanbanProjects].map(id => {
+        const p = projects.find(x => String(x.id) === String(id));
+        return p ? '<option value="' + p.id + '">' + p.name + '</option>' : '';
+      }).join('') + '<option value="ALL">-- SHOW ALL --</option></select></div>' : ''}
             
-            ${viewMode === 'kanban' && filtered.length > [...hiddenKanbanProjects].length ? 
-            '<button id="hide-all-kanban" class="px-4 py-2.5 bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ml-3 border border-white/5">Hide All</button>' : ''}
+            ${viewMode === 'kanban' && filtered.length > [...hiddenKanbanProjects].length ?
+      '<button id="hide-all-kanban" class="px-4 py-2.5 bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ml-3 border border-white/5">Hide All</button>' : ''}
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-4 w-full lg:w-auto">
@@ -367,12 +367,12 @@ export async function renderProjects() {
             </div>
             <div class="flex-1 overflow-y-auto p-3 ${compactKanban ? 'space-y-0' : 'space-y-3'} kanban-dropzone group/dropzone min-h-[150px] custom-scrollbar" data-project-id="${p.id}">
                 ${(state.tasks || []).filter(t => String(t.project_id) === String(p.id))
-                    .sort((a,b) => {
-                        if (a.status !== 'done' && b.status === 'done') return -1;
-                        if (a.status === 'done' && b.status !== 'done') return 1;
-                        return 0;
-                    })
-                    .map(t => renderKanbanTask(t, team)).join('')}
+          .sort((a, b) => {
+            if (a.status !== 'done' && b.status === 'done') return -1;
+            if (a.status === 'done' && b.status !== 'done') return 1;
+            return 0;
+          })
+          .map(t => renderKanbanTask(t, team)).join('')}
                 ${(state.tasks || []).filter(t => String(t.project_id) === String(p.id)).length === 0 ? `<div class="opacity-0 group-hover/dropzone:opacity-30 transition-opacity text-center text-[10px] font-black uppercase tracking-widest text-dim py-6 border-2 border-dashed border-dim/20 rounded-xl pointer-events-none">Drop tasks here</div>` : ''}
             </div>
         </div>
@@ -418,11 +418,11 @@ export async function renderProjects() {
   function renderKanbanTask(t, team) {
     const isDone = t.status === 'done';
     const bgcol = isDone ? 'bg-black/20 shadow-none' : 'bg-[#1a1b1e] hover:bg-[#202226] border-white/5 hover:border-white/10 hover:-translate-y-1 shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md relative';
-    const resName = t.resource_id ? (t.resource_id === 'me' ? 'ME' : (team.find(tm => tm.id == t.resource_id)?.initials || t.resource_id.substring(0,2).toUpperCase())) : '';
-    
+    const resName = t.resource_id ? (t.resource_id === 'me' ? 'ME' : (team.find(tm => tm.id == t.resource_id)?.initials || t.resource_id.substring(0, 2).toUpperCase())) : '';
+
     if (compactKanban) {
-        const compactBg = isDone ? 'bg-black/20' : 'bg-transparent hover:bg-white/5 border-b border-white/5 last:border-b-0';
-        return `
+      const compactBg = isDone ? 'bg-black/20' : 'bg-transparent hover:bg-white/5 border-b border-white/5 last:border-b-0';
+      return `
         <div class="${compactBg} flex items-center py-1.5 px-3 cursor-grab active:cursor-grabbing kanban-task-card transition-colors ${isDone ? 'opacity-50 grayscale-[0.5]' : ''}" draggable="true" data-task-id="${t.id}">
             <div class="font-medium text-[11px] text-main leading-none truncate transition-colors flex-1 min-w-0" title="${t.title}">${t.title}</div>
             ${resName ? `<div class="ml-2 text-[8px] font-black text-dim/70 uppercase tracking-widest shrink-0" title="${t.resource_id}">${resName}</div>` : ''}
@@ -461,7 +461,7 @@ export async function renderProjects() {
 
       topLevelItems.forEach(topLevel => {
         rowsHtml += renderProjectRow(topLevel, customers, team, false);
-        
+
         // Render children immediately under their parent
         const children = items.filter(p => p.parent_id == topLevel.id);
         children.forEach(child => {
@@ -499,11 +499,11 @@ export async function renderProjects() {
       function renderNode(nodes, level) {
         let html = '';
         const sortedTags = Object.keys(nodes).sort((a, b) => a === 'Untagged' ? 1 : b === 'Untagged' ? -1 : a.localeCompare(b));
-        
+
         sortedTags.forEach(tag => {
           const node = nodes[tag];
           const totalProjects = countProjects(node);
-          
+
           if (totalProjects > 0) {
             const paddingLeft = 1.25 + (level * 1.5);
             html += `
@@ -514,15 +514,15 @@ export async function renderProjects() {
                 </td>
             </tr>
             `;
-            
+
             node._projects.forEach(p => {
               html += renderProjectRow(p, customers, team, false);
             });
-            
+
             html += renderNode(node._children, level + 1);
           }
         });
-        
+
         return html;
       }
 
@@ -572,10 +572,10 @@ export async function renderProjects() {
     const hasVisibleChildren = !collapseEpics && !groupByOrg && !groupByTag && !groupByLead && filtered.some(child => child.parent_id == p.id);
     let isLastChild = false;
     if (isChild && p.parent_id) {
-        const siblings = filtered.filter(child => child.parent_id == p.parent_id);
-        if (siblings.length > 0) {
-            isLastChild = siblings[siblings.length - 1].id == p.id;
-        }
+      const siblings = filtered.filter(child => child.parent_id == p.parent_id);
+      if (siblings.length > 0) {
+        isLastChild = siblings[siblings.length - 1].id == p.id;
+      }
     }
     const org = customers.find(c => c.id == p.customer_id && c.is_client == 1);
     const progress = p._progress;
@@ -586,11 +586,11 @@ export async function renderProjects() {
 
     const tagsHtml = p.tags && p.tags.length > 0
       ? `<div class="flex flex-wrap items-center gap-1.5 ml-2">${p.tags.map(t => {
-          if (t.toLowerCase().includes('urgent')) {
-            return `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-red-500/20 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded">${t}</span>`;
-          }
-          return `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`;
-        }).join('')}</div>`
+        if (t.toLowerCase().includes('urgent')) {
+          return `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-red-500/20 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded">${t}</span>`;
+        }
+        return `<span class="whitespace-nowrap text-[8px] uppercase tracking-widest bg-white/5 text-dim px-1.5 py-0.5 rounded">${t}</span>`;
+      }).join('')}</div>`
       : '';
 
     // Type formatting
@@ -707,78 +707,78 @@ export async function renderProjects() {
   // --- ACTIONS ---
 
   const kanbanBtn = container.querySelector('#view-kanban-btn');
-  if (kanbanBtn) kanbanBtn.onclick = () => { 
-      localStorage.setItem('project_view_mode', 'kanban'); 
-      viewMode = 'kanban'; 
-      statusFilter = localStorage.getItem('project_status_kanban') || localStorage.getItem('project_status_filter') || 'active';
-      refreshView(); 
+  if (kanbanBtn) kanbanBtn.onclick = () => {
+    localStorage.setItem('project_view_mode', 'kanban');
+    viewMode = 'kanban';
+    statusFilter = localStorage.getItem('project_status_kanban') || localStorage.getItem('project_status_filter') || 'active';
+    refreshView();
   };
-  
+
   const tableBtn = container.querySelector('#view-table-btn');
-  if (tableBtn) tableBtn.onclick = () => { 
-      localStorage.setItem('project_view_mode', 'table'); 
-      viewMode = 'table'; 
-      statusFilter = localStorage.getItem('project_status_table') || localStorage.getItem('project_status_filter') || 'active';
-      refreshView(); 
+  if (tableBtn) tableBtn.onclick = () => {
+    localStorage.setItem('project_view_mode', 'table');
+    viewMode = 'table';
+    statusFilter = localStorage.getItem('project_status_table') || localStorage.getItem('project_status_filter') || 'active';
+    refreshView();
   };
 
   const unhideSelect = container.querySelector('#unhide-project-select');
   if (unhideSelect) {
-      unhideSelect.onchange = (e) => {
-          if (e.target.value === 'ALL') {
-              hiddenKanbanProjects.clear();
-          } else if (e.target.value) {
-              hiddenKanbanProjects.delete(String(e.target.value));
-          }
-          if (e.target.value) {
-              localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
-              refreshView();
-          }
-      };
+    unhideSelect.onchange = (e) => {
+      if (e.target.value === 'ALL') {
+        hiddenKanbanProjects.clear();
+      } else if (e.target.value) {
+        hiddenKanbanProjects.delete(String(e.target.value));
+      }
+      if (e.target.value) {
+        localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
+        refreshView();
+      }
+    };
   }
 
   const hideAllKanbanBtn = container.querySelector('#hide-all-kanban');
   if (hideAllKanbanBtn) {
-      hideAllKanbanBtn.onclick = () => {
-          filtered.forEach(p => hiddenKanbanProjects.add(String(p.id)));
-          localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
-          refreshView();
-      };
+    hideAllKanbanBtn.onclick = () => {
+      filtered.forEach(p => hiddenKanbanProjects.add(String(p.id)));
+      localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
+      refreshView();
+    };
   }
 
   const compactKanbanToggle = container.querySelector('#compact-kanban');
   if (compactKanbanToggle) {
-      compactKanbanToggle.onchange = (e) => {
-          compactKanban = e.target.checked;
-          localStorage.setItem('compact_kanban', compactKanban.toString());
-          refreshView();
-      };
+    compactKanbanToggle.onchange = (e) => {
+      compactKanban = e.target.checked;
+      localStorage.setItem('compact_kanban', compactKanban.toString());
+      refreshView();
+    };
   }
 
   // Hide Column Handlers
   container.querySelectorAll('.hide-col-btn').forEach(btn => {
-      btn.onclick = (e) => {
-          e.stopPropagation();
-          const pid = btn.dataset.id;
-          if (pid) {
-              hiddenKanbanProjects.add(String(pid));
-              localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
-              refreshView();
-          }
-      };
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const pid = btn.dataset.id;
+      if (pid) {
+        hiddenKanbanProjects.add(String(pid));
+        localStorage.setItem('hidden_kanban_projects', JSON.stringify([...hiddenKanbanProjects]));
+        refreshView();
+      }
+    };
   });
 
   // Kanban Horizontal Scroll with Mouse Wheel
   const kanbanBoardDiv = container.querySelector('.kanban-board');
   if (kanbanBoardDiv) {
-      kanbanBoardDiv.addEventListener('wheel', (e) => {
-          // Map vertical scroll (deltaY) to horizontal scroll (scrollLeft)
-          // Avoid mapping if the user is scrolling horizontally naturally (deltaX !== 0)
-          if (e.deltaY !== 0 && Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
-              kanbanBoardDiv.scrollLeft += e.deltaY;
-              e.preventDefault();
-          }
-      }, { passive: false });
+    kanbanBoardDiv.addEventListener('wheel', (e) => {
+      // Map vertical scroll (deltaY) to horizontal scroll (scrollLeft)
+      // Avoid mapping if the user is scrolling horizontally naturally (deltaX !== 0)
+      if (e.deltaY !== 0 && Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+        kanbanBoardDiv.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }, { passive: false });
   }
 
   // Add Project
@@ -969,27 +969,27 @@ export async function renderProjects() {
 
     // Bulk Assign Lead/Dev
     if (e.target.id === 'bulk-assign-apply') {
-        const leadId = document.getElementById('bulk-lead-select').value;
-        const devId = document.getElementById('bulk-dev-select').value;
-        
-        if (leadId === '' && devId === '') return; // Nothing selected
+      const leadId = document.getElementById('bulk-lead-select').value;
+      const devId = document.getElementById('bulk-dev-select').value;
 
-        const arr = Array.from(selectedProjectIds);
-        for (const id of arr) {
-            const projectToUpdate = (statusFilter === 'archived' ? filtered : state.projects || []).find(p => String(p.id) === String(id));
-            if (!projectToUpdate) continue;
+      if (leadId === '' && devId === '') return; // Nothing selected
 
-            const payload = { id, name: projectToUpdate.name };
-            if (leadId !== '') payload.lead_id = leadId === 'none' ? null : leadId;
-            if (devId !== '') payload.dev_id = devId === 'none' ? null : devId;
-            
-            await api.post('projects.php', payload);
-        }
+      const arr = Array.from(selectedProjectIds);
+      for (const id of arr) {
+        const projectToUpdate = (statusFilter === 'archived' ? filtered : state.projects || []).find(p => String(p.id) === String(id));
+        if (!projectToUpdate) continue;
 
-        store.update('projects', await api.get('projects.php'));
-        selectedProjectIds.clear();
-        refreshView();
-        return;
+        const payload = { id, name: projectToUpdate.name };
+        if (leadId !== '') payload.lead_id = leadId === 'none' ? null : leadId;
+        if (devId !== '') payload.dev_id = devId === 'none' ? null : devId;
+
+        await api.post('projects.php', payload);
+      }
+
+      store.update('projects', await api.get('projects.php'));
+      selectedProjectIds.clear();
+      refreshView();
+      return;
     }
 
     // Bulk Delete
@@ -1122,19 +1122,19 @@ export async function renderProjects() {
     // Edit Kanban Task
     const kanbanTask = e.target.closest('.kanban-task-card');
     if (kanbanTask) {
-        const taskId = kanbanTask.dataset.taskId;
-        if (taskId) {
-            const task = (state.tasks || []).find(t => String(t.id) === String(taskId));
-            if (task) {
-                TaskModal.open(task, {
-                    onSave: async () => {
-                        store.update('tasks', await api.get('planner.php'));
-                        refreshView();
-                    }
-                }, team);
+      const taskId = kanbanTask.dataset.taskId;
+      if (taskId) {
+        const task = (state.tasks || []).find(t => String(t.id) === String(taskId));
+        if (task) {
+          TaskModal.open(task, {
+            onSave: async () => {
+              store.update('tasks', await api.get('planner.php'));
+              refreshView();
             }
+          }, team);
         }
-        return;
+      }
+      return;
     }
 
   });
@@ -1179,62 +1179,62 @@ export async function renderProjects() {
     }
 
     if (draggedKanbanTask) {
-        const dropzone = e.target.closest('.kanban-dropzone');
-        if (dropzone) {
-            dropzone.classList.add('bg-white/5');
-            // Basic insert visual feedback inside the column
-            const taskCard = e.target.closest('.kanban-task-card');
-            if (taskCard && taskCard !== draggedKanbanTask) {
-                const rect = taskCard.getBoundingClientRect();
-                const offset = e.clientY - rect.top;
-                if (offset > rect.height / 2) {
-                    taskCard.parentNode.insertBefore(draggedKanbanTask, taskCard.nextSibling);
-                } else {
-                    taskCard.parentNode.insertBefore(draggedKanbanTask, taskCard);
-                }
-            } else if (!taskCard && dropzone !== draggedKanbanTask.parentNode) {
-                dropzone.appendChild(draggedKanbanTask);
-            }
+      const dropzone = e.target.closest('.kanban-dropzone');
+      if (dropzone) {
+        dropzone.classList.add('bg-white/5');
+        // Basic insert visual feedback inside the column
+        const taskCard = e.target.closest('.kanban-task-card');
+        if (taskCard && taskCard !== draggedKanbanTask) {
+          const rect = taskCard.getBoundingClientRect();
+          const offset = e.clientY - rect.top;
+          if (offset > rect.height / 2) {
+            taskCard.parentNode.insertBefore(draggedKanbanTask, taskCard.nextSibling);
+          } else {
+            taskCard.parentNode.insertBefore(draggedKanbanTask, taskCard);
+          }
+        } else if (!taskCard && dropzone !== draggedKanbanTask.parentNode) {
+          dropzone.appendChild(draggedKanbanTask);
         }
+      }
     }
   });
 
   container.addEventListener('dragleave', (e) => {
-      const dropzone = e.target.closest('.kanban-dropzone');
-      // Remove visual feedback if leaving the dropzone boundary entirely
-      if (dropzone && (!e.relatedTarget || !dropzone.contains(e.relatedTarget))) {
-          dropzone.classList.remove('bg-white/5');
-      }
+    const dropzone = e.target.closest('.kanban-dropzone');
+    // Remove visual feedback if leaving the dropzone boundary entirely
+    if (dropzone && (!e.relatedTarget || !dropzone.contains(e.relatedTarget))) {
+      dropzone.classList.remove('bg-white/5');
+    }
   });
 
   container.addEventListener('drop', async (e) => {
-      if (draggedKanbanTask) {
-          const dropzone = e.target.closest('.kanban-dropzone');
-          if (dropzone) {
-              dropzone.classList.remove('bg-white/5');
-              const targetProjectId = dropzone.dataset.projectId;
-              try {
-                  const data = JSON.parse(e.dataTransfer.getData('application/json'));
-                  if (String(data.sourceProjectId) !== String(targetProjectId)) {
-                      // Call planner.php to update project_id of the task
-                      const payload = { id: data.taskId, project_id: targetProjectId };
-                      await api.post('planner.php', payload);
-                      store.update('tasks', await api.get('planner.php'));
-                      refreshView();
-                  }
-              } catch (err) {
-                  console.error('Failed to parse kanban drop data', err);
-              }
+    if (draggedKanbanTask) {
+      const dropzone = e.target.closest('.kanban-dropzone');
+      if (dropzone) {
+        dropzone.classList.remove('bg-white/5');
+        const targetProjectId = dropzone.dataset.projectId;
+        try {
+          const data = JSON.parse(e.dataTransfer.getData('application/json'));
+          if (String(data.sourceProjectId) !== String(targetProjectId)) {
+            // Call planner.php to update project_id of the task
+            const payload = { id: data.taskId, project_id: targetProjectId };
+            await api.post('planner.php', payload);
+            store.update('tasks', await api.get('planner.php'));
+            refreshView();
           }
+        } catch (err) {
+          console.error('Failed to parse kanban drop data', err);
+        }
       }
+    }
   });
 
   container.addEventListener('dragend', async (e) => {
     if (draggedKanbanTask) {
-        draggedKanbanTask.classList.remove('opacity-30');
-        // Clear all dropzone highlights just in case
-        container.querySelectorAll('.kanban-dropzone').forEach(d => d.classList.remove('bg-white/5'));
-        draggedKanbanTask = null;
+      draggedKanbanTask.classList.remove('opacity-30');
+      // Clear all dropzone highlights just in case
+      container.querySelectorAll('.kanban-dropzone').forEach(d => d.classList.remove('bg-white/5'));
+      draggedKanbanTask = null;
     }
 
     if (draggedRow) {

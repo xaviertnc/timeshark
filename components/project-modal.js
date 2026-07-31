@@ -196,7 +196,7 @@ export class ProjectModal {
                                     <!-- Notes -->
                                     <div class="space-y-1.5 md:col-span-3">
                                         <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1">Notes</label>
-                                        <textarea name="notes" rows="1" placeholder="Project notes and details..." class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold placeholder:opacity-30 text-sm outline-none resize-y">${project && project.notes ? project.notes : ''}</textarea>
+                                        <textarea name="notes" rows="3" placeholder="Project notes and details..." class="w-full py-2.5 px-4 bg-app border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-main font-bold placeholder:opacity-30 text-sm outline-none resize-y !h-auto min-h-[96px]">${project && project.notes ? escapeHTML(project.notes) : ''}</textarea>
                                     </div>
                                     
                                     <!-- Tags -->
