@@ -2,6 +2,11 @@
  * components/planner/planner-view-analytics.js
  * 
  * Renders an Analytics view including a Burnup chart and basic stats.
+ *
+ * @version 1.1 - FT - 31 Jul 2026 - Add Burn Rate badge ( added / done ratio for timeframe )
+ * @version 1.5 - UPD - 31 Jul 2026 - Burn Rate as signed diff percent ( + green / - red )
+ * @version 1.6 - UPD - 31 Jul 2026 - Orange Burn Rate tone when less than 10% negative
+ * @version 1.7 - UPD - 31 Jul 2026 - Blue Burn Rate tone when diff within 1% of parity
  */
 
 export const PlannerAnalytics = {
@@ -109,6 +114,20 @@ export const PlannerAnalytics = {
         const donePct = overallSum > 0 ? Math.round((totalDone / overallSum) * 100) : 0;
         const remainingPct = overallSum > 0 ? Math.round((totalRemaining / overallSum) * 100) : 0;
 
+        // Burn Rate: ( completed - added ) / added — positive means tasks are completed faster than they arrive
+        const burnRate = totalAdded > 0 ? (totalDone - totalAdded) / totalAdded : null;
+        const burnRateLabel = burnRate !== null ? (burnRate > 0 ? '+' : '') + Math.round(burnRate * 100) + '%' : (totalDone > 0 ? '+∞' : '—');
+        const burnRateGood = totalDone >= totalAdded;
+        const burnRateTone = burnRate !== null && Math.abs(burnRate) < 0.01 ? { box: 'bg-sky-500/10 border-sky-500/20', text: 'text-sky-400' }
+            : burnRateGood ? { box: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400' }
+            : burnRate > -0.1 ? { box: 'bg-orange-500/10 border-orange-500/20', text: 'text-orange-400' }
+            : { box: 'bg-rose-500/10 border-rose-500/20', text: 'text-rose-400' };
+        const burnRateIcon = totalDone === totalAdded
+            ? '<line x1="5" y1="12" x2="19" y2="12"/>'
+            : totalDone > totalAdded
+                ? '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'
+                : '<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>';
+
         // Draw Burnup Chart HTML/CSS
         let chartHtml = '';
         if (burnupData.length > 0) {
@@ -144,15 +163,15 @@ export const PlannerAnalytics = {
                                 <span>${d.date.toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
                             </div>
                             <div class="flex justify-between items-center gap-4 text-[10px] mb-1">
-                                <span class="text-white/60 font-bold uppercase">Total Scope:</span>
-                                <span class="text-main font-black">${d.total} <span class="text-[8px] text-amber-500/80 ml-1 font-bold">${d.addedToday > 0 ? `(+${d.addedToday})` : ''}</span></span>
+                                <span class="text-white/60 font-bold uppercase">Scope:</span>
+                                <span class="text-main font-black">${d.total} <span class="text-[8px] text-amber-500/80 ml-1 font-bold">${d.addedToday > 0 ? `(+${d.addedToday} added)` : ''}</span></span>
                             </div>
                             <div class="flex justify-between items-center gap-4 text-[10px] mb-1">
-                                <span class="text-primary/70 font-bold uppercase">Completed:</span>
-                                <span class="text-primary font-black">${d.done} <span class="text-[8px] text-green-500/90 ml-1 font-bold">${d.doneToday > 0 ? `(+${d.doneToday})` : ''}</span></span>
+                                <span class="text-primary/70 font-bold uppercase">Done:</span>
+                                <span class="text-primary font-black">${d.done} <span class="text-[8px] text-green-500/90 ml-1 font-bold">${d.doneToday > 0 ? `(+${d.doneToday} completed)` : ''}</span></span>
                             </div>
                             <div class="flex justify-between items-center gap-4 text-[10px] border-t border-white/5 pt-1">
-                                <span class="text-white/30 font-bold uppercase">Todo:</span>
+                                <span class="text-white/30 font-bold uppercase">Remaining:</span>
                                 <span class="text-white/40 font-black">${Math.max(d.total - d.done, 0)}</span>
                             </div>
                         </div>
@@ -194,12 +213,12 @@ export const PlannerAnalytics = {
                                     <span class="text-[9px] font-bold text-amber-500/80">(${addedPct}%)</span>
                                 </div>
 
-                                <!-- Done Badge -->
-                                <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
-                                    <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]"></div>
-                                    <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400">Done</span>
+                                <!-- Completed Badge (tasks completed within timeframe) -->
+                                <div class="flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-xl" title="Tasks completed within the timeframe">
+                                    <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.4)]"></div>
+                                    <span class="text-[9px] font-black uppercase tracking-wider text-green-400">Completed</span>
                                     <span class="text-xs font-black text-white tabular-nums">${totalDone}</span>
-                                    <span class="text-[9px] font-bold text-emerald-400/80">(${donePct}%)</span>
+                                    <span class="text-[9px] font-bold text-green-400/80">(${donePct}%)</span>
                                 </div>
 
                                 <!-- Remaining Badge -->
@@ -209,28 +228,16 @@ export const PlannerAnalytics = {
                                     <span class="text-xs font-black text-white tabular-nums">${totalRemaining}</span>
                                     <span class="text-[9px] font-bold text-slate-400/80">(${remainingPct}%)</span>
                                 </div>
+
+                                <!-- Burn Rate Badge -->
+                                <div class="flex items-center gap-2 ${burnRateTone.box} border px-3 py-1.5 rounded-xl" title="( Completed − Added ) ÷ Added — positive means tasks are completed faster than they arrive">
+                                    <svg class="w-3.5 h-3.5 ${burnRateTone.text}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${burnRateIcon}</svg>
+                                    <span class="text-[9px] font-black uppercase tracking-wider ${burnRateTone.text}">Burn Rate</span>
+                                    <span class="text-xs font-black text-white tabular-nums">${burnRateLabel}</span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Far Right: Unified Legend (NEW, TODO, COMPLETED, DONE) -->
-                        <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-dim/60 shrink-0">
-                            <div class="flex items-center gap-1.5 opacity-80" title="Tasks Added Today">
-                                <div class="w-2.5 h-2.5 rounded-[2px] bg-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.3)]"></div> 
-                                NEW
-                            </div>
-                            <div class="flex items-center gap-1.5" title="Tasks Remaining / Scope">
-                                <div class="w-2.5 h-2.5 rounded-[2px] bg-white/10 border border-white/5"></div> 
-                                TODO
-                            </div>
-                            <div class="flex items-center gap-1.5 opacity-80 ml-1" title="Tasks Completed Today">
-                                <div class="w-2.5 h-2.5 rounded-[2px] bg-green-500/90 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div> 
-                                COMPLETED
-                            </div>
-                            <div class="flex items-center gap-1.5" title="Cumulative Completed Tasks">
-                                <div class="w-2.5 h-2.5 rounded-[2px] bg-primary shadow-[0_0_8px_rgba(51,138,129,0.3)]"></div> 
-                                DONE
-                            </div>
-                        </div>
                     </div>
                     
                     <!-- Full Width Burnup Timeline Bar Chart -->
@@ -272,7 +279,7 @@ export const PlannerAnalytics = {
                     container._burnupPieChart = new Chart(pieCanvas, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Added', 'Done', 'Remaining'],
+                            labels: ['Added', 'Completed', 'Remaining'],
                             datasets: [{
                                 data: overallSum > 0 ? pieData : [0, 0, 1],
                                 backgroundColor: overallSum > 0 ? pieColors : ['rgba(255,255,255,0.05)'],
