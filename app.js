@@ -23,8 +23,8 @@ import { renderSidebar } from './components/sidebar.js';
 import { renderDashboard } from './components/dashboard.js?v=20260723.2';
 import { renderOrganizations } from './components/organizations.js';
 import { renderProjects } from './components/projects.js';
-import { renderPlanner } from './components/planner.js';
-import { renderReports } from './components/reports.js';
+import { renderPlanner } from './components/planner.js?v=3.1.2';
+import { renderReports } from './components/reports.js?v=3.1.2';
 import { renderTeam } from './components/team.js';
 
 const app = document.getElementById('app');

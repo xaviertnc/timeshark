@@ -10,7 +10,7 @@ import { PlannerState } from './planner/planner-state.js';
 import { PlannerUtils } from './planner/planner-utils.js';
 import { PlannerTimeline } from './planner/planner-view-timeline.js';
 import { PlannerKanban } from './planner/planner-view-kanban.js';
-import { PlannerAnalytics } from './planner/planner-view-analytics.js';
+import { PlannerAnalytics } from './planner/planner-view-analytics.js?v=3.1.2';
 import { TaskModal } from './task-modal.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { ProjectModal } from './project-modal.js';

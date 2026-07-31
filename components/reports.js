@@ -3,7 +3,7 @@ import { api } from '../utils/api.js';
 import { TimeEntryModal } from './time-entry-modal.js';
 import { ConfirmModal } from './confirm-modal.js';
 import { PlannerState } from './planner/planner-state.js';
-import { PlannerAnalytics } from './planner/planner-view-analytics.js';
+import { PlannerAnalytics } from './planner/planner-view-analytics.js?v=3.1.2';
 import { PlannerActivity } from './planner/planner-view-activity.js';
 import { SearchableSelect } from './searchable-select.js';
 
@@ -122,6 +122,10 @@ export async function renderReports() {
   };
   container.__dispose = () => {
     if (renderTimeout) clearTimeout(renderTimeout);
+    const analyticsEl = container.querySelector('#project-analytics-container');
+    if (analyticsEl && analyticsEl._burnupPieChart) {
+      try { analyticsEl._burnupPieChart.destroy(); } catch (e) {}
+    }
     charts.splice(0).forEach(chart => {
       if (chart && typeof chart.destroy === 'function') chart.destroy();
     });
@@ -211,7 +215,7 @@ export async function renderReports() {
              <div id="reports-project-filter-container" class="w-[200px] h-7 relative z-10 shrink-0"></div>
           </div>
         </div>
-        <div id="project-analytics-container" class="w-full bg-card/10 rounded-xl border border-white/5 overflow-hidden flex flex-col h-[500px]"></div>
+        <div id="project-analytics-container" class="w-full bg-card/10 rounded-xl border border-white/5 overflow-hidden flex flex-col min-h-[480px]"></div>
     </div>
     
     <div id="reports-activity-container" class="w-full flex flex-col mt-4"></div>

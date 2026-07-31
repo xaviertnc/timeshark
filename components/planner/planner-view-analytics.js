@@ -98,6 +98,17 @@ export const PlannerAnalytics = {
             });
         }
 
+        // Summary Calculations for Timeframe (ADDED, DONE, REMAINING)
+        const totalAdded = burnupData.reduce((sum, d) => sum + (d.addedToday || 0), 0);
+        const totalDone = burnupData.reduce((sum, d) => sum + (d.doneToday || 0), 0);
+        const lastEntry = burnupData.length > 0 ? burnupData[burnupData.length - 1] : null;
+        const totalRemaining = lastEntry ? Math.max(0, lastEntry.total - lastEntry.done) : 0;
+
+        const overallSum = totalAdded + totalDone + totalRemaining;
+        const addedPct = overallSum > 0 ? Math.round((totalAdded / overallSum) * 100) : 0;
+        const donePct = overallSum > 0 ? Math.round((totalDone / overallSum) * 100) : 0;
+        const remainingPct = overallSum > 0 ? Math.round((totalRemaining / overallSum) * 100) : 0;
+
         // Draw Burnup Chart HTML/CSS
         let chartHtml = '';
         if (burnupData.length > 0) {
@@ -150,32 +161,80 @@ export const PlannerAnalytics = {
             }).join('');
 
             chartHtml = `
-                <div class="w-full h-full p-8 relative flex flex-col justify-center">
-                    <div class="flex items-center justify-between mb-8">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-dim">Delivery Burnup</h3>
-                        
-                        <!-- Chart Legend -->
-                        <div class="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-dim/60 flex-wrap justify-end">
-                            <div class="flex items-center gap-1.5 opacity-80">
+                <div class="w-full h-full p-6 lg:p-8 flex flex-col justify-between">
+                    <!-- Top Section Header: Title, Mini Pie Chart + Total, Stats Badges, Legend -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-white/5 mb-6">
+                        <!-- Left Group: Title, Mini Pie Chart, Total, and Single Row Stats -->
+                        <div class="flex items-center gap-5 flex-wrap min-w-0">
+                            <div>
+                                <h3 class="text-xs font-black uppercase tracking-widest text-dim">Delivery Burnup</h3>
+                                <p class="text-[10px] text-dim/50 font-medium mt-0.5">Scope & Ratios</p>
+                            </div>
+
+                            <div class="h-8 w-px bg-white/10 hidden sm:block"></div>
+
+                            <!-- Small Pie Chart + Total Tasks to the right -->
+                            <div class="flex items-center gap-3 bg-white/[0.02] border border-white/5 px-3 py-1.5 rounded-xl shrink-0">
+                                <div class="w-10 h-10 relative flex-shrink-0 flex items-center justify-center">
+                                    <canvas id="burnup-pie-canvas"></canvas>
+                                </div>
+                                <div class="flex flex-col justify-center">
+                                    <span class="text-base font-black text-white leading-none tabular-nums">${overallSum}</span>
+                                    <span class="text-[8px] font-black uppercase tracking-wider text-dim/60 mt-0.5">Total Tasks</span>
+                                </div>
+                            </div>
+
+                            <!-- Single Row Stats Badges: ADDED, DONE, REMAINING -->
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <!-- Added Badge -->
+                                <div class="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl">
+                                    <div class="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]"></div>
+                                    <span class="text-[9px] font-black uppercase tracking-wider text-amber-500/90">Added</span>
+                                    <span class="text-xs font-black text-white tabular-nums">${totalAdded}</span>
+                                    <span class="text-[9px] font-bold text-amber-500/80">(${addedPct}%)</span>
+                                </div>
+
+                                <!-- Done Badge -->
+                                <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]"></div>
+                                    <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400">Done</span>
+                                    <span class="text-xs font-black text-white tabular-nums">${totalDone}</span>
+                                    <span class="text-[9px] font-bold text-emerald-400/80">(${donePct}%)</span>
+                                </div>
+
+                                <!-- Remaining Badge -->
+                                <div class="flex items-center gap-2 bg-slate-500/10 border border-slate-500/20 px-3 py-1.5 rounded-xl">
+                                    <div class="w-2 h-2 rounded-full bg-slate-500 shadow-[0_0_6px_rgba(100,116,139,0.4)]"></div>
+                                    <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Remaining</span>
+                                    <span class="text-xs font-black text-white tabular-nums">${totalRemaining}</span>
+                                    <span class="text-[9px] font-bold text-slate-400/80">(${remainingPct}%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Far Right: Unified Legend (NEW, TODO, COMPLETED, DONE) -->
+                        <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-dim/60 shrink-0">
+                            <div class="flex items-center gap-1.5 opacity-80" title="Tasks Added Today">
                                 <div class="w-2.5 h-2.5 rounded-[2px] bg-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.3)]"></div> 
                                 NEW
                             </div>
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5" title="Tasks Remaining / Scope">
                                 <div class="w-2.5 h-2.5 rounded-[2px] bg-white/10 border border-white/5"></div> 
                                 TODO
                             </div>
-                            <div class="flex items-center gap-1.5 opacity-80 ml-2">
+                            <div class="flex items-center gap-1.5 opacity-80 ml-1" title="Tasks Completed Today">
                                 <div class="w-2.5 h-2.5 rounded-[2px] bg-green-500/90 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div> 
                                 COMPLETED
                             </div>
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5" title="Cumulative Completed Tasks">
                                 <div class="w-2.5 h-2.5 rounded-[2px] bg-primary shadow-[0_0_8px_rgba(51,138,129,0.3)]"></div> 
                                 DONE
                             </div>
                         </div>
                     </div>
                     
-                    <div class="flex items-end h-[200px] border-b border-light/5 w-full relative pl-10 pr-2 overflow-visible">
+                    <!-- Full Width Burnup Timeline Bar Chart -->
+                    <div class="flex items-end h-[230px] border-b border-light/5 w-full relative pl-10 pr-2 overflow-visible">
                         <!-- Y-Axis Labels -->
                         <div class="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between text-[9px] font-bold text-dim/30 py-0 border-r border-white/5 pr-2 items-end">
                             <span class="-mt-2.5">${maxVal}</span>
@@ -199,9 +258,47 @@ export const PlannerAnalytics = {
             chartHtml = `<div class="p-8 text-center text-dim/40 font-bold text-xs">No dates configured for analytics in this scale.</div>`;
         }
 
-
         container.innerHTML = `
             ${chartHtml}
         `;
+
+        if (burnupData.length > 0) {
+            setTimeout(() => {
+                const pieCanvas = container.querySelector('#burnup-pie-canvas');
+                if (pieCanvas && typeof Chart !== 'undefined') {
+                    const pieData = [totalAdded, totalDone, totalRemaining];
+                    const pieColors = ['#f59e0b', '#10b981', '#64748b'];
+
+                    container._burnupPieChart = new Chart(pieCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Added', 'Done', 'Remaining'],
+                            datasets: [{
+                                data: overallSum > 0 ? pieData : [0, 0, 1],
+                                backgroundColor: overallSum > 0 ? pieColors : ['rgba(255,255,255,0.05)'],
+                                borderWidth: 0,
+                                cutout: '70%'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const val = context.raw || 0;
+                                            const pct = overallSum > 0 ? Math.round((val / overallSum) * 100) : 0;
+                                            return ` ${context.label}: ${val} (${pct}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 0);
+        }
     }
 };
