@@ -20,7 +20,7 @@ import { store } from './utils/store.js';
 
 // Components
 import { renderSidebar } from './components/sidebar.js?v=3.2';
-import { renderDashboard } from './components/dashboard.js?v=3.2.1';
+import { renderDashboard } from './components/dashboard.js?v=3.3';
 import { renderOrganizations } from './components/organizations.js';
 import { renderProjects } from './components/projects.js?v=3.2.1';
 import { renderReports } from './components/reports.js?v=3.2.1';

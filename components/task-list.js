@@ -10,9 +10,9 @@
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.1 - UPD - 23 Jul 2026 - Sort URGENT-tagged tasks first in each group
  * @version 1.2 - FT - 23 Jul 2026 - Collapsible major and project group headers
  * @version 3.2 - CHORE - 31 Jul 2026 - Cache-bust imports after Planner page removal
+ * @version 3.3 - FT - 31 Jul 2026 - Show task count badge on collapsed project groups
  */
 
 import { TaskItem } from './task-item.js?v=3.2';
@@ -256,6 +256,7 @@ export const TaskList = {
                                 <svg class="w-2.5 h-2.5 text-dim/40 group-hover/proj:text-dim transition-transform shrink-0 ${isProjCollapsed ? '-rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
                                 <span class="w-[5px] h-[5px] opacity-80 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style="background-color: ${projColor}"></span>
                                 <span class="text-[10px] font-black uppercase tracking-[0.2em]" style="color: ${projColor}">${escapeHTML(projName)}</span>
+                                <span class="task-proj-count px-2 py-0.5 rounded-full bg-highlight text-[9px] font-black text-dim/40 tabular-nums border border-white/5 ${isProjCollapsed ? '' : 'hidden'}">${bucket.tasks.length}</span>
                             </button>
                         `;
                         const items = bucket.tasks.map(t => TaskItem.render(t, projects, { mode, selectionMode: options.selectionMode, hideProjectName: true })).join('');
@@ -382,6 +383,7 @@ export const TaskList = {
                         const wrap = projBtn.parentElement;
                         wrap?.querySelector('.task-proj-body')?.classList.toggle('hidden', collapsed[projKey]);
                         projBtn.querySelector('svg')?.classList.toggle('-rotate-90', collapsed[projKey]);
+                        projBtn.querySelector('.task-proj-count')?.classList.toggle('hidden', !collapsed[projKey]);
                     }
                 });
             }
