@@ -3,7 +3,7 @@
  *
  * Reusable filter toggle bar for task lists.
  * Renders a row of filter buttons (Today, Completed, Planned, Projects, Backlog)
- * plus an optional compact-mode toggle. Used in both the planner sidebar and
+ * plus an optional compact-mode toggle. Used in both the TODO sidebar and
  * the dashboard todo section.
  */
 

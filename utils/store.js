@@ -31,7 +31,7 @@ export class Store {
 export const store = new Store({
     customers: [],
     projects: [],
-    tasks: [], // Planner tasks
+    tasks: [], // Tasks / TODOs
     timeEntries: [],
     currentView: 'dashboard',
     activeTimer: null

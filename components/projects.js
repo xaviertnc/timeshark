@@ -10,15 +10,15 @@
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
  * @version 1.1 - UPD - 28 Jan 2026 - Align with Organizations & Clients terminology
  * @version 1.4 - UPD - 08 Feb 2026 - Redesign and fix syntax errors
+ * @version 3.2 - CHORE - 31 Jul 2026 - Planner page removed; tasks API renamed to tasks.php
  */
 
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { ProjectModal } from './project-modal.js';
-import { TaskModal } from './task-modal.js';
+import { ProjectModal } from './project-modal.js?v=3.2.1';
+import { TaskModal } from './task-modal.js?v=3.2.1';
 import { ConfirmModal } from './confirm-modal.js';
 
 const applyAlpha = (color, alpha) => {
@@ -1003,7 +1003,7 @@ export async function renderProjects() {
 
         const [newProjects, newTasks, newTimeEntries] = await Promise.all([
           api.get('projects.php'),
-          api.get('planner.php'),
+          api.get('tasks.php'),
           api.get('time-entries.php')
         ]);
         store.update('projects', newProjects);
@@ -1084,7 +1084,7 @@ export async function renderProjects() {
         await api.delete(`projects.php?id=${id}`);
         const [newProjects, newTasks, newTimeEntries] = await Promise.all([
           api.get('projects.php'),
-          api.get('planner.php'),
+          api.get('tasks.php'),
           api.get('time-entries.php')
         ]);
         store.update('projects', newProjects);
@@ -1128,7 +1128,7 @@ export async function renderProjects() {
         if (task) {
           TaskModal.open(task, {
             onSave: async () => {
-              store.update('tasks', await api.get('planner.php'));
+              store.update('tasks', await api.get('tasks.php'));
               refreshView();
             }
           }, team);
@@ -1216,10 +1216,10 @@ export async function renderProjects() {
         try {
           const data = JSON.parse(e.dataTransfer.getData('application/json'));
           if (String(data.sourceProjectId) !== String(targetProjectId)) {
-            // Call planner.php to update project_id of the task
+            // Call tasks.php to update project_id of the task
             const payload = { id: data.taskId, project_id: targetProjectId };
-            await api.post('planner.php', payload);
-            store.update('tasks', await api.get('planner.php'));
+            await api.post('tasks.php', payload);
+            store.update('tasks', await api.get('tasks.php'));
             refreshView();
           }
         } catch (err) {

@@ -2,6 +2,9 @@
  * components/task-quick-add.js
  * 
  * Reusable component for quick-adding tasks with project selection.
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Tasks API renamed to tasks.php
  */
 
 import { api } from '../utils/api.js';
@@ -104,7 +107,7 @@ export const TaskQuickAdd = {
                     resource_id: defaultMember ? defaultMember.name : 'me'
                 };
 
-                await api.post('planner.php?action=add_task', data);
+                await api.post('tasks.php?action=add_task', data);
                 input.value = '';
                 tagInput.value = '';
                 if (options.onAdd) options.onAdd();

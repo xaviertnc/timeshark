@@ -1,3 +1,16 @@
+/**
+ * components/team.js
+ *
+ * Team Management - 28 Jun 2025
+ *
+ * Purpose: Manage team members / resources.
+ *
+ * @package Time Shark
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Tasks API renamed to tasks.php
+ */
+
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { ConfirmModal } from './confirm-modal.js';
@@ -263,7 +276,7 @@ export async function renderTeam() {
                 await api.delete(`team.php?id=${id}`);
                 const [newTeam, newTasks] = await Promise.all([
                     api.get('team.php'),
-                    api.get('planner.php')
+                    api.get('tasks.php')
                 ]);
                 store.update('team', newTeam);
                 store.update('tasks', newTasks);

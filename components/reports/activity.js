@@ -1,15 +1,18 @@
 import { SearchableSelect } from '../searchable-select.js';
 
 /**
- * components/planner/planner-view-activity.js
+ * components/reports/activity.js
  * 
  * Renders a GitHub-style Activity Grid displaying hours logged over the past year or a specific year.
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Relocated from planner/planner-view-activity.js, renamed to ReportsActivity
  */
 
 let activityProjectFilter = JSON.parse(localStorage.getItem('timeshark_reports_activity_filter') || '[]');
 let activityYear = localStorage.getItem('timeshark_reports_activity_year') || 'rolling';
 
-export const PlannerActivity = {
+export const ReportsActivity = {
     render(container, data) {
         if (typeof container === 'string') container = document.getElementById(container);
         container.innerHTML = '';
@@ -274,7 +277,7 @@ export const PlannerActivity = {
         yearSelect.addEventListener('change', (e) => {
             activityYear = e.target.value;
             localStorage.setItem('timeshark_reports_activity_year', activityYear);
-            PlannerActivity.render(container, data);
+            ReportsActivity.render(container, data);
         });
 
         // Render its own SearchableSelect filtering
@@ -292,7 +295,7 @@ export const PlannerActivity = {
                     onChange: (newVal) => {
                         activityProjectFilter = newVal;
                         localStorage.setItem('timeshark_reports_activity_filter', JSON.stringify(activityProjectFilter));
-                        PlannerActivity.render(container, data);
+                        ReportsActivity.render(container, data);
                     }
                 });
             }

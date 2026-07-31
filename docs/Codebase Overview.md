@@ -35,13 +35,11 @@ timeshark/
 ├── components/            # All view modules (ES Modules)
 │   ├── dashboard.js       # Timer widget, recent entries, task toggles, mini-Gantt (~51KB)
 │   ├── projects.js        # Project CRUD, activity graphs, color palettes (~34KB)
-│   ├── planner.js         # Task/todo planner entry point (~29KB)
-│   ├── planner/           # Planner sub-modules
-│   │   ├── planner-modal.js       # Task create/edit modal (~30KB)
-│   │   ├── planner-state.js       # Data state manager (~4KB)
-│   │   ├── planner-utils.js       # Shared utilities (~7KB)
-│   │   ├── planner-view-list.js   # List view with categories & grouping (~36KB)
-│   │   └── planner-view-timeline.js # Gantt timeline with 4 zoom levels (~36KB)
+│   ├── tasks/             # Task data sub-modules (shared by dashboard & reports)
+│   │   └── task-state.js          # Data state manager (~4KB)
+│   ├── reports/           # Reports-only view modules
+│   │   ├── analytics.js           # Delivery burnup analytics
+│   │   └── activity.js            # Activity heatmap
 │   ├── organizations.js      # Client/organization management (~20KB)
 │   ├── reports.js         # Reporting & analytics (~22KB)
 │   ├── sidebar.js         # Navigation sidebar (~4KB)
@@ -57,7 +55,7 @@ timeshark/
 │   ├── time-entries.php   # Start/stop/edit time entries (~5KB)
 │   ├── projects.php       # Project CRUD (~10KB)
 │   ├── organizations.php  # Organization/client CRUD (~5KB)
-│   ├── planner.php        # Task/todo CRUD (~3KB)
+│   ├── tasks.php          # Task/todo CRUD (~3KB)
 │   ├── team.php           # Team member CRUD (~4KB)
 │   └── debug.php          # Debug utility (~1KB)
 ├── data/                  # JSON data files (the "database")
@@ -75,7 +73,7 @@ timeshark/
 
 ## Key Concepts
 
-1. **Hash-based Router** — [app.js](file:///c:/laragon/www/timeshark/app.js) maps URL hashes (`#projects`, `#planner`, etc.) to render functions. The default route (`''`) renders the **Dashboard**.
+1. **Hash-based Router** — [app.js](file:///c:/laragon/www/timeshark/app.js) maps URL hashes (`#projects`, `#reports`, etc.) to render functions. The default route (`''`) renders the **Dashboard**.
 
 2. **Reactive State Store** — [store.js](file:///c:/laragon/www/timeshark/utils/store.js) is a simple pub/sub store. On init, all data (organizations, projects, time entries, team, tasks) is fetched in parallel and set into the store. Components subscribe to state changes.
 
@@ -85,9 +83,9 @@ timeshark/
 
 5. **Client/Organization Hierarchy** — "Organizations" are companies; "Clients" are people within organizations. Projects can be assigned custodians from either. Supports multi-org and selectable colors.
 
-6. **Planner** — A project planning/todo system with both a **list view** and a **timeline view** (Gantt-style). Tasks have a unified model supporting scheduling, priorities, progress tracking, and resource assignment. The planner is split across 5 sub-modules totalling ~143KB.
+6. **Tasks / TODOs** — Tasks have a unified model supporting scheduling, priorities, progress tracking, and resource assignment. They are managed from the Dashboard TODO section and the Projects page, backed by the `tasks.php` API and the `tasks/` data sub-modules.
 
-7. **Select Helpers** — [select-helpers.js](file:///c:/laragon/www/timeshark/utils/select-helpers.js) provides a shared utility for building `<select>` dropdowns with "Recent" and "All" optgroups, computed from time entry history. Used across dashboard, reports, and planner modals.
+7. **Select Helpers** — [select-helpers.js](file:///c:/laragon/www/timeshark/utils/select-helpers.js) provides a shared utility for building `<select>` dropdowns with "Recent" and "All" optgroups, computed from time entry history. Used across dashboard, reports, and task modals.
 
 ---
 
@@ -96,7 +94,6 @@ timeshark/
 | Route | Component | Purpose |
 |---|---|---|
 | `#` (default) | [dashboard.js](file:///c:/laragon/www/timeshark/components/dashboard.js) | Start/stop timer, recent entries, quick logging, task toggles, mini-Gantt spans chart, todo linking |
-| `#planner` | [planner.js](file:///c:/laragon/www/timeshark/components/planner.js) | Task/todo management, timeline planning, sidebar filters, quick-add, lane reordering |
 | `#projects` | [projects.js](file:///c:/laragon/www/timeshark/components/projects.js) | Project CRUD, activity graphs, color-coded entries, grid/list view toggle, progress tracking |
 | `#organizations` | [organizations.js](file:///c:/laragon/www/timeshark/components/organizations.js) | Organization & client management, multi-org support |
 | `#team` | [team.js](file:///c:/laragon/www/timeshark/components/team.js) | Team/resource management |
@@ -104,15 +101,13 @@ timeshark/
 
 ---
 
-## Planner Sub-Modules
+## Task Data Sub-Modules
 
 | Module | Purpose |
 |---|---|
-| [planner-state.js](file:///c:/laragon/www/timeshark/components/planner/planner-state.js) | Fetches and merges tasks + time entries + projects. Separates scheduled vs backlog tasks. Maps items to resource rows. |
-| [planner-utils.js](file:///c:/laragon/www/timeshark/components/planner/planner-utils.js) | Shared helpers: contrast colors, duration formatting, color shifting, ISO dates, week numbers, timeline config generation. |
-| [planner-modal.js](file:///c:/laragon/www/timeshark/components/planner/planner-modal.js) | Full-featured task modal with date pickers, progress quick-buttons, priority, notes, project select with Recent optgroups. |
-| [planner-view-list.js](file:///c:/laragon/www/timeshark/components/planner/planner-view-list.js) | List view with category filtering (today/completed/planned), compact & full card modes, grouping by week/month/year, pagination. |
-| [planner-view-timeline.js](file:///c:/laragon/www/timeshark/components/planner/planner-view-timeline.js) | Gantt chart with 4 zoom levels (day/week/month/year), per-project lanes, lane reordering, compact/regular/relaxed density modes. |
+| [tasks/task-state.js](file:///c:/laragon/www/timeshark/components/tasks/task-state.js) | Fetches and merges tasks + time entries + projects. Separates scheduled vs backlog tasks. Maps items to resource rows. |
+| [reports/analytics.js](file:///c:/laragon/www/timeshark/components/reports/analytics.js) | Delivery burnup analytics rendered on the Reports page. |
+| [reports/activity.js](file:///c:/laragon/www/timeshark/components/reports/activity.js) | Activity heatmap rendered on the Reports page. |
 
 ---
 
@@ -120,11 +115,11 @@ timeshark/
 
 - **All DOM rendering is imperative** — each component's `render()` function builds DOM elements with `document.createElement`, wires up event listeners, and returns a container node.
 - **No templating engine** — everything is hand-built DOM or innerHTML strings.
-- **Component structure** — each component exports a single `render*` function (e.g., `renderDashboard`, `renderProjects`). The planner sub-modules export objects (`PlannerList`, `PlannerTimeline`, `PlannerModal`, etc.) with `render()` methods.
+- **Component structure** — each component exports a single `render*` function (e.g., `renderDashboard`, `renderProjects`). The task/report sub-modules export objects (`TaskState`, `ReportsAnalytics`, etc.) with `render()` methods.
 - **Dark mode** — supported via Tailwind's `dark` class toggling, persisted in `localStorage`.
 - **Smart selects** — project/org dropdowns across the app use the shared `select-helpers.js` to show recently-used items first.
 - **Inline modals** — each major component manages its own modal(s) for CRUD operations, with backdrop click/escape to close.
-- **No pagination on most views** — completed tasks in the planner use grouping (week/month/year) with pagination; other views show all data.
+- **No pagination on most views** — completed tasks in the TODO list use grouping (week/month/year) with pagination; other views show all data.
 
 ---
 
@@ -134,7 +129,7 @@ timeshark/
 |---|---|---|
 | `organizations.json` | `id`, `name`, `color`, `clients[]` | Companies with nested client contacts |
 | `projects.json` | `id`, `name`, `color`, `org_id`, `client_id`, `status` | Linked to organizations/clients |
-| `tasks.json` | `id`, `title`, `project_id`, `resource_id`, `start_date`, `end_date`, `status`, `progress`, `priority`, `notes` | Unified task model for planner |
+| `tasks.json` | `id`, `title`, `project_id`, `resource_id`, `start_date`, `end_date`, `status`, `progress`, `priority`, `notes` | Unified task model for TODOs |
 | `team.json` | `id`, `name`, `role`, `email` | Team members / resources |
 | `time-entries.json` | `id`, `description`, `project_id`, `task_id`, `start_time`, `end_time`, `resource_id` | Timer-based entries, linkable to tasks |
 

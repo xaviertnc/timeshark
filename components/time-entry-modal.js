@@ -7,6 +7,9 @@ import { escapeHTML } from '../utils/dom.js';
  * components/time-entry-modal.js
  * 
  * Centralized Time Entry Editor
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Tasks API renamed to tasks.php
  */
 export class TimeEntryModal {
     static open(entry, options = {}) {
@@ -156,7 +159,7 @@ export class TimeEntryModal {
                     const originalText = autoCreateBtn.innerHTML;
                     autoCreateBtn.innerHTML = '<span class="animate-pulse">...</span>';
                     
-                    const newTask = await api.post('planner.php', taskData);
+                    const newTask = await api.post('tasks.php', taskData);
                     const tasks = store.get().tasks || [];
                     store.update('tasks', [...tasks, newTask]);
                     

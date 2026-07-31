@@ -1,7 +1,7 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { TaskModal } from './task-modal.js';
-import { TimeEntryModal } from './time-entry-modal.js';
+import { TaskModal } from './task-modal.js?v=3.2.1';
+import { TimeEntryModal } from './time-entry-modal.js?v=3.2.1';
 import { escapeHTML } from '../utils/dom.js';
 import { ConfirmModal } from './confirm-modal.js';
 
@@ -9,6 +9,9 @@ import { ConfirmModal } from './confirm-modal.js';
  * components/project-modal.js
  * 
  * Centralized Project Editor
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Removed references to the retired Planner page
  */
 export class ProjectModal {
     static open(project = null, options = {}) {
@@ -80,7 +83,7 @@ export class ProjectModal {
                                     </div>
 
                                     <div class="space-y-1.5">
-                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1" title="Hide from Planner & global reports">Visibility</label>
+                                        <label class="text-[9px] font-black text-dim uppercase tracking-[0.2em] block ml-1" title="Hide from global reports">Visibility</label>
                                         <label class="flex items-center justify-between gap-3 bg-app rounded-xl py-[9px] px-4 cursor-pointer hover:bg-app/80 transition-colors">
                                             <span class="text-[10px] font-black text-main uppercase tracking-[0.2em] truncate">Hide Project</span>
                                             <input type="checkbox" name="hide_from_gantt" class="w-4 h-4 rounded border-soft bg-card text-primary focus:ring-primary/20" ${project && project.hide_from_gantt ? 'checked' : ''}>
@@ -354,7 +357,7 @@ export class ProjectModal {
                             btn.onclick = () => {
                                 const task = relatedTasks.find(x => String(x.id) === btn.dataset.id);
                                 if (task) TaskModal.open(task, { onSave: () => {
-                                    if(window.location.hash.includes('tasks') || window.location.hash.includes('planner')) {
+                                    if(window.location.hash.includes('tasks')) {
                                         // already handled by components
                                     } else {
                                         setTimeout(() => window.dispatchEvent(new Event('hashchange')), 100);

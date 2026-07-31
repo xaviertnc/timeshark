@@ -1,4 +1,17 @@
 <?php
+/**
+ * api/projects.php
+ *
+ * Projects API - 28 Jun 2025
+ *
+ * Purpose: CRUD, archiving and reordering for projects.
+ *
+ * @package Time Shark
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Dropped Planner-only lane_reorder validation bypass
+ */
+
 header('Content-Type: application/json');
 require_once 'store.php';
 require_once 'debug.php';
@@ -123,7 +136,7 @@ try {
             debug_log('projects', 'POST received', $data);
 
             // Validate: name is required for create, cannot be blank on update
-            if (empty($data['reorder']) && empty($data['lane_reorder'])) {
+            if (empty($data['reorder'])) {
                 if (!empty($data['id'])) {
                     // Update intent — reject explicitly blank name
                     if (isset($data['name']) && trim($data['name']) === '') {
@@ -226,7 +239,7 @@ try {
                 $store->save('time-entries', $timeEntries);
             }
 
-            // Delete associated tasks (assignments in planner)
+            // Delete associated tasks
             $tasks = $store->get('tasks');
             $newTasks = array_filter($tasks, function($task) use ($id) {
                 return ($task['project_id'] ?? '') != $id;

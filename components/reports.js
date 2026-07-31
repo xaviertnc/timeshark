@@ -1,10 +1,10 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { TimeEntryModal } from './time-entry-modal.js';
+import { TimeEntryModal } from './time-entry-modal.js?v=3.2.1';
 import { ConfirmModal } from './confirm-modal.js';
-import { PlannerState } from './planner/planner-state.js';
-import { PlannerAnalytics } from './planner/planner-view-analytics.js?v=3.1.2';
-import { PlannerActivity } from './planner/planner-view-activity.js';
+import { TaskState } from './tasks/task-state.js';
+import { ReportsAnalytics } from './reports/analytics.js';
+import { ReportsActivity } from './reports/activity.js';
 import { SearchableSelect } from './searchable-select.js';
 
 /**
@@ -12,6 +12,9 @@ import { SearchableSelect } from './searchable-select.js';
  *
  * Reports - 08 Feb 2026
  * Fixed modals, project selection logic and interactive pointer events.
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - TaskState + relocated reports modules after Planner removal
  */
 
 let currentPage = 1;
@@ -22,7 +25,7 @@ let dailyReportDate = localStorage.getItem('timeshark_reports_daily_date') || ne
 let analyticsScale = localStorage.getItem('timeshark_reports_analytics_scale') || 'month';
 
 export async function renderReports() {
-  await PlannerState.init();
+  await TaskState.init();
   
   const state = store.get();
   const rawEntries = state.timeEntries || [];
@@ -31,7 +34,7 @@ export async function renderReports() {
   const hiddenProjectIds = new Set(projects.filter(p => p.hide_from_gantt == 1 && !projectFilter.includes(String(p.id))).map(p => String(p.id)));
   const entries = rawEntries.filter(e => !hiddenProjectIds.has(String(e.project_id)));
   
-  const plannerData = PlannerState.getCombinedData(projectFilter.length > 0 ? projectFilter : 'all');
+  const taskData = TaskState.getCombinedData(projectFilter.length > 0 ? projectFilter : 'all');
   const today = new Date();
   
   const generateDates = (days) => {
@@ -291,12 +294,12 @@ export async function renderReports() {
     
     const analyticsContainer = container.querySelector('#project-analytics-container');
     if (analyticsContainer) {
-        PlannerAnalytics.render(analyticsContainer, plannerData, analyticsConfig, today, projectFilter);
+        ReportsAnalytics.render(analyticsContainer, taskData, analyticsConfig, today, projectFilter);
     }
 
     const activityContainer = container.querySelector('#reports-activity-container');
     if (activityContainer) {
-        PlannerActivity.render(activityContainer, PlannerState.getCombinedData('all'));
+        ReportsActivity.render(activityContainer, TaskState.getCombinedData('all'));
     }
     
     const filterContainer = container.querySelector('#reports-project-filter-container');

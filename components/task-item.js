@@ -3,9 +3,10 @@
  * 
  * Reusable component for rendering a single task card.
  * Supports 'full' (ref dashboard) and 'compact' (ref sidebar) modes.
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Removed unused PlannerUtils import
  */
-
-import { PlannerUtils } from './planner/planner-utils.js';
 
 export const TaskItem = {
     /**

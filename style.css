@@ -1,4 +1,5 @@
 /* Zen Design System - Refined with Dark Mode Support */
+/* @version 3.2 - CHORE - 31 Jul 2026 - Removed Gantt-only dynamic color classes */
 :root {
     --primary: #338a81;
     --primary-dark: #2a736c;
@@ -46,32 +47,6 @@
     --border-subtle: rgba(255, 255, 255, 0.08);
     --highlight-soft: rgba(255, 255, 255, 0.04);
     --shadow-soft: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
-}
-
-/* Dynamic Gantt border colors based on CSS variables */
-.dynamic-border-item {
-    border-color: color-mix(in srgb, var(--item-color) 25%, white) !important;
-}
-.dark .dynamic-border-item {
-    border-color: color-mix(in srgb, var(--item-color) 25%, black) !important;
-}
-
-/* Dynamic Gantt Background colors */
-.dynamic-bg-item {
-    background-color: transparent !important;
-}
-.dark .dynamic-bg-item {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--item-color) 20%, black) 0%, transparent 20%, transparent 80%, color-mix(in srgb, var(--item-color) 20%, black) 100%) !important;
-}
-
-/* Dynamic Gantt Task Text coloring */
-.task-title-dynamic {
-    color: color-mix(in srgb, var(--item-color) 50%, black);
-    font-weight: 600;
-}
-.dark .task-title-dynamic {
-    color: rgba(255, 255, 255, 0.6);
-    font-weight: 400;
 }
 
 body {

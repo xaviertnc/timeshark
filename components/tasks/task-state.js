@@ -1,19 +1,22 @@
 /**
- * components/planner/planner-state.js
+ * components/tasks/task-state.js
  * 
- * Manages the data state for the unified planner.
+ * Manages the shared task data state.
  * Merges Tasks and Time Entries.
+ *
+ * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Relocated from planner/planner-state.js, renamed to TaskState
  */
 
 import { api } from '../../utils/api.js';
 import { store } from '../../utils/store.js';
 
-export const PlannerState = {
+export const TaskState = {
     async init() {
         try {
             // Fetch latest data
             const [tasks, timeEntries, projects] = await Promise.all([
-                api.get('planner.php'),
+                api.get('tasks.php'),
                 api.get('time-entries.php'),
                 api.get('projects.php')
             ]);
@@ -37,7 +40,7 @@ export const PlannerState = {
             store.update('timeEntries', timeEntries);
             store.update('projects', projects);
         } catch (err) {
-            console.error("PlannerState: Failed to fetch data", err);
+            console.error("TaskState: Failed to fetch data", err);
         }
     },
 

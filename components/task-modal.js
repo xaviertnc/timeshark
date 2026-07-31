@@ -10,9 +10,9 @@
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.0 - INIT - 08 Feb 2026 - Replaced the legacy planner modal
  * @version 1.1 - FIX - 23 Jul 2026 - Hydrate task dates and times in local time
  * @version 1.2 - FIX - 23 Jul 2026 - Default missing times to working hours
+ * @version 3.2 - CHORE - 31 Jul 2026 - Tasks API renamed to tasks.php
  */
 
 import { api } from '../utils/api.js';
@@ -20,7 +20,7 @@ import { store } from '../utils/store.js';
 import { SearchableSelect } from './searchable-select.js';
 import { escapeHTML } from '../utils/dom.js';
 import { ConfirmModal } from './confirm-modal.js';
-import { TimeEntryModal } from './time-entry-modal.js';
+import { TimeEntryModal } from './time-entry-modal.js?v=3.2.1';
 
 export class TaskModal {
     static open(task = null, options = {}) {
@@ -282,7 +282,7 @@ export class TaskModal {
             </div>
         `;
 
-        // ───── LOGIC PORTED FROM PlannerModal ─────
+        // ───── TASK EDIT LOGIC ─────
 
         setTimeout(() => {
             const content = container.querySelector('#task-modal-content');
@@ -605,7 +605,7 @@ export class TaskModal {
             deleteBtn.onclick = async () => {
                 const confirmed = await ConfirmModal.show('Delete this task?', { confirmText: 'Delete Task', isDestructive: true });
                 if (confirmed) {
-                    await api.delete(`planner.php?id=${task.id}`);
+                    await api.delete(`tasks.php?id=${task.id}`);
                     onSave();
                     close();
                 }
@@ -750,7 +750,7 @@ export class TaskModal {
             }
 
             try {
-                await api.post('planner.php', data);
+                await api.post('tasks.php', data);
                 onSave();
                 close();
             } catch (err) {

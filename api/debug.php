@@ -5,7 +5,7 @@
  * Usage:
  *   require_once 'debug.php';
  *   debug_log('projects', 'Update request', ['id' => $id, 'data' => $data]);
- *   debug_log('planner', 'Task not found', $taskId);
+ *   debug_log('tasks', 'Task not found', $taskId);
  */
 
 // Timezone & error log

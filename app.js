@@ -13,19 +13,18 @@ import { store } from './utils/store.js';
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.1 - UPD - 28 Jan 2026 - Rename Customers to Organizations and Clients
  * @version 2.1 - UPD - 14 May 2026 - Comprehensive upgrade. TAGS Support + TODOs & Projects management
  * @version 2.2 - FIX - 23 Jul 2026 - Refresh updated dashboard modules
+ * @version 3.2 - CHORE - 31 Jul 2026 - Removed the Planner page; tasks API renamed to tasks.php
  */
 
 // Components
-import { renderSidebar } from './components/sidebar.js';
-import { renderDashboard } from './components/dashboard.js?v=20260723.2';
+import { renderSidebar } from './components/sidebar.js?v=3.2';
+import { renderDashboard } from './components/dashboard.js?v=3.2.1';
 import { renderOrganizations } from './components/organizations.js';
-import { renderProjects } from './components/projects.js';
-import { renderPlanner } from './components/planner.js?v=3.1.2';
-import { renderReports } from './components/reports.js?v=3.1.2';
-import { renderTeam } from './components/team.js';
+import { renderProjects } from './components/projects.js?v=3.2.1';
+import { renderReports } from './components/reports.js?v=3.2.1';
+import { renderTeam } from './components/team.js?v=3.2.1';
 
 const app = document.getElementById('app');
 const headerContainer = document.getElementById('page-header-container');
@@ -48,7 +47,6 @@ window.__timesharkDisposeCurrentView = disposeCurrentRoute;
 // Router
 const routes = {
     '': { title: 'Dashboard', render: renderDashboard },
-    '#planner': { title: 'Planner', render: renderPlanner },
     '#projects': { title: 'Projects', render: renderProjects },
     '#organizations': { title: 'Organizations', render: renderOrganizations },
     '#team': { title: 'Team', render: renderTeam },
@@ -114,7 +112,7 @@ async function init() {
             api.get('projects.php'),
             api.get('time-entries.php'),
             api.get('team.php'),
-            api.get('planner.php')
+            api.get('tasks.php')
         ]);
 
         const activeTimer = timeEntries.find(e => !e.end_time);

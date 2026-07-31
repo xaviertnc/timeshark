@@ -5,7 +5,6 @@ A clean, beautiful time tracking SPA with the following main features:
 - Time Tracker (Shark)
   - Todo / Tasks Manager
   - Time Entries Manager
-- Projects Timeline
 - Archive
   - Archived Projects
   - Archived Todos / Tasks

@@ -10,12 +10,12 @@
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.0 - INIT - 28 Jun 2025 - Initial commit
  * @version 1.1 - UPD - 23 Jul 2026 - Sort URGENT-tagged tasks first in each group
  * @version 1.2 - FT - 23 Jul 2026 - Collapsible major and project group headers
+ * @version 3.2 - CHORE - 31 Jul 2026 - Cache-bust imports after Planner page removal
  */
 
-import { TaskItem } from './task-item.js';
+import { TaskItem } from './task-item.js?v=3.2';
 import { escapeHTML } from '../utils/dom.js';
 
 export const TaskList = {

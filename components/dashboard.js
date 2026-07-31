@@ -1,13 +1,13 @@
 import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
-import { TaskModal } from './task-modal.js?v=20260723.2';
-import { PlannerState } from './planner/planner-state.js';
-import { TaskList } from './task-list.js';
-import { TaskQuickAdd } from './task-quick-add.js';
+import { TaskModal } from './task-modal.js?v=3.2.1';
+import { TaskState } from './tasks/task-state.js';
+import { TaskList } from './task-list.js?v=3.2';
+import { TaskQuickAdd } from './task-quick-add.js?v=3.2.1';
 import { SearchableSelect } from './searchable-select.js';
-import { TimeEntryModal } from './time-entry-modal.js';
+import { TimeEntryModal } from './time-entry-modal.js?v=3.2.1';
 import { TaskFilterBar } from './task-filter-bar.js';
-import { ProjectModal } from './project-modal.js';
+import { ProjectModal } from './project-modal.js?v=3.2.1';
 import { ConfirmModal } from './confirm-modal.js';
 import { ExportModal } from './export-modal.js';
 import { escapeHTML } from '../utils/dom.js';
@@ -24,13 +24,13 @@ import { escapeHTML } from '../utils/dom.js';
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.1 - FIX - 08 Feb 2026 - Fixed modals, pointer events and project selection
  * @version 1.2 - FIX - 23 Jul 2026 - Preserve local dates when moving tasks
  * @version 1.3 - FIX - 23 Jul 2026 - Default moved tasks to working hours
+ * @version 3.2 - CHORE - 31 Jul 2026 - Planner page removed; TaskState + tasks.php renames
  */
 
 export async function renderDashboard(forceRefresh = false) {
-  let isCompact = localStorage.getItem('planner_sidebar_compact') !== 'false'; // Default to true
+  let isCompact = localStorage.getItem('todo_sidebar_compact') !== 'false'; // Default to true
   let isHistoryCompact = localStorage.getItem('dashboard_history_compact') === 'true'; // Default to false
   let isSearchRowVisible = localStorage.getItem('dashboard_search_visible') !== 'false';
   let isTodosCollapsed = localStorage.getItem('dashboard_todos_collapsed') === 'true';
@@ -40,7 +40,7 @@ export async function renderDashboard(forceRefresh = false) {
   let historyLimit = localStorage.getItem('dashboard_history_limit') || 'today';
 
   if (forceRefresh || !store.get().tasks || store.get().tasks.length === 0) {
-    await PlannerState.init();
+    await TaskState.init();
   }
 
   const state = store.get();
@@ -680,7 +680,7 @@ export async function renderDashboard(forceRefresh = false) {
 
   const refreshView = async () => {
     // Explicitly fetch fresh data before re-rendering
-    await PlannerState.init();
+    await TaskState.init();
     const app = document.getElementById('app');
     if (typeof container.__dispose === 'function') container.__dispose();
     app.innerHTML = '';
@@ -758,7 +758,7 @@ export async function renderDashboard(forceRefresh = false) {
       isCompact,
       onToggleCompact: (val) => {
         isCompact = val;
-        localStorage.setItem('planner_sidebar_compact', String(val));
+        localStorage.setItem('todo_sidebar_compact', String(val));
         window.dispatchEvent(new CustomEvent('compact-mode-change', { detail: { isCompact: val } }));
         renderTaskToggles();
         renderDashboardTasks();
@@ -982,7 +982,7 @@ export async function renderDashboard(forceRefresh = false) {
 
         try {
           for (const id of selectedTaskIds) {
-            await api.post('planner.php', {
+            await api.post('tasks.php', {
               id,
               status: 'todo',
               start_date: `${todayStr}T09:00:00`,
@@ -1006,7 +1006,7 @@ export async function renderDashboard(forceRefresh = false) {
 
         try {
           for (const id of selectedTaskIds) {
-            await api.post('planner.php', {
+            await api.post('tasks.php', {
               id,
               status: 'todo',
               start_date: `${tomorrowStr}T09:00:00`,
@@ -1053,7 +1053,7 @@ export async function renderDashboard(forceRefresh = false) {
               updates.end_date = newE.toISOString();
             }
             updates.status = 'todo';
-            await api.post('planner.php', updates);
+            await api.post('tasks.php', updates);
           }
           selectedTaskIds.clear();
           refreshView();
@@ -1077,7 +1077,7 @@ export async function renderDashboard(forceRefresh = false) {
             startD.setHours(startHr, startMin, 0, 0);
             endD.setHours(endHr, endMin, 0, 0);
 
-            await api.post('planner.php', {
+            await api.post('tasks.php', {
               id: t.id,
               start_date: startD.toISOString(),
               end_date: endD.toISOString()
@@ -1096,7 +1096,7 @@ export async function renderDashboard(forceRefresh = false) {
         if (!confirmed) return;
         try {
           for (const id of selectedTaskIds) {
-            await api.post('planner.php', { id, status: 'backlog', start_date: null, end_date: null });
+            await api.post('tasks.php', { id, status: 'backlog', start_date: null, end_date: null });
           }
           selectedTaskIds.clear();
           refreshView();
@@ -1111,7 +1111,7 @@ export async function renderDashboard(forceRefresh = false) {
         if (!confirmed) return;
         try {
           for (const id of selectedTaskIds) {
-            await api.delete(`planner.php?id=${id}`);
+            await api.delete(`tasks.php?id=${id}`);
           }
           selectedTaskIds.clear();
           refreshView();
@@ -1141,7 +1141,7 @@ export async function renderDashboard(forceRefresh = false) {
           const assignedVal = val;
           try {
             for (const id of selectedTaskIds) {
-              await api.post('planner.php', { id, resource_id: assignedVal });
+              await api.post('tasks.php', { id, resource_id: assignedVal });
             }
             selectedTaskIds.clear();
             refreshView();
@@ -1442,8 +1442,8 @@ export async function renderDashboard(forceRefresh = false) {
           }
         }
         try {
-          await api.post('planner.php', update);
-          await PlannerState.init();
+          await api.post('tasks.php', update);
+          await TaskState.init();
           refreshView();
         } catch (err) { console.error('Toggle failed:', err); }
         return;
@@ -1480,8 +1480,8 @@ export async function renderDashboard(forceRefresh = false) {
         }
         if (newStatus !== 'done') update.completed_at = null;
         try {
-          await api.post('planner.php', update);
-          await PlannerState.init();
+          await api.post('tasks.php', update);
+          await TaskState.init();
           refreshView();
         } catch (err) { console.error('Progress update failed:', err); }
         return;
@@ -1518,8 +1518,8 @@ export async function renderDashboard(forceRefresh = false) {
         const confirmed = await ConfirmModal.show('Are you sure you want to delete this task?', { confirmText: 'Delete Task', isDestructive: true });
         if (!confirmed) return;
         try {
-          await api.post('planner.php?action=delete', { id: taskId });
-          await PlannerState.init();
+          await api.post('tasks.php?action=delete', { id: taskId });
+          await TaskState.init();
           refreshView();
         } catch (err) { console.error('Delete task failed:', err); }
         return;
@@ -1535,7 +1535,7 @@ export async function renderDashboard(forceRefresh = false) {
         if (task) {
           TaskModal.open(task, {
             onSave: async () => {
-              await PlannerState.init();
+              await TaskState.init();
               refreshView();
             }
           });
@@ -1674,7 +1674,7 @@ export async function renderDashboard(forceRefresh = false) {
           completed_at: null
         };
         try {
-          const newTask = await api.post('planner.php', taskData);
+          const newTask = await api.post('tasks.php', taskData);
           const tasks = store.get().tasks || [];
           store.update('tasks', [...tasks, newTask]);
 

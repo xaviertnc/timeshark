@@ -1,15 +1,14 @@
 /**
- * components/planner/planner-view-analytics.js
+ * components/reports/analytics.js
  * 
  * Renders an Analytics view including a Burnup chart and basic stats.
  *
- * @version 1.1 - FT - 31 Jul 2026 - Add Burn Rate badge ( added / done ratio for timeframe )
- * @version 1.6 - UPD - 31 Jul 2026 - Orange Burn Rate tone when less than 10% negative
  * @version 1.7 - UPD - 31 Jul 2026 - Blue Burn Rate tone when diff within 1% of parity
  * @version 1.8 - UPD - 31 Jul 2026 - Header shows Scope total and Done / Scope percent instead of Total Tasks sum
+ * @version 3.2 - CHORE - 31 Jul 2026 - Relocated from planner/planner-view-analytics.js, renamed to ReportsAnalytics
  */
 
-export const PlannerAnalytics = {
+export const ReportsAnalytics = {
     render(container, data, config, today, projectFilter) {
         if (typeof container === 'string') container = document.getElementById(container);
         if (!container) return;

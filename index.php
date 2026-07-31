@@ -9,13 +9,12 @@
  * @package Time Shark
  *
  * Last 3 version commits:
+ * @version 3.2 - CHORE - 31 Jul 2026 - Removed the Project Planning page (Gantt + Kanban views) and its dead code.
  * @version 3.1 - FT - 31 Jul 2026 - Burn Rate diff metric on the Delivery Burnup, consolidated Done/Completed terminology, legend removed.
  * @version 3.0 - UPD - 11 Jul 2026 - Browser stability pass: route cleanup, chart/observer/listener disposal, dashboard churn reductions.
- * @version 2.8 - UPD - 22 Jun 2026 - NEW Export Center for Time Entries and TODOs / Tasks with ZIP & Unified JSON support.
- * @version 2.7 - FIX - 14 Jun 2026 - Fix the burnup graph logic and resetting future task dates when we complete them early.
  */
 
-define('APP_VERSION', 'v3.1');
+define('APP_VERSION', 'v3.2');
 $appVersion = APP_VERSION;
 ?>
 <!DOCTYPE html>
