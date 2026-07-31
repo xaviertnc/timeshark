@@ -4,9 +4,9 @@
  * Renders an Analytics view including a Burnup chart and basic stats.
  *
  * @version 1.1 - FT - 31 Jul 2026 - Add Burn Rate badge ( added / done ratio for timeframe )
- * @version 1.5 - UPD - 31 Jul 2026 - Burn Rate as signed diff percent ( + green / - red )
  * @version 1.6 - UPD - 31 Jul 2026 - Orange Burn Rate tone when less than 10% negative
  * @version 1.7 - UPD - 31 Jul 2026 - Blue Burn Rate tone when diff within 1% of parity
+ * @version 1.8 - UPD - 31 Jul 2026 - Header shows Scope total and Done / Scope percent instead of Total Tasks sum
  */
 
 export const PlannerAnalytics = {
@@ -108,6 +108,8 @@ export const PlannerAnalytics = {
         const totalDone = burnupData.reduce((sum, d) => sum + (d.doneToday || 0), 0);
         const lastEntry = burnupData.length > 0 ? burnupData[burnupData.length - 1] : null;
         const totalRemaining = lastEntry ? Math.max(0, lastEntry.total - lastEntry.done) : 0;
+        const scopeTotal = lastEntry ? lastEntry.total : 0;
+        const scopeDonePct = scopeTotal > 0 ? Math.round((lastEntry.done / scopeTotal) * 100) : 0;
 
         const overallSum = totalAdded + totalDone + totalRemaining;
         const addedPct = overallSum > 0 ? Math.round((totalAdded / overallSum) * 100) : 0;
@@ -198,8 +200,13 @@ export const PlannerAnalytics = {
                                     <canvas id="burnup-pie-canvas"></canvas>
                                 </div>
                                 <div class="flex flex-col justify-center">
-                                    <span class="text-base font-black text-white leading-none tabular-nums">${overallSum}</span>
-                                    <span class="text-[8px] font-black uppercase tracking-wider text-dim/60 mt-0.5">Total Tasks</span>
+                                    <span class="text-base font-black text-white leading-none tabular-nums">${scopeTotal}</span>
+                                    <span class="text-[8px] font-black uppercase tracking-wider text-dim/60 mt-0.5">Scope</span>
+                                </div>
+                                <div class="h-6 w-px bg-white/10"></div>
+                                <div class="flex flex-col justify-center" title="Cumulative done ÷ total scope">
+                                    <span class="text-base font-black text-primary leading-none tabular-nums">${scopeDonePct}%</span>
+                                    <span class="text-[8px] font-black uppercase tracking-wider text-dim/60 mt-0.5">Done</span>
                                 </div>
                             </div>
 
