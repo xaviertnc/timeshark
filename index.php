@@ -9,12 +9,12 @@
  * @package Time Shark
  *
  * Last 3 version commits:
+ * @version 3.3 - INIT - 31 Jul 2026 - Start v3.3.
  * @version 3.2 - CHORE - 31 Jul 2026 - Removed the Project Planning page (Gantt + Kanban views) and its dead code.
  * @version 3.1 - FT - 31 Jul 2026 - Burn Rate diff metric on the Delivery Burnup, consolidated Done/Completed terminology, legend removed.
- * @version 3.0 - UPD - 11 Jul 2026 - Browser stability pass: route cleanup, chart/observer/listener disposal, dashboard churn reductions.
  */
 
-define('APP_VERSION', 'v3.2');
+define('APP_VERSION', 'v3.3');
 $appVersion = APP_VERSION;
 ?>
 <!DOCTYPE html>
