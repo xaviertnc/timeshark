@@ -13,14 +13,14 @@ import { store } from './utils/store.js';
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 2.1 - UPD - 14 May 2026 - Comprehensive upgrade. TAGS Support + TODOs & Projects management
  * @version 2.2 - FIX - 23 Jul 2026 - Refresh updated dashboard modules
  * @version 3.2 - CHORE - 31 Jul 2026 - Removed the Planner page; tasks API renamed to tasks.php
+ * @version 3.5 - CHORE - 12 Sep 2026 - Cache-bust Dashboard import
  */
 
 // Components
 import { renderSidebar } from './components/sidebar.js?v=3.2';
-import { renderDashboard } from './components/dashboard.js?v=3.3.2';
+import { renderDashboard } from './components/dashboard.js?v=3.5';
 import { renderOrganizations } from './components/organizations.js';
 import { renderProjects } from './components/projects.js?v=3.2.1';
 import { renderReports } from './components/reports.js?v=3.2.1';

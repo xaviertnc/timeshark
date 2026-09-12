@@ -2,7 +2,7 @@ import { store } from '../utils/store.js';
 import { api } from '../utils/api.js';
 import { TaskModal } from './task-modal.js?v=3.2.1';
 import { TaskState } from './tasks/task-state.js';
-import { TaskList } from './task-list.js?v=3.3';
+import { TaskList } from './task-list.js?v=3.5';
 import { TaskQuickAdd } from './task-quick-add.js?v=3.3';
 import { SearchableSelect } from './searchable-select.js';
 import { TimeEntryModal } from './time-entry-modal.js?v=3.2.1';
@@ -24,9 +24,9 @@ import { escapeHTML } from '../utils/dom.js';
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.3 - FIX - 23 Jul 2026 - Default moved tasks to working hours
- * @version 3.2 - CHORE - 31 Jul 2026 - Planner page removed; TaskState + tasks.php renames
  * @version 3.3 - FT - 31 Jul 2026 - Timeline bar drag/resize; Show Completed toggle
+ * @version 3.4 - CHORE - 12 Sep 2026 - Cache-bust TaskList import
+ * @version 3.5 - CHORE - 12 Sep 2026 - Cache-bust TaskList import
  */
 
 export async function renderDashboard(forceRefresh = false) {

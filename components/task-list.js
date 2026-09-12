@@ -10,9 +10,9 @@
  * @author Senpai
  *
  * Last 3 version commits:
- * @version 1.2 - FT - 23 Jul 2026 - Collapsible major and project group headers
- * @version 3.2 - CHORE - 31 Jul 2026 - Cache-bust imports after Planner page removal
  * @version 3.3 - FT - 31 Jul 2026 - Show task count badge on collapsed project groups
+ * @version 3.4 - FIX - 12 Sep 2026 - Completed group sorts by completed_at descending
+ * @version 3.5 - FIX - 12 Sep 2026 - Completed limit/search re-renders with latest filters
  */
 
 import { TaskItem } from './task-item.js?v=3.2';
@@ -28,6 +28,7 @@ export const TaskList = {
      */
     render(container, tasks, projects, options = {}) {
         if (!container) return;
+        container._renderArgs = { tasks, projects, options };
         const mode = options.mode || 'full';
         const showDone = options.showDone || false;
 
@@ -70,12 +71,14 @@ export const TaskList = {
 
             input.oninput = (e) => {
                 container._pageState.completedSearch = e.target.value;
-                this.render(container, tasks, projects, options);
+                const args = container._renderArgs;
+                this.render(container, args.tasks, args.projects, args.options);
             };
             select.onchange = (e) => {
                 container._pageState.completedLimit = e.target.value;
                 localStorage.setItem('tasks_completed_limit', e.target.value);
-                this.render(container, tasks, projects, options);
+                const args = container._renderArgs;
+                this.render(container, args.tasks, args.projects, args.options);
             };
 
             // Sync visual select value
@@ -163,7 +166,7 @@ export const TaskList = {
                     });
                 } else if (limit !== 'all') {
                     const n = parseInt(limit);
-                    groupTasks = groupTasks.slice(-n);
+                    groupTasks = groupTasks.slice(0, n);
                 }
             } else if (key !== 'projects') {
                 const PAGE_SIZE = 15;
@@ -475,11 +478,11 @@ export const TaskList = {
 
         groups.today.tasks.sort((a, b) => this._sortByUrgentThenStartDate(a, b));
 
-        // Special Sort for Completed (Earliest display date first)
+        // Special Sort for Completed (Most recently completed first, undated last)
         groups.completed.tasks.sort((a, b) => {
-            const da = this._getCompletedDisplayDate(a)?.getTime() || Infinity;
-            const db = this._getCompletedDisplayDate(b)?.getTime() || Infinity;
-            return da - db;
+            const da = this._getCompletedDisplayDate(a)?.getTime() || 0;
+            const db = this._getCompletedDisplayDate(b)?.getTime() || 0;
+            return db - da;
         });
 
         return groups;
